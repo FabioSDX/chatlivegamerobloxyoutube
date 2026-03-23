@@ -2267,6 +2267,25 @@
           b.vy += 0.05;
           b.y += b.vy;
           b.x += b.vx * 0.9;
+          // Block collision while hurt
+          var hHalf = BAT_SIZE * 0.35 * (b.isMother ? MOTHER_SCALE : 1);
+          var hCol = Math.floor(b.x / TILE), hRow = Math.floor(b.y / TILE);
+          for (var hr = hRow - 1; hr <= hRow + 1; hr++) {
+            for (var hc = hCol - 1; hc <= hCol + 1; hc++) {
+              var hCell = getCell(hr, hc);
+              if (!hCell || hCell.t === E) continue;
+              var htl = hc * TILE, htr = (hc + 1) * TILE, htt = hr * TILE, htb = (hr + 1) * TILE;
+              var hcx = Math.max(htl, Math.min(b.x, htr));
+              var hcy = Math.max(htt, Math.min(b.y, htb));
+              var hdx = b.x - hcx, hdy = b.y - hcy;
+              var hd = Math.sqrt(hdx * hdx + hdy * hdy);
+              if (hd < hHalf) {
+                if (hd > 0) { b.x += (hdx / hd) * (hHalf - hd); b.y += (hdy / hd) * (hHalf - hd); }
+                else { b.y -= hHalf; }
+                b.vx *= -0.3; b.vy *= -0.3;
+              }
+            }
+          }
           if (b.hurtTimer <= 0) {
             b.state = 'fly'; b.anim = 0;
           }
@@ -2277,9 +2296,13 @@
         b.flyPhase += b.flyFreq;
         b.retargetTimer--;
         if (b.retargetTimer <= 0) {
-          // Pick new target within bounds
-          b.targetX = b.boundsMinX + Math.random() * (b.boundsMaxX - b.boundsMinX);
-          b.targetY = b.boundsMinY + Math.random() * (b.boundsMaxY - b.boundsMinY);
+          // Pick new target within bounds, avoiding solid blocks
+          for (var rt = 0; rt < 5; rt++) {
+            var tx = b.boundsMinX + Math.random() * (b.boundsMaxX - b.boundsMinX);
+            var ty = b.boundsMinY + Math.random() * (b.boundsMaxY - b.boundsMinY);
+            var tc = getCell(Math.floor(ty / TILE), Math.floor(tx / TILE));
+            if (!tc || tc.t === E) { b.targetX = tx; b.targetY = ty; break; }
+          }
           b.retargetTimer = 60 + Math.floor(Math.random() * 120);
         }
 
@@ -2302,6 +2325,40 @@
 
         b.x += b.vx;
         b.y += b.vy;
+
+        // ── Block collision: push out of solid tiles ──
+        var bHalf = BAT_SIZE * 0.35 * (b.isMother ? MOTHER_SCALE : 1);
+        var bCol = Math.floor(b.x / TILE), bRow = Math.floor(b.y / TILE);
+        // Check a small grid around the bat
+        for (var cr = bRow - 1; cr <= bRow + 1; cr++) {
+          for (var cc = bCol - 1; cc <= bCol + 1; cc++) {
+            var cell = getCell(cr, cc);
+            if (!cell || cell.t === E) continue;
+            // Tile AABB
+            var tl = cc * TILE, tr = (cc + 1) * TILE, tt = cr * TILE, tb = (cr + 1) * TILE;
+            // Overlap check (circle vs AABB)
+            var closestX = Math.max(tl, Math.min(b.x, tr));
+            var closestY = Math.max(tt, Math.min(b.y, tb));
+            var ddx = b.x - closestX, ddy = b.y - closestY;
+            var dd = Math.sqrt(ddx * ddx + ddy * ddy);
+            if (dd < bHalf) {
+              // Push out
+              if (dd > 0) {
+                var pen = bHalf - dd;
+                b.x += (ddx / dd) * pen;
+                b.y += (ddy / dd) * pen;
+              } else {
+                b.y -= bHalf;
+              }
+              // Bounce velocity away from block
+              if (ddx !== 0 || ddy !== 0) {
+                var nd = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                b.vx = Math.abs(b.vx) * (ddx / nd) * 0.5;
+                b.vy = Math.abs(b.vy) * (ddy / nd) * 0.5;
+              }
+            }
+          }
+        }
 
         // Clamp to bounds
         if (b.x < b.boundsMinX) { b.x = b.boundsMinX; b.vx = Math.abs(b.vx); }
