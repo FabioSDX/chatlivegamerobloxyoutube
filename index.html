@@ -1121,8 +1121,42 @@
     }
 
     function isMegaClearingCell(r, c) {
-      if (c === 0 || c === COLS - 1) return false; // keep bedrock walls
-      return isMegaClearingRow(r);
+      if (c === 0 || c === COLS - 1) return false;
+      if (r < MEGA_CLEARING_FIRST) return false;
+      var offset = r - MEGA_CLEARING_FIRST;
+      var megaZone = Math.floor(offset / MEGA_CLEARING_INTERVAL);
+      var localRow = offset - megaZone * MEGA_CLEARING_INTERVAL;
+      if (localRow < 0 || localRow >= MEGA_CLEARING_HEIGHT) return false;
+
+      var seed = megaZone * 9973 + 1237;
+      var EDGE_DEPTH = 8;
+
+      // Top organic edge
+      if (localRow < EDGE_DEPTH) {
+        var topFactor = localRow / EDGE_DEPTH;
+        var noise = seededRand(seed + localRow * 31 + c * 17);
+        var noise2 = seededRand(seed + localRow * 47 + c * 23 + 500);
+        var threshold = (1 - topFactor) * 0.65 + noise2 * 0.15;
+        var wallDist = Math.min(c - 1, COLS - 2 - c) / (COLS / 2);
+        threshold += (1 - wallDist) * 0.25;
+        if (noise < threshold) return false;
+        return true;
+      }
+
+      // Bottom organic edge
+      if (localRow >= MEGA_CLEARING_HEIGHT - EDGE_DEPTH) {
+        var botFactor = (MEGA_CLEARING_HEIGHT - 1 - localRow) / EDGE_DEPTH;
+        var noise3 = seededRand(seed + localRow * 41 + c * 29 + 1000);
+        var noise4 = seededRand(seed + localRow * 53 + c * 37 + 1500);
+        var threshold2 = (1 - botFactor) * 0.65 + noise4 * 0.15;
+        var wallDist2 = Math.min(c - 1, COLS - 2 - c) / (COLS / 2);
+        threshold2 += (1 - wallDist2) * 0.25;
+        if (noise3 < threshold2) return false;
+        return true;
+      }
+
+      // Middle: fully open
+      return true;
     }
 
     function genRow(r) {
@@ -2585,8 +2619,8 @@
       var ptsVal = motherFlag ? (100 + Math.floor(zone * 15)) : (30 + Math.floor(zone * 5));
       bats.push({
         x: wx, y: wy,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 1.5,
+        vx: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 1.5),
+        vy: (Math.random() - 0.5) * 0.4,
         state: 'fly',
         anim: Math.random() * 18,
         dir: Math.random() < 0.5 ? -1 : 1,
@@ -2664,23 +2698,27 @@
         b.flyPhase += b.flyFreq;
         b.retargetTimer--;
         if (b.retargetTimer <= 0) {
-          // Pick new target within bounds, avoiding solid blocks
+          // Pick new target: mostly lateral movement (keep Y close, vary X widely)
           for (var rt = 0; rt < 5; rt++) {
             var tx = b.boundsMinX + Math.random() * (b.boundsMaxX - b.boundsMinX);
-            var ty = b.boundsMinY + Math.random() * (b.boundsMaxY - b.boundsMinY);
+            // Keep Y within a small band around current position (±3 tiles)
+            var yBand = TILE * 3;
+            var tyMin = Math.max(b.boundsMinY, b.y - yBand);
+            var tyMax = Math.min(b.boundsMaxY, b.y + yBand);
+            var ty = tyMin + Math.random() * (tyMax - tyMin);
             var tc = getCell(Math.floor(ty / TILE), Math.floor(tx / TILE));
             if (!tc || tc.t === E) { b.targetX = tx; b.targetY = ty; break; }
           }
           b.retargetTimer = 60 + Math.floor(Math.random() * 120);
         }
 
-        // Steer toward target
+        // Steer toward target (lateral bias)
         var dx = b.targetX - b.x;
         var dy = b.targetY - b.y;
         var dist = Math.sqrt(dx * dx + dy * dy) || 1;
         var accel = 0.12;
         b.vx += (dx / dist) * accel;
-        b.vy += (dy / dist) * accel + Math.sin(b.flyPhase) * 0.08;
+        b.vy += (dy / dist) * accel * 0.3 + Math.sin(b.flyPhase) * 0.03;
 
         // Speed limit
         var spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
