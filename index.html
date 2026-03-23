@@ -481,6 +481,7 @@
     var FRICTION = 0.97;
     var SPIN_DAMP = 0.99;
     var GRAVITY = 0.22;
+    var MAX_BOUNCE_VY = 8; // max upward velocity after bounce
 
     // ── Swept AABB para TNT ──
     function sweptAABB(bx, by, vx, vy, hs, tileCol, tileRow) {
@@ -934,7 +935,7 @@
     var MEGA_CLEARING_HEIGHT = 200;
     var MEGA_CLEARING_FIRST = 200;    // first mega-clearing starts at row 200
     var megaClearedZones = {};
-    var MAX_BATS_MEGA = 60;
+    var MAX_BATS_MEGA = 120;
 
     // ── Crystal types for clearings ──
     var CRYSTAL_TYPES = [
@@ -1495,6 +1496,7 @@
               hitBlock(col, row, Math.max(1, Math.floor(speed * dmgBase)), p);
               if (p.vy > 0) {
                 p.y = row * TILE - r - 1; p.vy = -p.vy * BOUNCE;
+                if (p.vy < -MAX_BOUNCE_VY) p.vy = -MAX_BOUNCE_VY;
                 if (Math.abs(p.vy) > 0.8) p.vx += (Math.random() - 0.5) * 3; else p.vx *= FRICTION;
               } else { p.y = (row + 1) * TILE + r + 1; p.vy = -p.vy * BOUNCE; }
               hitAny = true; hitY = true; break;
@@ -1687,7 +1689,7 @@
             if (mz >= 0 && !megaClearedZones[mz]) {
               megaClearedZones[mz] = true;
               megaClearedZones[mz + '_tick'] = 0;
-              var megaNum = Math.min(MAX_BATS_MEGA, 35 + Math.floor(mz * 5));
+              var megaNum = Math.min(MAX_BATS_MEGA, 100 + Math.floor(mz * 10));
               for (var mi = 0; mi < megaNum; mi++) {
                 var mx = (1 + Math.floor(seededRand(mz * 500 + mi * 11) * (COLS - 2))) * TILE + TILE / 2;
                 var myRow = mStart + 5 + Math.floor(seededRand(mz * 600 + mi * 19) * (MEGA_CLEARING_HEIGHT - 10));
