@@ -294,7 +294,7 @@
 <body>
   <!-- API Setup Modal -->
   <div id="apiSetupOverlay" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.92); align-items:center; justify-content:center; font-family:Arial,sans-serif;">
-    <div id="apiSetupBox" style="background:#1a1a2e; border:2px solid #00ff88; border-radius:16px; padding:28px 32px; max-width:460px; width:90%; color:#fff; box-shadow:0 0 40px rgba(0,255,136,0.2);">
+    <div id="apiSetupBox" style="background:#1a1a2e; border:2px solid #00ff88; border-radius:16px; padding:28px 32px; max-width:460px; width:90%; color:#fff; box-shadow:0 0 40px rgba(0,255,136,0.2); max-height:90vh; overflow-y:auto;">
       <div style="text-align:center; margin-bottom:18px;">
         <div style="font-size:36px;">⛏️</div>
         <h2 style="margin:8px 0 4px; color:#00ff88; font-size:20px;">Pickaxe Drop — API Setup</h2>
@@ -310,6 +310,7 @@
         <button id="apiTestBtn" onclick="apiSetupTest()" style="flex:1; padding:10px; border:none; border-radius:8px; background:#00ff88; color:#000; font-weight:bold; font-size:14px; cursor:pointer;">Test & Connect</button>
         <button id="apiFindLiveBtn" onclick="apiSetupFindLive()" style="padding:10px 14px; border:1px solid #00aaff; border-radius:8px; background:transparent; color:#00aaff; font-size:13px; cursor:pointer; display:none;">🔍 Find Live</button>
         <button id="apiSkipBtn" onclick="apiSetupSkip()" style="padding:10px 16px; border:1px solid #555; border-radius:8px; background:transparent; color:#888; font-size:13px; cursor:pointer;">Play Offline</button>
+        <button onclick="apiResetAll()" title="Clear all saved keys and data" style="padding:10px 12px; border:1px solid #ff4444; border-radius:8px; background:transparent; color:#ff4444; font-size:13px; cursor:pointer;">🗑</button>
       </div>
       <div style="margin-top:12px; padding-top:12px; border-top:1px solid #333;">
         <label style="font-size:12px; color:#888; display:block; margin-bottom:4px;">Live Video URL or ID (optional — saves API quota)</label>
@@ -321,9 +322,6 @@
       <div id="apiKeysList" style="margin-top:16px; display:none;">
         <div style="font-size:12px; color:#888; margin-bottom:6px;">Your registered API keys:</div>
         <div id="apiKeysListInner"></div>
-      </div>
-      <div style="margin-top:12px; text-align:center;">
-        <button onclick="apiResetAll()" style="padding:6px 14px; border:1px solid #ff4444; border-radius:8px; background:transparent; color:#ff4444; font-size:11px; cursor:pointer; opacity:0.7;">🗑 Reset all saved data</button>
       </div>
     </div>
   </div>
