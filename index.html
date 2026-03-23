@@ -1498,14 +1498,14 @@
                 p.y = row * TILE - r - 1; p.vy = -p.vy * BOUNCE;
                 if (p.vy < -MAX_BOUNCE_VY) p.vy = -MAX_BOUNCE_VY;
                 if (Math.abs(p.vy) > 0.8) p.vx += (Math.random() - 0.5) * 3; else p.vx *= FRICTION;
-              } else { p.y = (row + 1) * TILE + r + 1; p.vy = -p.vy * BOUNCE; }
+              } else { p.y = (row + 1) * TILE + r + 1; p.vy = -p.vy * BOUNCE; if (p.vy > MAX_BOUNCE_VY) p.vy = MAX_BOUNCE_VY; }
               hitAny = true; hitY = true; break;
             }
           }
           if (hitY) break;
         }
 
-        if (p.y - r < 0) { p.y = r; p.vy = Math.abs(p.vy) * BOUNCE; }
+        if (p.y - r < 0) { p.y = r; p.vy = Math.abs(p.vy) * BOUNCE; if (p.vy > MAX_BOUNCE_VY) p.vy = MAX_BOUNCE_VY; }
         p.ang += p.spin;
         if (hitAny) p.spin = p.spin * 0.9 + (Math.random() - 0.5) * 0.12; else p.spin *= 0.995;
         return hitAny;
@@ -2520,6 +2520,7 @@
             var bounceForce = Math.max(2.5, pSpeed * 0.5);
             p.vx = nx * bounceForce;
             p.vy = ny * bounceForce - 1.5;
+            if (p.vy < -MAX_BOUNCE_VY) p.vy = -MAX_BOUNCE_VY;
             p.spin += (Math.random() - 0.5) * 0.2;
             p.x = b.x + nx * (PICK_R + BR + 1);
             p.y = b.y + ny * (PICK_R + BR + 1);
@@ -2687,6 +2688,7 @@
             var bounceForce = Math.max(3, pSpeed * 0.6);
             p.vx = nx * bounceForce;
             p.vy = ny * bounceForce - 2; // kick upward
+            if (p.vy < -MAX_BOUNCE_VY) p.vy = -MAX_BOUNCE_VY;
             p.spin += (Math.random() - 0.5) * 0.3;
             // Push pick out of zombie
             p.x = z.x + nx * (PICK_R + ZR + 1);
