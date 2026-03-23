@@ -1535,7 +1535,8 @@
         if (p.y - r < 0) { p.y = r; p.vy = Math.abs(p.vy) * BOUNCE; }
         p.ang += p.spin;
         if (hitAny) p.spin = p.spin * 0.9 + (Math.random() - 0.5) * 0.12; else p.spin *= 0.995;
-        if (hitAny) resetCombo(p);
+        // Combo timer decay — reset combo if no enemy hit for 3 seconds
+        if (p.comboTimer > 0) { p.comboTimer--; } else { resetCombo(p); }
         return hitAny;
       }
 
@@ -1680,6 +1681,7 @@
       function registerComboHit(p, enemyX, enemyY) {
         if (!p) return;
         p.combo = (p.combo || 0) + 1;
+        p.comboTimer = 180; // 3 seconds to keep combo alive
         var c = p.combo;
         if (c >= TORMENTA_COMBO_THRESHOLD && !tormentaActive) {
           activateTormenta(p);
