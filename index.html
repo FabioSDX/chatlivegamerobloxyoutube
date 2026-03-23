@@ -255,6 +255,7 @@
     .lb-item {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 6px;
       margin-bottom: 5px;
       font-size: 11px;
@@ -269,17 +270,16 @@
     }
 
     .lb-avatar {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       border: 1px solid #fff;
     }
 
     .lb-name {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      flex: 1 1 auto;
+      white-space: normal;
+      word-break: break-word;
       font-weight: 500;
     }
 
@@ -287,6 +287,7 @@
       font-weight: bold;
       color: #ffdd44;
       text-shadow: 0 0 3px rgba(255, 221, 68, 0.3);
+      white-space: nowrap;
     }
   </style>
 </head>
