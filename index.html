@@ -851,23 +851,33 @@
     var PICKAXES = [
       { name: 'Wood', img: 'pickaxe/wooden_pickaxe.png', damage: 0.5, color: '#c8a464' },
       { name: 'Stone', img: 'pickaxe/stone_pickaxe.png', damage: 1.0, color: '#aaaaaa' },
-      { name: 'Iron', img: 'pickaxe/iron_pickaxe.png', damage: 1.5, color: '#d8d8d8' },
       { name: 'Gold', img: 'pickaxe/golden_pickaxe.png', damage: 1.2, color: '#ffe066' },
+      { name: 'Iron', img: 'pickaxe/iron_pickaxe.png', damage: 1.5, color: '#d8d8d8' },
       { name: 'Diamond', img: 'pickaxe/diamond_pickaxe.png', damage: 2.5, color: '#44ddff' },
       { name: 'Netherite', img: 'pickaxe/netherite_pickaxe.png', damage: 3.5, color: '#554444' }
     ];
     PICKAXES.forEach(function (p) { p.imgObj = new Image(); p.imgObj.src = p.img; });
 
+    var PICK_UPGRADE_MS = 2 * 60 * 1000; // 2 minutes per tier
+
     var currentPickaxe = PICKAXES[0];
+    var ownerJoinTime = Date.now();
     var PICK_SIZE = 80;
     var pickaxeChangeInterval = 10;
 
-    function changePickaxe() {
-      var prev = currentPickaxe;
-      do { currentPickaxe = PICKAXES[Math.floor(Math.random() * PICKAXES.length)]; }
-      while (currentPickaxe === prev && PICKAXES.length > 1);
-      safeUpdate('pickaxeDisplay', '⛏ ' + currentPickaxe.name, currentPickaxe.color);
-      if (_audioStarted) sfxPickaxeChange();
+    function getPickaxeForTime(joinTime) {
+      var elapsed = Date.now() - joinTime;
+      var tier = Math.min(Math.floor(elapsed / PICK_UPGRADE_MS), PICKAXES.length - 1);
+      return PICKAXES[tier];
+    }
+
+    function updateOwnerPickaxe() {
+      var newPick = getPickaxeForTime(ownerJoinTime);
+      if (newPick !== currentPickaxe) {
+        currentPickaxe = newPick;
+        safeUpdate('pickaxeDisplay', '⛏ ' + currentPickaxe.name, currentPickaxe.color);
+        if (_audioStarted) sfxPickaxeChange();
+      }
     }
 
     // ── Config from localStorage (no PHP needed) ──
@@ -878,8 +888,8 @@
         ownerName = cfg.owner_name.replace(/^@@+/, '@');
         if (ownerName && ownerName[0] !== '@') ownerName = '@' + ownerName;
       }
-      changePickaxe();
-      setInterval(changePickaxe, pickaxeChangeInterval * 1000);
+      updateOwnerPickaxe();
+      setInterval(updateOwnerPickaxe, 5000);
     })();
 
     // ── Mapa infinito ──────────────────────────────────────────────────────────────────
@@ -1389,7 +1399,8 @@
         if (!p) return false;
         p.vy += GRAVITY;
         var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        var dmgBase = 0.35 * (currentPickaxe ? currentPickaxe.damage : 1);
+        var pPickaxe = p.pickaxe || currentPickaxe;
+        var dmgBase = 0.35 * (pPickaxe ? pPickaxe.damage : 1);
         var hitAny = false;
 
         // Eixo X
@@ -2075,7 +2086,7 @@
         ctx.translate(up.x, up.y);
         ctx.rotate(up.ang);
         if (SHADOW_ENABLED) { ctx.shadowBlur = 12; ctx.shadowColor = up.color || '#00ff88'; }
-        var uImg = currentPickaxe.imgObj;
+        var uImg = (up.pickaxe || currentPickaxe).imgObj;
         if (uImg && uImg.complete && uImg.naturalWidth > 0) {
           ctx.drawImage(uImg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
         }
@@ -4126,6 +4137,8 @@
         halfSize: PICK_HALF,
         userName: userName,
         userAvatarUrl: avatarUrl,
+        joinTime: Date.now(),
+        pickaxe: PICKAXES[0],
         score: (persistentScores[userName] ? persistentScores[userName].score : 0),
         color: (persistentScores[userName] && persistentScores[userName].color)
           ? persistentScores[userName].color
@@ -4147,6 +4160,11 @@
     }
 
     function updateLeaderboard() {
+      // Update pickaxe tier for all userPicks
+      for (var i = 0; i < userPicks.length; i++) {
+        userPicks[i].pickaxe = getPickaxeForTime(userPicks[i].joinTime);
+      }
+
       var list = document.getElementById('leaderboardList');
       if (!list) return;
 
@@ -4156,10 +4174,20 @@
         if (ownerName && name === ownerName) return true; // owner always in leaderboard
         return lastActivity[name] && (now - lastActivity[name] <= INACTIVE_MS);
       }).map(function (name) {
+        // Find pickaxe tier for this player
+        var pTier = currentPickaxe; // default for owner
+        if (ownerName && name === ownerName) {
+          pTier = currentPickaxe;
+        } else {
+          for (var j = 0; j < userPicks.length; j++) {
+            if (userPicks[j].userName === name) { pTier = userPicks[j].pickaxe || PICKAXES[0]; break; }
+          }
+        }
         return {
           userName: name,
           score: persistentScores[name].score,
-          userAvatarUrl: persistentScores[name].avatar
+          userAvatarUrl: persistentScores[name].avatar,
+          pickaxe: pTier
         };
       });
 
@@ -4175,12 +4203,16 @@
       var html = '';
       sorted.forEach((u, i) => {
         var av = u.userAvatarUrl || '';
+        var pickImg = u.pickaxe ? u.pickaxe.img : 'pickaxe/wooden_pickaxe.png';
+        var pickName = u.pickaxe ? u.pickaxe.name : 'Wood';
+        var pickColor = u.pickaxe ? u.pickaxe.color : '#c8a464';
         html += `
       <div class="lb-item">
         <div class="lb-rank">#${i + 1}</div>
         <img class="lb-avatar" src="${av}" onerror="this.src='pickaxe/wooden_pickaxe.png'">
         <div class="lb-name">${u.userName}</div>
-        <div class="lb-score">${Math.floor(u.score || 0)}</div>
+        <img src="${pickImg}" style="width:20px;height:20px;vertical-align:middle;margin:0 4px;" title="${pickName}">
+        <div class="lb-score" style="color:${pickColor}">${Math.floor(u.score || 0)}</div>
       </div>
     `;
       });
