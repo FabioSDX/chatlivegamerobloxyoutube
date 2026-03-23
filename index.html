@@ -1475,10 +1475,10 @@
             var cell = getCell(row, col);
             if (cell && cell.t !== E) {
               hitBlock(col, row, Math.max(1, Math.floor(speed * dmgBase)), p);
-              var bfx = Math.max(4, Math.abs(p.vx) * 0.7);
-              if (p.vx > 0) { p.x = col * TILE - r - 1; p.vx = -bfx; }
-              else { p.x = (col + 1) * TILE + r + 1; p.vx = bfx; }
-              p.vy += (Math.random() - 0.5) * 3;
+              var bf = Math.max(2.5, speed * 0.5);
+              if (p.vx > 0) { p.x = col * TILE - r - 1; p.vx = -bf; }
+              else { p.x = (col + 1) * TILE + r + 1; p.vx = bf; }
+              p.vy = -Math.abs(p.vy) * 0.3 - 1.5;
               p.spin += (Math.random() - 0.5) * 0.2;
               hitAny = true; break;
             }
@@ -1496,12 +1496,12 @@
             var cell = getCell(row, col);
             if (cell && cell.t !== E) {
               hitBlock(col, row, Math.max(1, Math.floor(speed * dmgBase)), p);
-              var bfy = Math.max(5, Math.abs(p.vy) * 0.7);
+              var bf2 = Math.max(2.5, speed * 0.5);
               if (p.vy > 0) {
-                p.y = row * TILE - r - 1; p.vy = -bfy;
-                p.vx += (Math.random() - 0.5) * 5;
+                p.y = row * TILE - r - 1; p.vy = -bf2;
+                p.vx += (Math.random() - 0.5) * bf2 * 0.6;
               } else {
-                p.y = (row + 1) * TILE + r + 1; p.vy = bfy;
+                p.y = (row + 1) * TILE + r + 1; p.vy = bf2;
               }
               p.spin += (Math.random() - 0.5) * 0.2;
               hitAny = true; hitY = true; break;
