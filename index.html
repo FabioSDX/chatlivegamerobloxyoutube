@@ -1479,9 +1479,9 @@
               var bdx = p.x - bcx, bdy = p.y - bcy;
               var bdist = Math.sqrt(bdx * bdx + bdy * bdy) || 1;
               var bnx = bdx / bdist, bny = bdy / bdist;
-              var bf = Math.max(2.5, speed * 0.5);
+              var bf = Math.max(5, speed * 0.7);
               p.vx = bnx * bf;
-              p.vy = bny * bf - 1.5;
+              p.vy = bny * bf - 3;
               p.spin += (Math.random() - 0.5) * 0.2;
               if (p.vx > 0) p.x = (col + 1) * TILE + r + 1;
               else p.x = col * TILE - r - 1;
@@ -1505,9 +1505,9 @@
               var bdx2 = p.x - bcx2, bdy2 = p.y - bcy2;
               var bdist2 = Math.sqrt(bdx2 * bdx2 + bdy2 * bdy2) || 1;
               var bnx2 = bdx2 / bdist2, bny2 = bdy2 / bdist2;
-              var bf2 = Math.max(2.5, speed * 0.5);
+              var bf2 = Math.max(5, speed * 0.7);
               p.vx = bnx2 * bf2;
-              p.vy = bny2 * bf2 - 1.5;
+              p.vy = bny2 * bf2 - 3;
               p.spin += (Math.random() - 0.5) * 0.2;
               if (p.vy > 0) p.y = row * TILE - r - 1;
               else p.y = (row + 1) * TILE + r + 1;
