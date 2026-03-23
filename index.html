@@ -477,11 +477,11 @@
     var TNT_RADIUS = 3;
     var MEGA_TNT_RADIUS = 6;
 
-    var BOUNCE = 0.78;
-    var FRICTION = 0.985;
+    var BOUNCE = 0.55;
+    var FRICTION = 0.98;
     var SPIN_DAMP = 0.99;
     var GRAVITY = 0.18;
-    var MAX_BOUNCE_VY = 12; // cap upward bounce velocity
+    var MAX_BOUNCE_VY = 7;
 
     // ── Swept AABB para TNT ──
     function sweptAABB(bx, by, vx, vy, hs, tileCol, tileRow) {
@@ -1498,9 +1498,9 @@
                 p.y = row * TILE - r - 1;
                 p.vy = -p.vy * BOUNCE;
                 // Minimum bounce so pick always hops
-                if (p.vy > -2.5) p.vy = -2.5;
+                if (p.vy > -1.5) p.vy = -1.5;
                 if (p.vy < -MAX_BOUNCE_VY) p.vy = -MAX_BOUNCE_VY;
-                if (Math.abs(p.vy) > 1.5) p.vx += (Math.random() - 0.5) * 4; else p.vx *= FRICTION;
+                if (Math.abs(p.vy) > 1.5) p.vx += (Math.random() - 0.5) * 2; else p.vx *= FRICTION;
               } else {
                 p.y = (row + 1) * TILE + r + 1;
                 p.vy = -p.vy * BOUNCE;
