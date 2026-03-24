@@ -2406,7 +2406,6 @@
     function updateWater() {
       waterSimTick++;
       if (waterSimTick % WATER_SIM_RATE !== 0) return;
-      // Only simulate water near camera
       var rStart = Math.max(0, Math.floor(camY / TILE) - 5);
       var rEnd = Math.ceil((camY + canvas.height) / TILE) + 5;
       // Process bottom-up so water falls correctly
@@ -2415,35 +2414,63 @@
         for (var c = 0; c < COLS; c++) {
           var cell = worldMap[r][c];
           if (!cell || cell.t !== WATER) continue;
+          // Already processed this tick? skip (use a frame marker)
+          if (cell._wt === waterSimTick) continue;
           // Try to flow down
           var below = getCell(r + 1, c);
           if (below && below.t === E) {
-            worldMap[r + 1][c] = { t: WATER, hp: 1, cr: 0 };
+            worldMap[r + 1][c] = { t: WATER, hp: 1, cr: 0, _wt: waterSimTick };
             worldMap[r][c] = { t: E, hp: 0, cr: 0 };
             continue;
           }
-          // Try to flow down-left or down-right (random order)
+          // Try to flow down-diagonally
           var goLeft = Math.random() < 0.5;
           var dc1 = goLeft ? -1 : 1;
           var dc2 = goLeft ? 1 : -1;
-          var bl1 = getCell(r + 1, c + dc1);
-          if (bl1 && bl1.t === E && c + dc1 >= 0 && c + dc1 < COLS) {
-            worldMap[r + 1][c + dc1] = { t: WATER, hp: 1, cr: 0 };
-            worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-            continue;
+          if (c + dc1 >= 0 && c + dc1 < COLS) {
+            var bl1 = getCell(r + 1, c + dc1);
+            if (bl1 && bl1.t === E) {
+              worldMap[r + 1][c + dc1] = { t: WATER, hp: 1, cr: 0, _wt: waterSimTick };
+              worldMap[r][c] = { t: E, hp: 0, cr: 0 };
+              continue;
+            }
           }
-          var bl2 = getCell(r + 1, c + dc2);
-          if (bl2 && bl2.t === E && c + dc2 >= 0 && c + dc2 < COLS) {
-            worldMap[r + 1][c + dc2] = { t: WATER, hp: 1, cr: 0 };
-            worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-            continue;
+          if (c + dc2 >= 0 && c + dc2 < COLS) {
+            var bl2 = getCell(r + 1, c + dc2);
+            if (bl2 && bl2.t === E) {
+              worldMap[r + 1][c + dc2] = { t: WATER, hp: 1, cr: 0, _wt: waterSimTick };
+              worldMap[r][c] = { t: E, hp: 0, cr: 0 };
+              continue;
+            }
           }
-          // Try to spread sideways (on same level)
-          var side1 = getCell(r, c + dc1);
-          if (side1 && side1.t === E && c + dc1 >= 0 && c + dc1 < COLS) {
-            worldMap[r][c + dc1] = { t: WATER, hp: 1, cr: 0 };
-            worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-            continue;
+          // Lateral spread: only if the column beside has less water stacked above
+          // Count water tiles above current position in this column vs neighbor
+          var myHeight = 0;
+          for (var cr = r; cr >= rStart; cr--) {
+            var cc = getCell(cr, c);
+            if (cc && cc.t === WATER) myHeight++; else break;
+          }
+          var tryDirs = [dc1, dc2];
+          for (var di = 0; di < 2; di++) {
+            var nc = c + tryDirs[di];
+            if (nc < 0 || nc >= COLS) continue;
+            var side = getCell(r, nc);
+            if (!side || side.t !== E) continue;
+            // Check neighbor has solid below (don't spread into air)
+            var sideBelow = getCell(r + 1, nc);
+            if (!sideBelow || (sideBelow.t === E)) continue;
+            // Count neighbor water height
+            var nHeight = 0;
+            for (var cr2 = r - 1; cr2 >= rStart; cr2--) {
+              var cc2 = getCell(cr2, nc);
+              if (cc2 && cc2.t === WATER) nHeight++; else break;
+            }
+            // Only spread if we have more water stacked than neighbor
+            if (myHeight > nHeight + 1) {
+              worldMap[r][nc] = { t: WATER, hp: 1, cr: 0, _wt: waterSimTick };
+              worldMap[r][c] = { t: E, hp: 0, cr: 0 };
+              break;
+            }
           }
         }
       }
