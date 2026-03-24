@@ -2409,7 +2409,7 @@
       var rStart = Math.max(0, Math.floor(camY / TILE) - 5);
       var rEnd = Math.ceil((camY + canvas.height) / TILE) + 5;
 
-      // ── Phase 1: Gravity — water seeks lowest point ──
+      // ── Phase 1: Gravity — water falls down ──
       for (var r = rEnd; r >= rStart; r--) {
         if (!worldMap[r]) continue;
         for (var c = 0; c < COLS; c++) {
@@ -2431,7 +2431,7 @@
               break;
             }
           }
-          // If side has no solid block, check if there's a lower level to flow to
+          // Side has no block? check for lower level
           if (worldMap[r][c] && worldMap[r][c].t === WATER) {
             var sdc = (waterSimTick + r) % 2 === 0 ? -1 : 1;
             for (var sd = 0; sd < 2; sd++) {
@@ -2439,7 +2439,6 @@
               if (sc < 0 || sc >= COLS) continue;
               if (!worldMap[r] || !worldMap[r][sc]) continue;
               if (worldMap[r][sc].t !== E) continue;
-              // Side is empty — check if there's a drop below that side
               var hasDropBelow = false;
               for (var dr = r + 1; dr <= r + 5 && dr <= rEnd; dr++) {
                 if (!worldMap[dr]) break;
@@ -2457,24 +2456,58 @@
         }
       }
 
-      // ── Phase 2: Fill gaps — water tiles must not have empty neighbors with support ──
+      // ── Phase 2: Surface drain — pull water down from row above when space opens ──
+      for (var r = rEnd; r >= rStart + 1; r--) {
+        if (!worldMap[r] || !worldMap[r - 1]) continue;
+        for (var c = 0; c < COLS; c++) {
+          // If this cell is empty with solid below, and cell above has water, pull it down
+          if (worldMap[r][c] && worldMap[r][c].t === E) {
+            var below = worldMap[r + 1] ? worldMap[r + 1][c] : null;
+            if (below && below.t !== E) { // has support
+              var above = worldMap[r - 1][c];
+              if (above && above.t === WATER) {
+                worldMap[r][c] = { t: WATER, hp: 1, cr: 0 };
+                worldMap[r - 1][c] = { t: E, hp: 0, cr: 0 };
+              }
+            }
+          }
+        }
+      }
+
+      // ── Phase 3: Fill gaps or eliminate sparse rows ──
       for (var r = rStart; r <= rEnd; r++) {
         if (!worldMap[r]) continue;
+        // Count water and empty-with-support in this row
+        var waterCols = [];
+        var emptyCols = [];
         for (var c = 0; c < COLS; c++) {
           var cell = worldMap[r][c];
-          if (!cell || cell.t !== WATER) continue;
-          // Check left and right neighbors
-          for (var sd = -1; sd <= 1; sd += 2) {
-            var nc = c + sd;
-            if (nc < 0 || nc >= COLS) continue;
-            if (!worldMap[r][nc] || worldMap[r][nc].t !== E) continue;
-            // Empty neighbor — does it have solid support below?
-            if (!worldMap[r + 1] || !worldMap[r + 1][nc]) continue;
-            var belowN = worldMap[r + 1][nc];
-            if (belowN && belowN.t !== E) {
-              // Has support — create water to fill the gap
-              worldMap[r][nc] = { t: WATER, hp: 1, cr: 0 };
+          if (!cell) continue;
+          if (cell.t === WATER) {
+            waterCols.push(c);
+          } else if (cell.t === E) {
+            // Check if adjacent to water and has support
+            var hasWaterNeighbor = false;
+            if (c > 0 && worldMap[r][c - 1] && worldMap[r][c - 1].t === WATER) hasWaterNeighbor = true;
+            if (c < COLS - 1 && worldMap[r][c + 1] && worldMap[r][c + 1].t === WATER) hasWaterNeighbor = true;
+            if (hasWaterNeighbor) {
+              var belowC = worldMap[r + 1] ? worldMap[r + 1][c] : null;
+              if (belowC && belowC.t !== E) {
+                emptyCols.push(c);
+              }
             }
+          }
+        }
+        if (waterCols.length === 0 || emptyCols.length === 0) continue;
+        // If gaps outnumber water tiles, eliminate this row's water entirely
+        if (emptyCols.length >= waterCols.length) {
+          for (var wi = 0; wi < waterCols.length; wi++) {
+            worldMap[r][waterCols[wi]] = { t: E, hp: 0, cr: 0 };
+          }
+        } else {
+          // Fill the gaps with new water
+          for (var ei = 0; ei < emptyCols.length; ei++) {
+            worldMap[r][emptyCols[ei]] = { t: WATER, hp: 1, cr: 0 };
           }
         }
       }
