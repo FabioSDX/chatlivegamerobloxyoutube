@@ -2573,17 +2573,30 @@
             ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
           }
           ctx.restore();
-          // Draw clone avatar above
+          // Draw clone avatar and name (same size as original picks)
+          var cloneAvSize = isMobile ? 32 : 48;
+          var cloneAvY = ep.y - PICK_HALF - (isMobile ? 30 : 44);
           if (ep.cloneAvatar && avatarCache[ep.cloneAvatar]) {
             var avImg = avatarCache[ep.cloneAvatar];
             if (avImg.complete && avImg.naturalWidth > 0) {
               ctx.save();
-              ctx.globalAlpha = cloneAlpha * 0.8;
-              ctx.beginPath(); ctx.arc(ep.x, ep.y - PICK_HALF - 10, 9, 0, Math.PI * 2); ctx.clip();
-              ctx.drawImage(avImg, ep.x - 9, ep.y - PICK_HALF - 19, 18, 18);
+              ctx.globalAlpha = cloneAlpha * 0.85;
+              ctx.beginPath(); ctx.arc(ep.x - 10 - cloneAvSize / 2, cloneAvY, cloneAvSize / 2, 0, Math.PI * 2); ctx.clip();
+              ctx.drawImage(avImg, ep.x - 10 - cloneAvSize, cloneAvY - cloneAvSize / 2, cloneAvSize, cloneAvSize);
+              ctx.restore();
+              ctx.save();
+              ctx.globalAlpha = cloneAlpha * 0.85;
+              ctx.strokeStyle = ep.cloneColor || '#44ddff'; ctx.lineWidth = 2;
+              ctx.beginPath(); ctx.arc(ep.x - 10 - cloneAvSize / 2, cloneAvY, cloneAvSize / 2, 0, Math.PI * 2); ctx.stroke();
               ctx.restore();
             }
           }
+          ctx.save();
+          ctx.globalAlpha = cloneAlpha * 0.85;
+          ctx.fillStyle = '#fff'; ctx.font = isMobile ? 'bold 16px Arial' : 'bold 24px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          if (SHADOW_ENABLED) { ctx.shadowBlur = 6; ctx.shadowColor = '#000'; }
+          ctx.fillText(ep.cloneOwner || '', ep.x + 10, cloneAvY);
+          ctx.restore();
         } else {
           // Original doublePick extra
           if (SHADOW_ENABLED) {
