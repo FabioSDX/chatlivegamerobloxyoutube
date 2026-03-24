@@ -1483,6 +1483,15 @@
     var tormentaTimer = 0;
     var tormentaPick = null;
 
+    // ── Spin Skill ──────────────────────────────────────────────────────────────
+    var SPIN_CHARGE = 30;       // 0.5s charge-up
+    var SPIN_DASH = 180;        // 3s dash duration
+    var SPIN_COOLDOWN = 900;    // 15s cooldown
+    var SPIN_SPEED = 18;        // dash velocity
+    var SPIN_DMG_MULT = 5;      // damage multiplier during dash
+    var spinCooldowns = {};     // { userName: framesLeft }
+    var activeSpins = [];       // { pick, dir, phase, timer, origSpin }
+
     var score = 0;
     var items = [];
     var explosions = [];
@@ -5258,15 +5267,6 @@
     }
 
     var CLONE_DURATION = 600; // 10 seconds at 60fps
-
-    // ── Spin Skill ──────────────────────────────────────────────────────────────
-    var SPIN_CHARGE = 30;       // 0.5s charge-up
-    var SPIN_DASH = 180;        // 3s dash duration
-    var SPIN_COOLDOWN = 900;    // 15s cooldown
-    var SPIN_SPEED = 18;        // dash velocity
-    var SPIN_DMG_MULT = 5;      // damage multiplier during dash
-    var spinCooldowns = {};     // { userName: framesLeft }
-    var activeSpins = [];       // { pick, dir, phase, timer, origSpin }
 
     function spawnClone(userName, avatarUrl) {
       userName = userName.replace(/^@@+/, '@');
