@@ -5434,13 +5434,6 @@
             }
           }
           if (s.timer % 2 === 0) {
-            // Afterimage ghost trail
-            parts.push({
-              x: p.x - s.dir.x * 15,
-              y: p.y - s.dir.y * 15,
-              vx: 0, vy: 0,
-              life: 8, color: 'rgba(255,68,255,0.5)', r: PICK_HALF * 0.6
-            });
             // Sparks flying outward
             for (var sp = 0; sp < 2; sp++) {
               var sparkAng = Math.atan2(s.dir.y, s.dir.x) + Math.PI + (Math.random() - 0.5) * 1.5;
