@@ -399,6 +399,15 @@
     </div>
   </div>
 
+  <div id="cmdPanel" style="position:fixed; bottom:8px; left:4px; background:rgba(0,0,0,0.75); border:1px solid #333; border-radius:8px; padding:6px 8px; font-family:monospace; font-size:10px; color:#ccc; z-index:100; max-width:130px; pointer-events:none;">
+    <div style="color:#ffdd44; font-size:9px; margin-bottom:3px; font-weight:bold;">💬 Chat Commands</div>
+    <div><span style="color:#00ff88;">join</span> <span style="color:#666;">— entrar</span></div>
+    <div><span style="color:#00ff88;">play</span> <span style="color:#666;">— entrar</span></div>
+    <div><span style="color:#44ddff;">clone</span> <span style="color:#666;">— picareta dupla 10s</span></div>
+    <div><span style="color:#ff8844;">tnt</span> <span style="color:#666;">— explosão</span></div>
+    <div><span style="color:#ff4444;">mega tnt</span> <span style="color:#666;">— mega explosão</span></div>
+  </div>
+
   <div id="announceOverlay"></div>
 
   <canvas id="gameCanvas"></canvas>
@@ -1604,11 +1613,27 @@
       function updateExtraPicks() {
         if (doublePickActive) {
           doublePickTimer--;
-          if (doublePickTimer <= 0) { doublePickActive = false; extraPicks = []; }
+          if (doublePickTimer <= 0) {
+            doublePickActive = false;
+            // Only remove non-clone extra picks (old doublePick system)
+            for (var di = extraPicks.length - 1; di >= 0; di--) {
+              if (!extraPicks[di].cloneOwner) extraPicks.splice(di, 1);
+            }
+          }
           updateDoublePickHUD();
         }
         for (var i = extraPicks.length - 1; i >= 0; i--) {
-          applyPhysics(extraPicks[i], 28);
+          var ep = extraPicks[i];
+          // Clone timer countdown
+          if (ep.cloneOwner) {
+            ep.cloneTimer--;
+            if (ep.cloneTimer <= 0) {
+              spawnText(ep.x, ep.y - 20, '⚔️ clone expirou', '#888');
+              extraPicks.splice(i, 1);
+              continue;
+            }
+          }
+          applyPhysics(ep, 28);
         }
       }
 
@@ -2533,25 +2558,56 @@
         }
       }
 
-      // picaretas extras (skill dupla)
+      // picaretas extras (skill dupla + clones)
       for (var ei = 0; ei < extraPicks.length; ei++) {
         var ep = extraPicks[ei];
         ctx.save();
         ctx.translate(ep.x, ep.y);
         ctx.rotate(ep.ang);
-        if (SHADOW_ENABLED) {
-          var pulse = doublePickTimer > 0 ? (Math.sin(doublePickTimer * 0.15) * 0.5 + 0.5) : 1;
-          ctx.shadowBlur = 8 + pulse * 6;
-          ctx.shadowColor = '#44ddff';
-        }
-        var epimg = currentPickaxe.imgObj;
-        if (epimg && epimg.complete && epimg.naturalWidth > 0) {
-          ctx.drawImage(epimg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+
+        if (ep.cloneOwner) {
+          // Clone: use owner's pickaxe and color glow
+          var cloneAlpha = ep.cloneTimer < 120 ? (ep.cloneTimer / 120) : 1; // fade out last 2s
+          ctx.globalAlpha = cloneAlpha;
+          if (SHADOW_ENABLED) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ep.cloneColor || '#44ddff';
+          }
+          var cImg = (ep.clonePickaxe || currentPickaxe).imgObj;
+          if (cImg && cImg.complete && cImg.naturalWidth > 0) {
+            ctx.drawImage(cImg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+          } else {
+            ctx.fillStyle = ep.cloneColor || '#44ddff';
+            ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+          }
+          ctx.restore();
+          // Draw clone avatar above
+          if (ep.cloneAvatar && avatarCache[ep.cloneAvatar]) {
+            var avImg = avatarCache[ep.cloneAvatar];
+            if (avImg.complete && avImg.naturalWidth > 0) {
+              ctx.save();
+              ctx.globalAlpha = cloneAlpha * 0.8;
+              ctx.beginPath(); ctx.arc(ep.x, ep.y - PICK_HALF - 10, 9, 0, Math.PI * 2); ctx.clip();
+              ctx.drawImage(avImg, ep.x - 9, ep.y - PICK_HALF - 19, 18, 18);
+              ctx.restore();
+            }
+          }
         } else {
-          ctx.fillStyle = '#44ddff';
-          ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+          // Original doublePick extra
+          if (SHADOW_ENABLED) {
+            var pulse = doublePickTimer > 0 ? (Math.sin(doublePickTimer * 0.15) * 0.5 + 0.5) : 1;
+            ctx.shadowBlur = 8 + pulse * 6;
+            ctx.shadowColor = '#44ddff';
+          }
+          var epimg = currentPickaxe.imgObj;
+          if (epimg && epimg.complete && epimg.naturalWidth > 0) {
+            ctx.drawImage(epimg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+          } else {
+            ctx.fillStyle = '#44ddff';
+            ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+          }
+          ctx.restore();
         }
-        ctx.restore();
       }
 
       // picaretas de outros usuários (permanentes com avatar)
@@ -5185,6 +5241,53 @@
       if (_audioStarted) sfxSkillActivate();
     }
 
+    var CLONE_DURATION = 600; // 10 seconds at 60fps
+
+    function spawnClone(userName, avatarUrl) {
+      userName = userName.replace(/^@@+/, '@');
+      // Find the source pick (owner or userPick)
+      var sourcePick = null;
+      if (ownerName && userName === ownerName) {
+        sourcePick = pick;
+      } else {
+        sourcePick = userPicks.find(function(up) { return up.userName === userName; });
+      }
+      if (!sourcePick) return; // player not in game yet
+
+      // Check if this player already has an active clone
+      var hasClone = extraPicks.some(function(ep) { return ep.cloneOwner === userName; });
+      if (hasClone) return;
+
+      var clone = {
+        x: sourcePick.x,
+        y: sourcePick.y - 20,
+        vx: sourcePick.vx + (Math.random() - 0.5) * 6,
+        vy: sourcePick.vy - 3 - Math.random() * 4,
+        ang: sourcePick.ang,
+        spin: (Math.random() - 0.5) * 0.3,
+        stuck: false,
+        stuckTimer: 0,
+        halfSize: PICK_HALF,
+        cloneOwner: userName,
+        cloneAvatar: avatarUrl || sourcePick.userAvatarUrl || '',
+        cloneTimer: CLONE_DURATION,
+        clonePickaxe: sourcePick.pickaxe || currentPickaxe,
+        cloneColor: sourcePick.color || persistentScores[userName] && persistentScores[userName].color || '#44ddff',
+        // For combo/score attribution
+        userName: userName,
+        userAvatarUrl: avatarUrl || sourcePick.userAvatarUrl || '',
+        pickaxe: sourcePick.pickaxe || currentPickaxe,
+        joinTime: sourcePick.joinTime || Date.now(),
+        combo: 0,
+        comboTimer: 0
+      };
+
+      extraPicks.push(clone);
+      lastActivity[userName] = Date.now();
+      spawnText(clone.x, clone.y - 30, '⚔️ CLONE!', '#44ddff');
+      if (_audioStarted) sfxSkillActivate();
+    }
+
     function updateLeaderboard() {
       // Update pickaxe tier for all userPicks
       for (var i = 0; i < userPicks.length; i++) {
@@ -5528,6 +5631,10 @@
                   activateMegaTNT(tx, ty, cUser, cAvatarUrl);
                 } else if (msg.includes("tnt")) {
                   activateTNT(tx, ty, cUser, cAvatarUrl);
+                }
+
+                if (msg.includes("clone")) {
+                  spawnClone(cUser, cAvatarUrl);
                 }
 
                 if (msg.includes("bot20ok")) {
