@@ -4164,8 +4164,111 @@
     var _apiConnected = false;
     var _apiCheckInterval = null;
     var _apiSetupShown = false;
-    var _gameStarted = false; // true after first successful connection or skip
-    var _apiKeyUpdated = false; // set by popup window when key is saved
+    var _gameStarted = false;
+    var _apiKeyUpdated = false;
+
+    // ── API Key Pool System ──────────────────────────────────────────────────
+    var _keyPool = [];        // [{key, status:'ok'|'failed', lastError:'', failedAt:0}]
+    var _keyPoolIndex = 0;    // round-robin index
+    var _keyRetestTimer = null;
+    var _keyRetestInterval = 3600000; // retest failed keys every 1 hour
+
+    function apiStatusText() {
+      var ok = getOkKeyCount();
+      return ok > 1 ? 'API: ' + ok + ' keys' : 'API: OK';
+    }
+
+    function getNextApiKey() {
+      var okKeys = _keyPool.filter(function(k) { return k.status === 'ok'; });
+      if (okKeys.length === 0) return '';
+      _keyPoolIndex = (_keyPoolIndex + 1) % okKeys.length;
+      _activeApiKey = okKeys[_keyPoolIndex].key;
+      return _activeApiKey;
+    }
+
+    function getCurrentApiKey() {
+      var okKeys = _keyPool.filter(function(k) { return k.status === 'ok'; });
+      if (okKeys.length === 0) return '';
+      if (_keyPoolIndex >= okKeys.length) _keyPoolIndex = 0;
+      _activeApiKey = okKeys[_keyPoolIndex].key;
+      return _activeApiKey;
+    }
+
+    function getOkKeyCount() {
+      return _keyPool.filter(function(k) { return k.status === 'ok'; }).length;
+    }
+
+    function markKeyFailed(key, errorMsg) {
+      _keyPool.forEach(function(k) {
+        if (k.key === key) { k.status = 'failed'; k.lastError = errorMsg; k.failedAt = Date.now(); }
+      });
+      saveKeyPool();
+      var okCount = getOkKeyCount();
+      console.log('[KeyPool] Key failed:', key.substring(0, 8) + '...', errorMsg, '| OK keys left:', okCount);
+      if (okCount > 0) {
+        // Rotate to next OK key
+        getNextApiKey();
+        var txtApi = document.getElementById('statusTextApi');
+        if (txtApi) { txtApi.textContent = 'API: ' + okCount + ' key(s)'; txtApi.style.color = '#ffaa00'; }
+      } else {
+        _apiConnected = false;
+        _activeApiKey = '';
+        showApiSetup('Todas as API keys esgotadas. Adicione novas ou jogue offline.');
+        startKeyRetest();
+      }
+      loadKeysList();
+    }
+
+    function saveKeyPool() {
+      if (!_userChannelId) return;
+      localStorage.setItem('pd_api_keys_' + _userChannelId, JSON.stringify(_keyPool));
+    }
+
+    function loadKeyPool() {
+      if (!_userChannelId) { _keyPool = []; return; }
+      try {
+        _keyPool = JSON.parse(localStorage.getItem('pd_api_keys_' + _userChannelId) || '[]');
+      } catch(e) { _keyPool = []; }
+    }
+
+    function startKeyRetest() {
+      if (_keyRetestTimer) return;
+      console.log('[KeyPool] Starting hourly retest of failed keys');
+      _keyRetestTimer = setInterval(retestFailedKeys, _keyRetestInterval);
+    }
+
+    function retestFailedKeys() {
+      var failedKeys = _keyPool.filter(function(k) { return k.status === 'failed'; });
+      if (failedKeys.length === 0) {
+        if (_keyRetestTimer) { clearInterval(_keyRetestTimer); _keyRetestTimer = null; }
+        return;
+      }
+      console.log('[KeyPool] Retesting', failedKeys.length, 'failed key(s)...');
+      var testChannel = _userChannelId;
+      var pending = failedKeys.length;
+      failedKeys.forEach(function(kObj) {
+        var testUrl = 'https://www.googleapis.com/youtube/v3/channels?part=snippet&id=' + encodeURIComponent(testChannel) + '&key=' + encodeURIComponent(kObj.key);
+        fetch(testUrl)
+        .then(function(r) { return r.json().catch(function() { return { error: { code: 0, message: 'parse error' } }; }); })
+        .then(function(data) {
+          if (!data.error) {
+            kObj.status = 'ok'; kObj.lastError = ''; kObj.failedAt = 0;
+            console.log('[KeyPool] Key recovered:', kObj.key.substring(0, 8) + '...');
+            if (!_apiConnected) {
+              _activeApiKey = kObj.key;
+              _apiConnected = true;
+              dismissApiBanner();
+              startApiPolling();
+            }
+          } else {
+            console.log('[KeyPool] Key still failed:', kObj.key.substring(0, 8) + '...', data.error.message);
+          }
+          pending--;
+          if (pending <= 0) { saveKeyPool(); loadKeysList(); }
+        })
+        .catch(function() { pending--; if (pending <= 0) { saveKeyPool(); loadKeysList(); } });
+      });
+    }
 
     function showApiSetup(msg) {
       // During gameplay (live on screen), never show the inline form — open popup instead
@@ -4227,22 +4330,21 @@
     }
 
     function loadKeysList() {
-      // No PHP needed - keys stored in localStorage
       if (!_userChannelId) return;
       try {
-        var keys = JSON.parse(localStorage.getItem('pd_api_keys_' + _userChannelId) || '[]');
         var container = document.getElementById('apiKeysList');
         var inner = document.getElementById('apiKeysListInner');
-        if (!keys || keys.length === 0) { container.style.display = 'none'; return; }
+        if (!_keyPool || _keyPool.length === 0) { container.style.display = 'none'; return; }
         container.style.display = 'block';
-        var html = '';
-        keys.forEach(function(k) {
+        var html = '<div style="font-size:11px;color:#666;margin-bottom:4px;">Pool: ' + getOkKeyCount() + '/' + _keyPool.length + ' ativas | Round-robin a cada requisição</div>';
+        _keyPool.forEach(function(k, idx) {
           var statusColor = k.status === 'ok' ? '#00ff88' : '#ff4444';
           var statusIcon = k.status === 'ok' ? '✓' : '✗';
           var masked = k.key ? k.key.substring(0, 8) + '...' + k.key.slice(-4) : '???';
-          html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid #222;">';
+          var isActive = k.key === _activeApiKey;
+          html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid #222;' + (isActive ? 'background:#111;' : '') + '">';
           html += '<span style="color:' + statusColor + ';">' + statusIcon + '</span>';
-          html += '<span style="flex:1;color:#ccc;font-family:monospace;">' + masked + '</span>';
+          html += '<span style="flex:1;color:' + (isActive ? '#fff' : '#ccc') + ';font-family:monospace;">' + masked + (isActive ? ' ◄' : '') + '</span>';
           html += '<span style="color:#666;font-size:10px;">' + (k.lastError || k.status) + '</span>';
           html += '</div>';
         });
@@ -4255,52 +4357,83 @@
       var errEl = document.getElementById('apiSetupError');
       var sucEl = document.getElementById('apiSetupSuccess');
       var channelId = document.getElementById('apiChannelInput').value.trim();
-      var apiKey = document.getElementById('apiKeyInput').value.trim();
+      var rawKeys = document.getElementById('apiKeyInput').value.trim();
       errEl.style.display = 'none';
       sucEl.style.display = 'none';
 
       if (!channelId) { errEl.style.display = 'block'; errEl.textContent = 'Channel ID is required.'; return; }
-      if (!apiKey) { errEl.style.display = 'block'; errEl.textContent = 'API Key is required.'; return; }
+      if (!rawKeys) { errEl.style.display = 'block'; errEl.textContent = 'At least one API Key is required.'; return; }
 
-      btn.textContent = 'Testing...';
+      // Parse comma-separated keys
+      var inputKeys = rawKeys.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k.length > 10; });
+      if (inputKeys.length === 0) { errEl.style.display = 'block'; errEl.textContent = 'No valid API keys found.'; return; }
+
+      btn.textContent = 'Testing ' + inputKeys.length + ' key(s)...';
       btn.disabled = true;
 
-      // Test key directly against YouTube API (no PHP)
-      var testUrl = 'https://www.googleapis.com/youtube/v3/channels?part=snippet&id=' + encodeURIComponent(channelId) + '&key=' + encodeURIComponent(apiKey);
-      console.log('[apiSetupTest] Fetching:', testUrl);
-      fetch(testUrl)
-      .then(function(r) {
-        console.log('[apiSetupTest] Response status:', r.status, r.statusText);
-        return r.text();
-      })
-      .then(function(text) {
-        console.log('[apiSetupTest] Response body:', text.substring(0, 500));
-        var data;
-        try { data = JSON.parse(text); } catch(e) {
-          throw new Error('Invalid response (not JSON): ' + text.substring(0, 100));
-        }
+      _userChannelId = channelId;
+      localStorage.setItem('pd_channel_id', channelId);
+      loadKeyPool(); // load existing pool
+
+      var tested = 0;
+      var okCount = 0;
+      var firstOkData = null;
+      var errors = [];
+
+      inputKeys.forEach(function(apiKey) {
+        var testUrl = 'https://www.googleapis.com/youtube/v3/channels?part=snippet&id=' + encodeURIComponent(channelId) + '&key=' + encodeURIComponent(apiKey);
+        fetch(testUrl)
+        .then(function(r) { return r.json().catch(function() { return { error: { code: 0, message: 'parse error' } }; }); })
+        .then(function(data) {
+          tested++;
+          if (data.error) {
+            errors.push(apiKey.substring(0, 8) + '...: ' + (data.error.message || 'error'));
+            // Add to pool as failed
+            var exists = _keyPool.some(function(k) { return k.key === apiKey; });
+            if (!exists) _keyPool.push({ key: apiKey, status: 'failed', lastError: data.error.message || 'test failed', failedAt: Date.now() });
+            else _keyPool.forEach(function(k) { if (k.key === apiKey) { k.status = 'failed'; k.lastError = data.error.message || 'test failed'; k.failedAt = Date.now(); } });
+          } else {
+            okCount++;
+            if (!firstOkData) firstOkData = data;
+            // Add to pool as ok
+            var exists2 = _keyPool.some(function(k) { return k.key === apiKey; });
+            if (!exists2) _keyPool.push({ key: apiKey, status: 'ok', lastError: '', failedAt: 0 });
+            else _keyPool.forEach(function(k) { if (k.key === apiKey) { k.status = 'ok'; k.lastError = ''; k.failedAt = 0; } });
+          }
+          if (tested >= inputKeys.length) finishTest();
+        })
+        .catch(function(e) {
+          tested++;
+          errors.push(apiKey.substring(0, 8) + '...: ' + e.message);
+          if (tested >= inputKeys.length) finishTest();
+        });
+      });
+
+      function finishTest() {
         btn.textContent = 'Test & Connect';
         btn.disabled = false;
-        if (data.error) {
+        saveKeyPool();
+
+        if (okCount === 0) {
           errEl.style.display = 'block';
-          errEl.textContent = 'API Error ' + (data.error.code || '') + ': ' + (data.error.message || 'Key test failed.');
+          errEl.textContent = 'Nenhuma key válida. Erros: ' + errors.join(' | ');
+          loadKeysList();
           return;
         }
-        var channelTitle = (data.items && data.items[0]) ? data.items[0].snippet.title : '';
-        // Auto-detect owner from channel info
-        if (data.items && data.items[0]) {
-          var snippet = data.items[0].snippet;
+
+        // Auto-detect owner from first OK response
+        if (firstOkData && firstOkData.items && firstOkData.items[0]) {
+          var snippet = firstOkData.items[0].snippet;
+          var channelTitle = snippet.title || '';
           var detectedOwner = snippet.customUrl || ('@' + snippet.title);
           if (detectedOwner && detectedOwner[0] !== '@') detectedOwner = '@' + detectedOwner;
           ownerName = detectedOwner;
           pick.userName = ownerName;
-          // Save to config so it persists
           var cfg = JSON.parse(localStorage.getItem('pd_config') || '{}');
           cfg.owner_name = ownerName;
           cfg.channel_title = channelTitle;
           localStorage.setItem('pd_config', JSON.stringify(cfg));
           if (!persistentScores[ownerName]) persistentScores[ownerName] = { score: 0, avatar: '', color: '#ffdd44' };
-          // Try to get channel avatar
           var chAvatar = snippet.thumbnails && snippet.thumbnails.default ? snippet.thumbnails.default.url : '';
           if (chAvatar) {
             pick.userAvatarUrl = chAvatar;
@@ -4311,42 +4444,32 @@
             }
           }
         }
-        // Save key in localStorage
-        var keys = JSON.parse(localStorage.getItem('pd_api_keys_' + channelId) || '[]');
-        var exists = keys.some(function(k) { return k.key === apiKey; });
-        if (!exists) keys.push({ key: apiKey, status: 'ok', lastError: '' });
-        localStorage.setItem('pd_api_keys_' + channelId, JSON.stringify(keys));
-        _userChannelId = channelId;
-        _activeApiKey = apiKey;
-        _liveChatId = ''; // Clear stale liveChatId from previous sessions
-        localStorage.setItem('pd_channel_id', channelId);
-        localStorage.setItem('pd_active_key_' + channelId, apiKey);
+
+        _keyPoolIndex = 0;
+        getCurrentApiKey();
+        _liveChatId = '';
         localStorage.removeItem('pd_live_chat_' + channelId);
-        sucEl.style.display = 'block';
-        sucEl.textContent = 'Connected! ' + (channelTitle ? '(' + channelTitle + ')' : '') + ' — ' + keys.length + ' key(s) registered.';
         _apiConnected = true;
         _gameStarted = true;
+
+        sucEl.style.display = 'block';
+        sucEl.textContent = okCount + '/' + inputKeys.length + ' keys OK! Pool ativo com round-robin.' + (errors.length > 0 ? ' (' + errors.length + ' falharam)' : '');
+
         var flBtn = document.getElementById('apiFindLiveBtn');
         if (flBtn) flBtn.style.display = 'inline-block';
         loadKeysList();
+        if (errors.length > 0) startKeyRetest();
+
         setTimeout(function() {
           hideApiSetup();
-          // Try to connect live from URL field first, then auto-resolve
           var liveInput = document.getElementById('apiLiveIdInput').value.trim();
           if (liveInput) {
             apiConnectLiveById();
           } else {
             startApiPolling();
           }
-        }, 1200);
-      })
-      .catch(function(e) {
-        console.error('[apiSetupTest] Error:', e);
-        btn.textContent = 'Test & Connect';
-        btn.disabled = false;
-        errEl.style.display = 'block';
-        errEl.textContent = 'Error: ' + e.message + ' — Check console (F12) for details.';
-      });
+        }, 1500);
+      }
     }
 
     function apiSetupSkip() {
@@ -4366,6 +4489,7 @@
     function apiResetAll() {
       if (!confirm('Clear all saved API keys, channel data and live chat? You will need to reconfigure.')) return;
       if (_apiCheckInterval) { clearInterval(_apiCheckInterval); _apiCheckInterval = null; }
+      if (_keyRetestTimer) { clearInterval(_keyRetestTimer); _keyRetestTimer = null; }
       var chId = _userChannelId || localStorage.getItem('pd_channel_id') || '';
       if (chId) {
         localStorage.removeItem('pd_api_keys_' + chId);
@@ -4378,6 +4502,8 @@
       _activeApiKey = '';
       _liveChatId = '';
       _apiConnected = false;
+      _keyPool = [];
+      _keyPoolIndex = 0;
       _nextPageToken = '';
       _firstFetchDone = false;
       ownerName = '';
@@ -4394,7 +4520,7 @@
       if (flBtn) flBtn.style.display = 'none';
       var kl = document.getElementById('apiKeysList');
       if (kl) kl.style.display = 'none';
-      showApiSetup('Data cleared. Enter your API key and Channel ID.');
+      showApiSetup('Data cleared. Enter your API key(s) and Channel ID.');
     }
 
     function apiSetupFindLive() {
@@ -4467,14 +4593,15 @@
     function tryLoadActiveKey(callback) {
       if (!_userChannelId) { callback(false); return; }
       try {
-        var savedKey = localStorage.getItem('pd_active_key_' + _userChannelId);
+        loadKeyPool();
         var savedChat = localStorage.getItem('pd_live_chat_' + _userChannelId);
-        if (savedKey) {
-          _activeApiKey = savedKey;
-          _liveChatId = savedChat || '';
+        _liveChatId = savedChat || '';
+
+        if (getOkKeyCount() > 0) {
+          getCurrentApiKey();
           _apiConnected = true;
-          // Auto-detect owner from channel on reconnect
-          fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&id=' + encodeURIComponent(_userChannelId) + '&key=' + encodeURIComponent(savedKey))
+          // Auto-detect owner from channel on reconnect using first OK key
+          fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&id=' + encodeURIComponent(_userChannelId) + '&key=' + encodeURIComponent(_activeApiKey))
           .then(function(r) { return r.json().catch(function() { throw new Error('Network error: ' + r.status); }); })
           .then(function(data) {
             if (data.items && data.items[0]) {
@@ -4500,78 +4627,39 @@
             }
             callback(true);
           })
-          .catch(function() { callback(true); }); // still connected even if channel fetch fails
+          .catch(function() { callback(true); });
         } else {
-          // Try first key from stored keys
-          var keys = JSON.parse(localStorage.getItem('pd_api_keys_' + _userChannelId) || '[]');
-          var okKey = keys.find(function(k) { return k.status === 'ok'; });
-          if (okKey) {
-            _activeApiKey = okKey.key;
-            localStorage.setItem('pd_active_key_' + _userChannelId, okKey.key);
-            _apiConnected = true;
-            callback(true);
-          } else {
-            callback(false);
-          }
+          callback(false);
         }
       } catch(e) { callback(false); }
     }
 
     function rotateApiKey(failedKey, errorMsg) {
-      if (!_userChannelId) return;
-      try {
-        var keys = JSON.parse(localStorage.getItem('pd_api_keys_' + _userChannelId) || '[]');
-        // Mark failed key
-        keys.forEach(function(k) { if (k.key === failedKey) { k.status = 'failed'; k.lastError = errorMsg; } });
-        localStorage.setItem('pd_api_keys_' + _userChannelId, JSON.stringify(keys));
-        // Find next ok key
-        var nextKey = keys.find(function(k) { return k.status === 'ok' && k.key !== failedKey; });
-        if (nextKey) {
-          _activeApiKey = nextKey.key;
-          localStorage.setItem('pd_active_key_' + _userChannelId, nextKey.key);
-          _apiConnected = true;
-          var txtApi = document.getElementById('statusTextApi');
-          if (txtApi) { txtApi.textContent = 'API: Rotated'; txtApi.style.color = '#ffaa00'; }
-        } else {
-          _apiConnected = false;
-          _activeApiKey = '';
-          showApiSetup('All API keys exhausted. Please add a new key or play offline.');
-          scheduleKeyRetry();
-        }
-      } catch(e) {}
-    }
-
-    var _keyRetryTimer = null;
-    function scheduleKeyRetry() {
-      if (_keyRetryTimer) return; // already scheduled
-      _keyRetryTimer = setInterval(function() {
-        if (_apiConnected) { clearInterval(_keyRetryTimer); _keyRetryTimer = null; return; }
-        if (!_userChannelId) return;
-        // Try to load an active key (rotate tests all keys on backend)
-        tryLoadActiveKey(function(success) {
-          if (success) {
-            clearInterval(_keyRetryTimer);
-            _keyRetryTimer = null;
-            dismissApiBanner();
-            var dotApi = document.getElementById('statusDotApi');
-            var txtApi = document.getElementById('statusTextApi');
-            if (dotApi) dotApi.classList.add('online');
-            if (txtApi) { txtApi.textContent = 'API: Recovered'; txtApi.style.color = '#00ff88'; }
-            startApiPolling();
-          }
-        });
-      }, 60000);
+      markKeyFailed(failedKey, errorMsg);
+      // If we still have OK keys, restart polling
+      if (getOkKeyCount() > 0) {
+        startApiPolling();
+      }
     }
 
     function startApiPolling() {
       if (_apiCheckInterval) clearInterval(_apiCheckInterval);
+      // Rotate key before each poll cycle
+      if (getOkKeyCount() > 0) {
+        getNextApiKey();
+        _apiConnected = true;
+      }
       // Auto-resolve liveChatId on first connect if not persisted
       if (!_liveChatId && _apiConnected) {
         resolveLive(function() { checkConnection(); });
       } else {
         checkConnection();
       }
-      _apiCheckInterval = setInterval(checkConnection, 10000);
+      // Poll interval: rotate key each time
+      _apiCheckInterval = setInterval(function() {
+        if (getOkKeyCount() > 0) getNextApiKey();
+        checkConnection();
+      }, 10000);
     }
 
     // ── Initial API setup flow ──
