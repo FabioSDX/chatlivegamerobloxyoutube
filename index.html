@@ -2456,19 +2456,16 @@
         }
       }
 
-      // ── Phase 2: Surface drain — pull water down from row above when space opens ──
+      // ── Phase 2: Surface drain — pull water down from row above ──
       for (var r = rEnd; r >= rStart + 1; r--) {
         if (!worldMap[r] || !worldMap[r - 1]) continue;
         for (var c = 0; c < COLS; c++) {
-          // If this cell is empty with solid below, and cell above has water, pull it down
+          // If this cell is empty and cell above has water, pull it down
           if (worldMap[r][c] && worldMap[r][c].t === E) {
-            var below = worldMap[r + 1] ? worldMap[r + 1][c] : null;
-            if (below && below.t !== E) { // has support
-              var above = worldMap[r - 1][c];
-              if (above && above.t === WATER) {
-                worldMap[r][c] = { t: WATER, hp: 1, cr: 0 };
-                worldMap[r - 1][c] = { t: E, hp: 0, cr: 0 };
-              }
+            var above = worldMap[r - 1][c];
+            if (above && above.t === WATER) {
+              worldMap[r][c] = { t: WATER, hp: 1, cr: 0 };
+              worldMap[r - 1][c] = { t: E, hp: 0, cr: 0 };
             }
           }
         }
