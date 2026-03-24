@@ -947,6 +947,10 @@
     var clearedZones = {};      // track which clearings already spawned zombies
     var clearingShapes = {};    // cached organic shapes per zone
 
+    // ── Water in clearings (even zones: 0, 2, 4...) ──
+    var WATER_DEPTH_ROWS = 3;  // bottom 3 rows of clearing are water
+    var WATER_DRAG = 0.92;     // velocity multiplier per frame in water
+
     // ── Mega Clearings (every 400 rows, 200 rows tall, wall-to-wall) ──
     var MEGA_CLEARING_INTERVAL = 400; // space between mega-clearing starts
     var MEGA_CLEARING_HEIGHT = 200;
@@ -1546,6 +1550,12 @@
         if (!p) return false;
         if (p._spinLock) return false; // skip physics during spin dash
         p.vy += GRAVITY;
+        // Water drag
+        if (isInWater(p.x, p.y)) {
+          p.vx *= WATER_DRAG;
+          p.vy *= WATER_DRAG;
+          p.vy -= GRAVITY * 0.6; // buoyancy: counteract most gravity
+        }
         // Clamp velocidade para evitar tunneling (max ~1 tile por frame)
         var maxV = TILE * 0.8;
         if (p.vx > maxV) p.vx = maxV; else if (p.vx < -maxV) p.vx = -maxV;
@@ -2364,6 +2374,138 @@
       ctx.globalAlpha = 1;
     }
 
+    // ── Water Effect ──────────────────────────────────────────────────────────
+    function hasWater(zone) {
+      return zone >= 2 && zone % 2 === 0; // even zones starting from 2
+    }
+
+    function getWaterBounds(zone) {
+      var shape = getClearingShape(zone);
+      var zoneStart = zone * CLEARING_INTERVAL;
+      var waterStartLocal = CLEARING_HEIGHT - WATER_DEPTH_ROWS;
+      var result = [];
+      for (var lr = waterStartLocal; lr < CLEARING_HEIGHT; lr++) {
+        var b = shape[lr];
+        if (!b) continue;
+        result.push({
+          row: zoneStart + lr,
+          left: b.left,
+          right: b.right
+        });
+      }
+      return result;
+    }
+
+    function isInWater(px, py) {
+      var r = Math.floor(py / TILE);
+      var c = Math.floor(px / TILE);
+      if (isMegaClearingRow(r)) return false;
+      if (r < CLEARING_INTERVAL) return false;
+      var zone = Math.floor(r / CLEARING_INTERVAL);
+      if (!hasWater(zone)) return false;
+      var zoneStart = zone * CLEARING_INTERVAL;
+      var localRow = r - zoneStart;
+      if (localRow < CLEARING_HEIGHT - WATER_DEPTH_ROWS || localRow >= CLEARING_HEIGHT) return false;
+      var shape = getClearingShape(zone);
+      var b = shape[localRow];
+      if (!b) return false;
+      return c >= b.left && c <= b.right;
+    }
+
+    function drawWater() {
+      var t = Date.now() * 0.002;
+      var rStart = Math.floor(camY / TILE);
+      var rEnd = Math.ceil((camY + canvas.height) / TILE) + 1;
+
+      // Find which zones are visible
+      var zoneMin = Math.floor(rStart / CLEARING_INTERVAL);
+      var zoneMax = Math.ceil(rEnd / CLEARING_INTERVAL);
+
+      for (var zone = zoneMin; zone <= zoneMax; zone++) {
+        if (!hasWater(zone)) continue;
+        var wb = getWaterBounds(zone);
+        if (wb.length === 0) continue;
+
+        var zoneStart = zone * CLEARING_INTERVAL;
+        var surfaceRow = zoneStart + CLEARING_HEIGHT - WATER_DEPTH_ROWS;
+        var surfaceY = surfaceRow * TILE;
+
+        // Draw water body for each row
+        for (var wi = 0; wi < wb.length; wi++) {
+          var wr = wb[wi];
+          var wy = wr.row * TILE;
+          var wx = wr.left * TILE;
+          var ww = (wr.right - wr.left + 1) * TILE;
+
+          // Depth factor: darker deeper
+          var depthFrac = wi / wb.length;
+          var alpha = 0.25 + depthFrac * 0.15;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = 'rgba(30, 100, 200, 1)';
+          ctx.fillRect(wx, wy, ww, TILE);
+
+          // Caustic light pattern
+          ctx.globalAlpha = 0.06 + Math.sin(t * 1.5 + wi * 0.7) * 0.03;
+          ctx.fillStyle = '#88ccff';
+          for (var cx = 0; cx < ww; cx += 24) {
+            var cy = Math.sin(t * 2 + cx * 0.05 + wi) * 4;
+            ctx.beginPath();
+            ctx.arc(wx + cx + 12, wy + TILE * 0.5 + cy, 8 + Math.sin(t + cx * 0.1) * 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        // Draw animated wave surface
+        var firstBound = wb[0];
+        if (firstBound) {
+          var waveLeft = firstBound.left * TILE;
+          var waveRight = (firstBound.right + 1) * TILE;
+          ctx.save();
+          ctx.globalAlpha = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(waveLeft, surfaceY);
+          for (var wx2 = waveLeft; wx2 <= waveRight; wx2 += 6) {
+            var waveY = surfaceY + Math.sin(t * 3 + wx2 * 0.04) * 3 + Math.sin(t * 1.7 + wx2 * 0.08) * 2;
+            ctx.lineTo(wx2, waveY);
+          }
+          ctx.lineTo(waveRight, surfaceY + TILE);
+          ctx.lineTo(waveLeft, surfaceY + TILE);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(60, 150, 255, 0.3)';
+          ctx.fill();
+          // Wave highlight line
+          ctx.beginPath();
+          ctx.moveTo(waveLeft, surfaceY);
+          for (var wx3 = waveLeft; wx3 <= waveRight; wx3 += 6) {
+            var hlY = surfaceY + Math.sin(t * 3 + wx3 * 0.04) * 3 + Math.sin(t * 1.7 + wx3 * 0.08) * 2;
+            ctx.lineTo(wx3, hlY);
+          }
+          ctx.strokeStyle = 'rgba(180, 220, 255, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Bubbles (spawn occasionally)
+        if (Math.random() < 0.03 && wb.length > 0) {
+          var bRow = wb[Math.floor(Math.random() * wb.length)];
+          var bx = (bRow.left + Math.random() * (bRow.right - bRow.left)) * TILE + TILE / 2;
+          var by = bRow.row * TILE + TILE * 0.5;
+          parts.push({
+            x: bx, y: by,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: -0.5 - Math.random() * 0.8,
+            life: 30 + Math.random() * 30,
+            color: 'rgba(180,220,255,0.5)',
+            r: 2 + Math.random() * 3
+          });
+        }
+      }
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawBackground(); // caverna de cristais
@@ -2402,6 +2544,9 @@
       // Crystal decorations growing from clearing walls
       var viewTop = camY - TILE * 2;
       var viewBot = camY + canvas.height + TILE * 2;
+
+      // Water overlay in clearings
+      drawWater();
       ctx.globalAlpha = 0.9;
       for (var ci = crystalDecoList.length - 1; ci >= 0; ci--) {
         var cd = crystalDecoList[ci];
