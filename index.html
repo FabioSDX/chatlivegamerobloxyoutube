@@ -2408,7 +2408,8 @@
       if (waterSimTick % WATER_SIM_RATE !== 0) return;
       var rStart = Math.max(0, Math.floor(camY / TILE) - 5);
       var rEnd = Math.ceil((camY + canvas.height) / TILE) + 5;
-      // Process bottom-up: water falls down only
+
+      // ── Phase 1: Gravity — water seeks lowest point ──
       for (var r = rEnd; r >= rStart; r--) {
         if (!worldMap[r]) continue;
         for (var c = 0; c < COLS; c++) {
@@ -2420,21 +2421,61 @@
             worldMap[r][c] = { t: E, hp: 0, cr: 0 };
             continue;
           }
-          // Fall diagonally (alternate direction per tick to avoid bias)
+          // Fall diagonally
           var dc = (waterSimTick + c) % 2 === 0 ? -1 : 1;
-          var nc = c + dc;
-          if (nc >= 0 && nc < COLS && worldMap[r + 1] && worldMap[r + 1][nc] && worldMap[r + 1][nc].t === E) {
-            worldMap[r + 1][nc] = { t: WATER, hp: 1, cr: 0 };
-            worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-            continue;
+          for (var d = 0; d < 2; d++) {
+            var nc = c + (d === 0 ? dc : -dc);
+            if (nc >= 0 && nc < COLS && worldMap[r + 1] && worldMap[r + 1][nc] && worldMap[r + 1][nc].t === E) {
+              worldMap[r + 1][nc] = { t: WATER, hp: 1, cr: 0 };
+              worldMap[r][c] = { t: E, hp: 0, cr: 0 };
+              break;
+            }
           }
-          nc = c - dc;
-          if (nc >= 0 && nc < COLS && worldMap[r + 1] && worldMap[r + 1][nc] && worldMap[r + 1][nc].t === E) {
-            worldMap[r + 1][nc] = { t: WATER, hp: 1, cr: 0 };
-            worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-            continue;
+          // If side has no solid block, check if there's a lower level to flow to
+          if (worldMap[r][c] && worldMap[r][c].t === WATER) {
+            var sdc = (waterSimTick + r) % 2 === 0 ? -1 : 1;
+            for (var sd = 0; sd < 2; sd++) {
+              var sc = c + (sd === 0 ? sdc : -sdc);
+              if (sc < 0 || sc >= COLS) continue;
+              if (!worldMap[r] || !worldMap[r][sc]) continue;
+              if (worldMap[r][sc].t !== E) continue;
+              // Side is empty — check if there's a drop below that side
+              var hasDropBelow = false;
+              for (var dr = r + 1; dr <= r + 5 && dr <= rEnd; dr++) {
+                if (!worldMap[dr]) break;
+                var belowSide = worldMap[dr][sc];
+                if (!belowSide || belowSide.t === E) { hasDropBelow = true; break; }
+                if (belowSide.t !== WATER) break;
+              }
+              if (hasDropBelow) {
+                worldMap[r][sc] = { t: WATER, hp: 1, cr: 0 };
+                worldMap[r][c] = { t: E, hp: 0, cr: 0 };
+                break;
+              }
+            }
           }
-          // Water at rest: don't spread sideways (stable)
+        }
+      }
+
+      // ── Phase 2: Fill gaps — water tiles must not have empty neighbors with support ──
+      for (var r = rStart; r <= rEnd; r++) {
+        if (!worldMap[r]) continue;
+        for (var c = 0; c < COLS; c++) {
+          var cell = worldMap[r][c];
+          if (!cell || cell.t !== WATER) continue;
+          // Check left and right neighbors
+          for (var sd = -1; sd <= 1; sd += 2) {
+            var nc = c + sd;
+            if (nc < 0 || nc >= COLS) continue;
+            if (!worldMap[r][nc] || worldMap[r][nc].t !== E) continue;
+            // Empty neighbor — does it have solid support below?
+            if (!worldMap[r + 1] || !worldMap[r + 1][nc]) continue;
+            var belowN = worldMap[r + 1][nc];
+            if (belowN && belowN.t !== E) {
+              // Has support — create water to fill the gap
+              worldMap[r][nc] = { t: WATER, hp: 1, cr: 0 };
+            }
+          }
         }
       }
     }
