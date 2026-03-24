@@ -5059,11 +5059,11 @@
       } else {
         checkConnection();
       }
-      // Poll interval: rotate key each time
+      // Poll every 2s, rotate key each call, errors auto-remove key
       _apiCheckInterval = setInterval(function() {
         if (getOkKeyCount() > 0) getNextApiKey();
         checkConnection();
-      }, 10000);
+      }, 2000);
     }
 
     // ── Initial API setup flow ──
@@ -5413,7 +5413,7 @@
         var dotLive = document.getElementById('statusDotLive');
         var txtLive = document.getElementById('statusTextLive');
         if (dotApi) dotApi.classList.add('online');
-        if (txtApi) { txtApi.textContent = 'API: OK'; txtApi.style.color = '#00ff88'; }
+        if (txtApi) { txtApi.textContent = apiStatusText(); txtApi.style.color = '#00ff88'; }
         if (dotLive) { dotLive.classList.remove('online'); dotLive.classList.add('warning'); }
         if (txtLive) { txtLive.textContent = 'Live: OFF'; txtLive.style.color = '#ffaa00'; txtLive.style.cursor = 'pointer'; txtLive.title = 'Click to search for live'; }
         var now = Date.now();
@@ -5439,39 +5439,46 @@
           if (data.error) {
             var errMsg = data.error.message || '';
             var errCode = data.error.code || 0;
-            // Quota exceeded or forbidden
+            var usedKey = _activeApiKey; // capture before rotation
+            // Quota exceeded or forbidden — remove this key, keep polling with others
             if (errCode === 403 || errMsg.toLowerCase().indexOf('quota') !== -1) {
-              console.warn('[checkConnection] Quota exceeded or 403:', errMsg);
-              if (dotApi) dotApi.classList.remove('online');
-              if (txtApi) { txtApi.textContent = 'API: Quota exceeded'; txtApi.style.color = '#ff4444'; }
-              if (dotLive) dotLive.classList.remove('online');
-              if (txtLive) { txtLive.textContent = 'Live: paused (quota)'; txtLive.style.color = '#888'; }
-              // Stop polling to avoid wasting more quota
-              if (_apiCheckInterval) { clearInterval(_apiCheckInterval); _apiCheckInterval = null; }
-              rotateApiKey(_activeApiKey, errMsg);
+              console.warn('[checkConnection] Key quota/403, removing:', usedKey.substring(0, 8) + '...', errMsg);
+              rotateApiKey(usedKey, 'quota/' + errCode);
+              // DON'T stop polling — other keys may still work
+              if (getOkKeyCount() === 0) {
+                if (_apiCheckInterval) { clearInterval(_apiCheckInterval); _apiCheckInterval = null; }
+                if (dotApi) dotApi.classList.remove('online');
+                if (txtApi) { txtApi.textContent = 'API: sem keys'; txtApi.style.color = '#ff4444'; }
+                if (dotLive) dotLive.classList.remove('online');
+                if (txtLive) { txtLive.textContent = 'Live: paused'; txtLive.style.color = '#888'; }
+              }
               return;
             }
-            // Live ended or invalid chat
+            // Live ended or invalid chat — not a key problem
             if (errCode === 404 || errCode === 400) {
               clearLiveChatId();
               if (dotApi) dotApi.classList.add('online');
-              if (txtApi) { txtApi.textContent = 'API: OK'; txtApi.style.color = '#00ff88'; }
+              if (txtApi) { txtApi.textContent = apiStatusText(); txtApi.style.color = '#00ff88'; }
               if (dotLive) { dotLive.classList.remove('online'); dotLive.classList.add('warning'); }
               if (txtLive) { txtLive.textContent = 'Live: reconnecting...'; txtLive.style.color = '#ffaa00'; txtLive.style.cursor = 'pointer'; }
               resolveLive();
               return;
             }
-            // General error
-            if (dotApi) dotApi.classList.remove('online');
-            if (txtApi) { txtApi.textContent = 'API: Error'; txtApi.style.color = '#ff4444'; }
-            rotateApiKey(_activeApiKey, errMsg || 'api_error');
+            // Any other error — remove key immediately
+            console.warn('[checkConnection] Key error, removing:', usedKey.substring(0, 8) + '...', errCode, errMsg);
+            rotateApiKey(usedKey, errMsg || 'error_' + errCode);
+            if (getOkKeyCount() === 0) {
+              if (_apiCheckInterval) { clearInterval(_apiCheckInterval); _apiCheckInterval = null; }
+              if (dotApi) dotApi.classList.remove('online');
+              if (txtApi) { txtApi.textContent = 'API: sem keys'; txtApi.style.color = '#ff4444'; }
+            }
             return;
           }
 
           // Success
           if (data.nextPageToken) _nextPageToken = data.nextPageToken;
           if (dotApi) dotApi.classList.add('online');
-          if (txtApi) { txtApi.textContent = 'API: OK'; txtApi.style.color = '#00ff88'; }
+          if (txtApi) { txtApi.textContent = apiStatusText(); txtApi.style.color = '#00ff88'; }
           if (dotLive) { dotLive.classList.remove('warning'); dotLive.classList.add('online'); }
           if (txtLive) { txtLive.textContent = 'Live: ON'; txtLive.style.color = '#00ff88'; }
 
