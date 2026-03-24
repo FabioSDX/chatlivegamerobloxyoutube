@@ -2471,7 +2471,50 @@
         }
       }
 
-      // ── Phase 3: Eliminate sparse rows — if gaps >= water tiles, remove row ──
+      // ── Phase 3: Level water — equalize heights between adjacent columns ──
+      // For each column, find the top water tile. If neighbor column's top is lower, move water there.
+      for (var c = 0; c < COLS; c++) {
+        // Find topmost water in this column (within visible range)
+        var myTop = -1, myBot = -1;
+        for (var r = rStart; r <= rEnd; r++) {
+          if (!worldMap[r]) continue;
+          var cell = worldMap[r][c];
+          if (cell && cell.t === WATER) {
+            if (myTop === -1) myTop = r;
+            myBot = r;
+          }
+        }
+        if (myTop === -1) continue;
+        var myHeight = myBot - myTop + 1;
+        // Check neighbor (alternate direction per tick)
+        var nc = c + ((waterSimTick + c) % 2 === 0 ? 1 : -1);
+        if (nc < 0 || nc >= COLS) continue;
+        // Find topmost water in neighbor column
+        var nTop = -1, nBot = -1;
+        for (var r = rStart; r <= rEnd; r++) {
+          if (!worldMap[r]) continue;
+          var cell = worldMap[r][nc];
+          if (cell && cell.t === WATER) {
+            if (nTop === -1) nTop = r;
+            nBot = r;
+          }
+        }
+        var nHeight = nTop === -1 ? 0 : (nBot - nTop + 1);
+        // If my column is 2+ tiles taller, move top water to neighbor's level
+        if (myHeight > nHeight + 1) {
+          // Target row: one above neighbor's top, or same as my bottom if neighbor is empty
+          var targetRow = nTop === -1 ? myBot : (nTop - 1);
+          if (targetRow < rStart) continue;
+          if (!worldMap[targetRow]) continue;
+          var targetCell = worldMap[targetRow][nc];
+          if (targetCell && targetCell.t === E) {
+            worldMap[targetRow][nc] = { t: WATER, hp: 1, cr: 0 };
+            worldMap[myTop][c] = { t: E, hp: 0, cr: 0 };
+          }
+        }
+      }
+
+      // ── Phase 4: Eliminate sparse rows — if gaps >= water tiles, remove row ──
       for (var r = rStart; r <= rEnd; r++) {
         if (!worldMap[r]) continue;
         var waterCols = [];
