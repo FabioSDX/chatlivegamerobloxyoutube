@@ -1545,8 +1545,6 @@
         p.vy += GRAVITY;
         // Clamp velocidade para evitar tunneling (max ~1 tile por frame)
         var maxV = TILE * 0.8;
-        var spinning = isSpinDashing(p);
-        if (spinning) maxV = SPIN_SPEED * 1.2; // allow higher speed during spin
         if (p.vx > maxV) p.vx = maxV; else if (p.vx < -maxV) p.vx = -maxV;
         if (p.vy > maxV) p.vy = maxV; else if (p.vy < -maxV) p.vy = -maxV;
         var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
@@ -1563,10 +1561,8 @@
             var cell = getCell(row, col);
             if (cell && cell.t !== E) {
               hitBlock(col, row, Math.max(1, Math.floor(speed * dmgBase)), p);
-              if (!spinning) {
-                if (p.vx > 0) { p.x = col * TILE - r - 1; p.vx = -p.vx * BOUNCE * FRICTION; }
-                else { p.x = (col + 1) * TILE + r + 1; p.vx = -p.vx * BOUNCE * FRICTION; }
-              }
+              if (p.vx > 0) { p.x = col * TILE - r - 1; p.vx = -p.vx * BOUNCE * FRICTION; }
+              else { p.x = (col + 1) * TILE + r + 1; p.vx = -p.vx * BOUNCE * FRICTION; }
               hitAny = true; break;
             }
           }
@@ -1583,12 +1579,10 @@
             var cell = getCell(row, col);
             if (cell && cell.t !== E) {
               hitBlock(col, row, Math.max(1, Math.floor(speed * dmgBase)), p);
-              if (!spinning) {
-                if (p.vy > 0) {
-                  p.y = row * TILE - r - 1; p.vy = -p.vy * BOUNCE;
-                  if (Math.abs(p.vy) > 0.8) p.vx += (Math.random() - 0.5) * 6; else p.vx *= FRICTION;
-                } else { p.y = (row + 1) * TILE + r + 1; p.vy = -p.vy * BOUNCE; }
-              }
+              if (p.vy > 0) {
+                p.y = row * TILE - r - 1; p.vy = -p.vy * BOUNCE;
+                if (Math.abs(p.vy) > 0.8) p.vx += (Math.random() - 0.5) * 6; else p.vx *= FRICTION;
+              } else { p.y = (row + 1) * TILE + r + 1; p.vy = -p.vy * BOUNCE; }
               hitAny = true; hitY = true; break;
             }
           }
@@ -1597,7 +1591,7 @@
 
         if (p.y - r < 0) { p.y = r; p.vy = Math.abs(p.vy) * BOUNCE; }
         p.ang += p.spin;
-        if (hitAny) p.spin = spinning ? p.spin : p.spin * 0.9 + (Math.random() - 0.5) * 0.12; else p.spin *= 0.995;
+        if (hitAny) p.spin = p.spin * 0.9 + (Math.random() - 0.5) * 0.12; else p.spin *= 0.995;
         // Combo timer decay — reset combo if no enemy hit for 3 seconds
         if (p.comboTimer > 0) { p.comboTimer--; } else { resetCombo(p); }
         return hitAny;
@@ -5358,11 +5352,9 @@
         if (!p) { activeSpins.splice(i, 1); continue; }
 
         if (s.phase === 'charge') {
-          // Charge phase: spin faster and faster, hold position
           var chargeProgress = 1 - (s.timer / s.totalTimer);
-          p.spin = s.origSpin + chargeProgress * 2.5; // ramp up spin speed
-          p.vx *= 0.85; p.vy *= 0.85; // slow down during charge
-          // Charge particles
+          p.spin = s.origSpin + chargeProgress * 2.5;
+          p.vx *= 0.85; p.vy *= 0.85;
           if (s.timer % 3 === 0) {
             var pa = Math.random() * Math.PI * 2;
             var pr = 20 + Math.random() * 20;
@@ -5370,71 +5362,64 @@
           }
           s.timer--;
           if (s.timer <= 0) {
-            // Launch!
             s.phase = 'dash';
             s.timer = SPIN_DASH;
-            p.vx = s.dir.x * SPIN_SPEED;
-            p.vy = s.dir.y * SPIN_SPEED;
-            p.spin = 3.0; // super fast spin
             p.stuck = false;
             p.stuckTimer = 0;
             if (_audioStarted) sfxSpinDash();
           }
         } else if (s.phase === 'dash') {
-          // Dash phase: maintain speed, destroy blocks with high damage
           p.spin = 3.0;
           p.stuck = false;
           p.stuckTimer = 0;
-          // Keep velocity in dash direction
-          var spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-          if (spd < SPIN_SPEED * 0.5) {
-            p.vx += s.dir.x * SPIN_SPEED * 0.3;
-            p.vy += s.dir.y * SPIN_SPEED * 0.3;
-          }
-          // Override gravity during horizontal/up dashes
-          if (s.dir.y <= 0) p.vy -= GRAVITY * 0.8;
-          // Destroy blocks in path (3x3 area around pick)
-          var pr = PICK_HALF + 10;
-          var c0 = Math.floor((p.x - pr) / TILE), c1 = Math.floor((p.x + pr) / TILE);
-          var r0 = Math.floor((p.y - pr) / TILE), r1 = Math.floor((p.y + pr) / TILE);
+          // Move pick forward by SPIN_SPEED pixels in direction, destroying blocks along the way
+          var stepX = s.dir.x * SPIN_SPEED;
+          var stepY = s.dir.y * SPIN_SPEED;
+          p.x += stepX;
+          p.y += stepY;
+          // Cancel normal velocity so applyPhysics doesn't fight us
+          p.vx = stepX;
+          p.vy = stepY;
+          // Counteract gravity for non-down dashes
+          if (s.dir.y <= 0) p.vy -= GRAVITY;
+          // Destroy blocks at current position (only existing cells, max 9 blocks)
+          var bpr = PICK_HALF + 10;
+          var c0 = Math.floor((p.x - bpr) / TILE), c1 = Math.floor((p.x + bpr) / TILE);
+          var r0 = Math.floor((p.y - bpr) / TILE), r1 = Math.floor((p.y + bpr) / TILE);
           for (var row = r0; row <= r1; row++) {
+            if (!worldMap[row]) continue; // only destroy already-generated rows
             for (var col = c0; col <= c1; col++) {
-              var cell = getCell(row, col);
-              if (cell && cell.t !== E) {
-                var pPickaxe = p.pickaxe || currentPickaxe;
-                var dmg = Math.max(3, Math.floor(SPIN_DMG_MULT * (pPickaxe ? pPickaxe.damage : 1)));
+              if (col < 0 || col >= COLS) continue;
+              var cell = worldMap[row] ? worldMap[row][col] : null;
+              if (cell && cell.t !== E && cell.t !== BEDROCK) {
+                var pPick = p.pickaxe || currentPickaxe;
+                var dmg = Math.max(3, Math.floor(SPIN_DMG_MULT * (pPick ? pPick.damage : 1)));
                 hitBlock(col, row, dmg, p);
               }
             }
           }
-          // Trail particles
-          if (s.timer % 2 === 0) {
-            for (var ti = 0; ti < 3; ti++) {
-              parts.push({
-                x: p.x + (Math.random() - 0.5) * 30,
-                y: p.y + (Math.random() - 0.5) * 30,
-                vx: -s.dir.x * (2 + Math.random() * 3) + (Math.random() - 0.5) * 2,
-                vy: -s.dir.y * (2 + Math.random() * 3) + (Math.random() - 0.5) * 2,
-                life: 12 + Math.random() * 8,
-                color: s.timer % 4 < 2 ? '#ff44ff' : '#ffaa00',
-                r: 2 + Math.random() * 4
-              });
-            }
+          // Trail particles (limited)
+          if (s.timer % 4 === 0) {
+            parts.push({
+              x: p.x + (Math.random() - 0.5) * 20,
+              y: p.y + (Math.random() - 0.5) * 20,
+              vx: -s.dir.x * 3 + (Math.random() - 0.5) * 2,
+              vy: -s.dir.y * 3 + (Math.random() - 0.5) * 2,
+              life: 10, color: s.timer % 8 < 4 ? '#ff44ff' : '#ffaa00', r: 3
+            });
           }
+          // Boundary check
+          if (p.x < PICK_HALF) { p.x = PICK_HALF; s.timer = 0; }
+          if (p.x > COLS * TILE - PICK_HALF) { p.x = COLS * TILE - PICK_HALF; s.timer = 0; }
+          if (p.y < PICK_HALF) { p.y = PICK_HALF; s.timer = 0; }
           s.timer--;
           if (s.timer <= 0) {
             p.spin = s.origSpin;
+            p.vx = s.dir.x * 3; p.vy = s.dir.y * 3; // gentle exit velocity
             activeSpins.splice(i, 1);
           }
         }
       }
-    }
-
-    function isSpinDashing(p) {
-      for (var i = 0; i < activeSpins.length; i++) {
-        if (activeSpins[i].pick === p && activeSpins[i].phase === 'dash') return true;
-      }
-      return false;
     }
 
     function drawSpinAura(p) {
