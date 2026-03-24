@@ -950,7 +950,7 @@
     // ── Water in clearings (even zones: 0, 2, 4...) ──
     var WATER_DEPTH_ROWS = 3;  // bottom 3 rows of clearing are water
     var WATER_DRAG = 0.92;     // velocity multiplier per frame in water
-    var WATER_SIM_RATE = 3;    // simulate water every N frames
+    var WATER_SIM_RATE = 8;    // simulate water every N frames (slower)
     var waterSimTick = 0;
 
     // ── Mega Clearings (every 400 rows, 200 rows tall, wall-to-wall) ──
@@ -2474,40 +2474,29 @@
         }
       }
 
-      // ── Phase 3: Fill gaps or eliminate sparse rows ──
+      // ── Phase 3: Eliminate sparse rows — if gaps >= water tiles, remove row ──
       for (var r = rStart; r <= rEnd; r++) {
         if (!worldMap[r]) continue;
-        // Count water and empty-with-support in this row
         var waterCols = [];
-        var emptyCols = [];
+        var gapCount = 0;
         for (var c = 0; c < COLS; c++) {
           var cell = worldMap[r][c];
           if (!cell) continue;
           if (cell.t === WATER) {
             waterCols.push(c);
           } else if (cell.t === E) {
-            // Check if adjacent to water and has support
-            var hasWaterNeighbor = false;
-            if (c > 0 && worldMap[r][c - 1] && worldMap[r][c - 1].t === WATER) hasWaterNeighbor = true;
-            if (c < COLS - 1 && worldMap[r][c + 1] && worldMap[r][c + 1].t === WATER) hasWaterNeighbor = true;
-            if (hasWaterNeighbor) {
-              var belowC = worldMap[r + 1] ? worldMap[r + 1][c] : null;
-              if (belowC && belowC.t !== E) {
-                emptyCols.push(c);
-              }
+            var hasWN = false;
+            if (c > 0 && worldMap[r][c - 1] && worldMap[r][c - 1].t === WATER) hasWN = true;
+            if (c < COLS - 1 && worldMap[r][c + 1] && worldMap[r][c + 1].t === WATER) hasWN = true;
+            if (hasWN) {
+              var bC = worldMap[r + 1] ? worldMap[r + 1][c] : null;
+              if (bC && bC.t !== E) gapCount++;
             }
           }
         }
-        if (waterCols.length === 0 || emptyCols.length === 0) continue;
-        // If gaps outnumber water tiles, eliminate this row's water entirely
-        if (emptyCols.length >= waterCols.length) {
+        if (waterCols.length > 0 && gapCount >= waterCols.length) {
           for (var wi = 0; wi < waterCols.length; wi++) {
             worldMap[r][waterCols[wi]] = { t: E, hp: 0, cr: 0 };
-          }
-        } else {
-          // Fill the gaps with new water
-          for (var ei = 0; ei < emptyCols.length; ei++) {
-            worldMap[r][emptyCols[ei]] = { t: WATER, hp: 1, cr: 0 };
           }
         }
       }
