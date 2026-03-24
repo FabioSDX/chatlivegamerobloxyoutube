@@ -384,7 +384,7 @@
     <div id="commandBox">
       <div class="cmd-item">Type <span class="cmd-highlight">play</span> to join!</div>
       <div class="cmd-item"><span class="cmd-highlight">clone</span> — dual pickaxe 10s</div>
-      <div class="cmd-item"><span class="cmd-highlight">spin</span> right/left/up/down</div>
+      <div class="cmd-item"><span class="cmd-highlight">spin</span> right/left/up/down (<span class="cmd-highlight">sr sl su sd</span>)</div>
       <div class="cmd-item"><span class="cmd-highlight">tnt</span> / <span class="cmd-highlight">mega tnt</span> — boom!</div>
     </div>
 
@@ -1485,10 +1485,10 @@
 
     // ── Spin Skill ──────────────────────────────────────────────────────────────
     var SPIN_CHARGE = 30;       // 0.5s charge-up
-    var SPIN_DASH = 180;        // 3s dash duration
+    var SPIN_DASH = 90;         // 1.5s dash duration
     var SPIN_COOLDOWN = 900;    // 15s cooldown
-    var SPIN_SPEED = 18;        // dash velocity
-    var SPIN_DMG_MULT = 5;      // damage multiplier during dash
+    var SPIN_SPEED = 14;        // dash velocity
+    var SPIN_DMG_MULT = 3;      // damage multiplier during dash
     var spinCooldowns = {};     // { userName: framesLeft }
     var activeSpins = [];       // { pick, dir, phase, timer, origSpin }
 
@@ -5820,8 +5820,15 @@
                   spawnClone(cUser, cAvatarUrl);
                 }
 
-                // Spin skill: spin right/left/down/up
+                // Spin skill: spin right/left/down/up or shortcuts sr/sl/sd/su
                 var spinMatch = msg.match(/spin\s+(right|left|down|up)/);
+                if (!spinMatch) {
+                  var shortcut = msg.match(/\b(sr|sl|sd|su)\b/);
+                  if (shortcut) {
+                    var sMap = { sr: 'right', sl: 'left', sd: 'down', su: 'up' };
+                    spinMatch = [null, sMap[shortcut[1]]];
+                  }
+                }
                 if (spinMatch) {
                   activateSpin(cUser, spinMatch[1]);
                 }
