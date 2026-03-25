@@ -2389,39 +2389,40 @@
     function placeWaterInClearing(zone) {
       var zoneStart = zone * CLEARING_INTERVAL;
       var waterStartLocal = CLEARING_HEIGHT - WATER_DEPTH_ROWS;
-      // Find the actual solid walls in each water row from the worldMap
-      // Use the narrowest gap between walls across all water rows
-      var bestLeft = 0, bestRight = COLS - 1;
+      // For each water row, find the actual solid walls and fill between them
+      // First pass: find the narrowest solid-to-solid span across all rows
+      var globalLeft = COLS, globalRight = 0;
       var found = false;
       for (var lr = waterStartLocal; lr < CLEARING_HEIGHT; lr++) {
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
-        // Scan from left to find first empty cell
-        var rowLeft = -1, rowRight = -1;
+        // Find rightmost solid block on the left side
+        var wallLeft = -1;
         for (var c = 0; c < COLS; c++) {
-          if (worldMap[row][c] && worldMap[row][c].t === E) { rowLeft = c; break; }
+          if (worldMap[row][c] && worldMap[row][c].t !== E) wallLeft = c;
+          else break;
         }
-        // Scan from right to find last empty cell
+        // Find leftmost solid block on the right side
+        var wallRight = -1;
         for (var c = COLS - 1; c >= 0; c--) {
-          if (worldMap[row][c] && worldMap[row][c].t === E) { rowRight = c; break; }
+          if (worldMap[row][c] && worldMap[row][c].t !== E) wallRight = c;
+          else break;
         }
-        if (rowLeft === -1 || rowRight === -1) continue;
-        if (!found) { bestLeft = rowLeft; bestRight = rowRight; found = true; }
+        if (wallLeft === -1 || wallRight === -1 || wallLeft >= wallRight) continue;
+        var innerLeft = wallLeft + 1;  // first empty after left wall
+        var innerRight = wallRight - 1; // last empty before right wall
+        if (!found) { globalLeft = innerLeft; globalRight = innerRight; found = true; }
         else {
-          if (rowLeft > bestLeft) bestLeft = rowLeft;
-          if (rowRight < bestRight) bestRight = rowRight;
+          if (innerLeft > globalLeft) globalLeft = innerLeft;
+          if (innerRight < globalRight) globalRight = innerRight;
         }
       }
-      if (!found || bestLeft >= bestRight) return;
-      // Shrink by 1 tile on each side to ensure walls are adjacent
-      bestLeft += 1;
-      bestRight -= 1;
-      if (bestLeft >= bestRight) return;
-      // Place water using uniform width
+      if (!found || globalLeft >= globalRight) return;
+      // Place water in uniform rectangle
       for (var lr = waterStartLocal; lr < CLEARING_HEIGHT; lr++) {
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
-        for (var c = bestLeft; c <= bestRight; c++) {
+        for (var c = globalLeft; c <= globalRight; c++) {
           if (worldMap[row][c] && worldMap[row][c].t === E) {
             worldMap[row][c] = { t: WATER, hp: 1, cr: 0 };
           }
