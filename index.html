@@ -1312,7 +1312,8 @@
         clearedZones[zone] = true;
         // Place water tiles in even clearings
         if (hasWater(zone)) {
-          placeWaterInClearing(zone);
+          // Defer water placement to update loop (rows may not be generated yet)
+          clearedZones[zone + '_needsWater'] = true;
         }
         if (typeof zombies !== 'undefined' && zombies) {
           var shape = getClearingShape(zone);
@@ -2041,6 +2042,19 @@
         updateStorm();
         updateTormenta();
         updateSpins();
+        // Place deferred water in clearings
+        if (pick) {
+          var pickZone = Math.floor(Math.floor(pick.y / TILE) / CLEARING_INTERVAL);
+          for (var wz = pickZone - 2; wz <= pickZone + 2; wz++) {
+            if (wz >= 1 && clearedZones[wz + '_needsWater'] && !clearedZones[wz + '_waterPlaced']) {
+              var wFloorRow = wz * CLEARING_INTERVAL + CLEARING_HEIGHT;
+              if (worldMap[wFloorRow] && worldMap[wz * CLEARING_INTERVAL + CLEARING_HEIGHT - 1]) {
+                placeWaterInClearing(wz);
+                clearedZones[wz + '_waterPlaced'] = true;
+              }
+            }
+          }
+        }
         updateWater();
         updateZombies();
         checkPickZombieCollisions();
@@ -2389,32 +2403,34 @@
     function placeWaterInClearing(zone) {
       var shape = getClearingShape(zone);
       var zoneStart = zone * CLEARING_INTERVAL;
-      // The clearing occupies local rows 0 to CLEARING_HEIGHT-1
-      // Solid ground is at row zoneStart + CLEARING_HEIGHT (first row below clearing)
       var floorRow = zoneStart + CLEARING_HEIGHT;
-      // Ensure floor row exists and is solid across the water span
-      if (!worldMap[floorRow]) {
-        // Generate it if needed
-        ensureRows(floorRow, floorRow + 1);
-      }
-      // Use the bottom clearing row shape for width reference
+      // Use the bottom clearing row shape for width
       var botShape = shape[CLEARING_HEIGHT - 1];
       if (!botShape) return;
       var wLeft = botShape.left + 1;
       var wRight = botShape.right - 1;
       if (wLeft >= wRight) return;
-      // Verify floor is solid
-      if (!worldMap[floorRow]) return;
-      for (var c = wLeft; c <= wRight; c++) {
-        if (!worldMap[floorRow][c] || worldMap[floorRow][c].t === E) {
-          // Make floor solid if it's empty (place cobblestone)
-          worldMap[floorRow][c] = { t: COBBLE, hp: 9999, cr: 0 };
+      // Force solid floor below water
+      if (worldMap[floorRow]) {
+        for (var c = wLeft; c <= wRight; c++) {
+          if (!worldMap[floorRow][c] || worldMap[floorRow][c].t === E) {
+            worldMap[floorRow][c] = { t: COBBLE, hp: 9999, cr: 0 };
+          }
         }
       }
-      // Place water in the bottom 2 rows of the clearing (right above the floor)
+      // Also force solid walls on left and right edges for each water row
       for (var lr = CLEARING_HEIGHT - 2; lr < CLEARING_HEIGHT; lr++) {
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
+        // Left wall
+        if (wLeft > 0 && worldMap[row][wLeft - 1] && worldMap[row][wLeft - 1].t === E) {
+          worldMap[row][wLeft - 1] = { t: COBBLE, hp: 9999, cr: 0 };
+        }
+        // Right wall
+        if (wRight < COLS - 1 && worldMap[row][wRight + 1] && worldMap[row][wRight + 1].t === E) {
+          worldMap[row][wRight + 1] = { t: COBBLE, hp: 9999, cr: 0 };
+        }
+        // Place water
         for (var c = wLeft; c <= wRight; c++) {
           if (worldMap[row][c] && worldMap[row][c].t === E) {
             worldMap[row][c] = { t: WATER, hp: 1, cr: 0 };
