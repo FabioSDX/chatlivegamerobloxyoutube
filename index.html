@@ -2312,9 +2312,13 @@
       // A cell outside the clearing is reachable only if it's adjacent to a clearing cell
       // AND the border between them was originally a wall (solid block at clearing edge)
       var maxCells = 400;
+      var maxDepthBelow = 12; // water dilutes after 12 rows below clearing bottom
+      var clearingBottom = zoneStart + CLEARING_HEIGHT;
       var idx = 0;
       while (idx < queue.length && reachable.size < maxCells) {
         var qr = queue[idx++], qc = queue[idx++];
+        // Depth limit: don't expand beyond maxDepthBelow rows outside clearing
+        if (qr >= clearingBottom + maxDepthBelow) continue;
         // Check if this cell is inside the clearing
         var qLocal = qr - zoneStart;
         var insideClearing = false;
