@@ -1190,8 +1190,8 @@
             else if (w.dir === 'down')  { baseRot = Math.PI;        baseAY = r * TILE + TILE * 0.95; }
             else if (w.dir === 'left')  { baseRot = Math.PI * 0.5;  baseAX = c * TILE + TILE * 0.05; }
             else                        { baseRot = -Math.PI * 0.5; baseAX = c * TILE + TILE * 0.95; }
-            // 3-5 crystals per wall edge to fully cover the border
-            var count = 3 + Math.floor(seededRand(seed * 43 + wi * 71) * 3);
+            // 5-8 crystals per wall edge for dense coverage
+            var count = 5 + Math.floor(seededRand(seed * 43 + wi * 71) * 4);
             for (var ci = 0; ci < count; ci++) {
               var cs = seed * 100 + wi * 50 + ci;
               // Spread along the wall edge
@@ -1288,7 +1288,7 @@
             else if (mw.dir === 'down')  { mBaseRot = Math.PI;        mBaseAY = r * TILE + TILE * 0.95; }
             else if (mw.dir === 'left')  { mBaseRot = Math.PI * 0.5;  mBaseAX = c * TILE + TILE * 0.05; }
             else                         { mBaseRot = -Math.PI * 0.5; mBaseAX = c * TILE + TILE * 0.95; }
-            var mcount = 2 + Math.floor(seededRand(mseed * 43 + mwi * 71) * 2);
+            var mcount = 3 + Math.floor(seededRand(mseed * 43 + mwi * 71) * 3);
             for (var mci = 0; mci < mcount; mci++) {
               var mcs = mseed * 100 + mwi * 50 + mci;
               var mspread = (seededRand(mcs * 61) - 0.5) * TILE * 0.8;
@@ -1310,7 +1310,7 @@
         }
       }
 
-      // ── Mini-clearing: spawn mineral pile ──
+      // ── Mini-clearing: spawn collectible item pile ──
       var miniStart2 = zone * CLEARING_INTERVAL + MINI_CLEARING_OFFSET;
       var miniLastRow = miniStart2 + MINI_CLEARING_HEIGHT - 1;
       if (r === miniLastRow && zone >= 1 && !miniClearedZones[zone]) {
@@ -1330,21 +1330,25 @@
             cumW += MINERAL_PILE_DEFS[mi].weight;
             if (roll < cumW) { mineralDef = MINERAL_PILE_DEFS[mi]; break; }
           }
-          // Place ore blocks inside the mini-clearing
+          // Spawn collectible items scattered in the mini-clearing
           var mShape = getMiniClearingShape(zone);
-          var numBlocks = mineralDef.min + Math.floor(seededRand(zone * 499) * (mineralDef.max - mineralDef.min + 1));
-          var placed = 0;
-          for (var mlr = 0; mlr < MINI_CLEARING_HEIGHT && placed < numBlocks; mlr++) {
-            var mb = mShape[mlr];
-            if (!mb) continue;
-            var mrow = miniStart2 + mlr;
-            if (!worldMap[mrow]) continue;
-            for (var mc = mb.left; mc <= mb.right && placed < numBlocks; mc++) {
-              if (worldMap[mrow][mc] && worldMap[mrow][mc].t === E) {
-                var def = BDEF[mineralDef.t];
-                worldMap[mrow][mc] = { t: mineralDef.t, hp: def ? def.hp : 2, cr: 0 };
-                placed++;
-              }
+          var numItems = mineralDef.min + Math.floor(seededRand(zone * 499) * (mineralDef.max - mineralDef.min + 1));
+          var mb = mShape[0];
+          if (mb) {
+            var cx = Math.floor((mb.left + mb.right) / 2) * TILE + TILE / 2;
+            var cy = miniStart2 * TILE + TILE / 2;
+            for (var ii = 0; ii < numItems; ii++) {
+              items.push({
+                x: cx + (seededRand(zone * 700 + ii * 13) - 0.5) * (mb.right - mb.left) * TILE * 0.7,
+                y: cy + (seededRand(zone * 800 + ii * 17) - 0.5) * TILE * 0.8,
+                vx: 0, vy: 0,
+                t: mineralDef.t,
+                wait: 9999, // stays still until player approaches
+                ang: seededRand(zone * 900 + ii) * Math.PI * 2,
+                spin: (seededRand(zone * 1000 + ii) - 0.5) * 0.05,
+                owner: null, // no owner yet — assigned when player gets close
+                isGrotta: true // mark as grotto item
+              });
             }
           }
         }
@@ -1694,6 +1698,25 @@
       function updateItems() {
         for (var i = items.length - 1; i >= 0; i--) {
           var it = items[i];
+          // Grotto items: stay still until a player gets close
+          if (it.isGrotta && it.wait > 100) {
+            it.ang += it.spin;
+            // Check proximity to any pick
+            var allP = [pick].concat(userPicks, extraPicks);
+            for (var pi = 0; pi < allP.length; pi++) {
+              var pp = allP[pi];
+              if (!pp) continue;
+              var gdx = pp.x - it.x, gdy = pp.y - it.y;
+              if (Math.sqrt(gdx * gdx + gdy * gdy) < TILE * 2.5) {
+                it.owner = pp;
+                it.wait = 15; // short wait then fly to player
+                it.vy = -3 - Math.random() * 2;
+                it.vx = (Math.random() - 0.5) * 4;
+                break;
+              }
+            }
+            continue;
+          }
           if (it.wait > 0) {
             it.wait--; it.vx *= 0.96; it.vy += 0.3;
             // Items float in water
