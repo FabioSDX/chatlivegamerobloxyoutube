@@ -2270,17 +2270,42 @@
 
     function initPool(zone) {
       if (poolVolumes[zone] !== undefined) return;
-      // Calculate initial volume from clearing shape (no worldMap dependency)
       var shape = getClearingShape(zone);
       var vol = 0;
       for (var lr = CLEARING_HEIGHT - 3; lr < CLEARING_HEIGHT; lr++) {
         var b = shape[lr];
         if (!b) continue;
-        // Count inner tiles (skip 1 from each edge for walls)
         var width = b.right - b.left - 1;
         if (width > 0) vol += width;
       }
       poolVolumes[zone] = vol;
+    }
+
+    // Check if any wall/floor block of the clearing's water area has been broken
+    function isPoolBreached(zone) {
+      var shape = getClearingShape(zone);
+      var zoneStart = zone * CLEARING_INTERVAL;
+      for (var lr = CLEARING_HEIGHT - 3; lr < CLEARING_HEIGHT; lr++) {
+        var b = shape[lr];
+        if (!b) continue;
+        var row = zoneStart + lr;
+        if (!worldMap[row]) continue;
+        // Check left wall
+        if (worldMap[row][b.left] && worldMap[row][b.left].t === E) return true;
+        // Check right wall
+        if (worldMap[row][b.right] && worldMap[row][b.right].t === E) return true;
+      }
+      // Check floor (row below bottom of clearing)
+      var floorRow = zoneStart + CLEARING_HEIGHT;
+      if (worldMap[floorRow]) {
+        var botShape = shape[CLEARING_HEIGHT - 1];
+        if (botShape) {
+          for (var c = botShape.left; c <= botShape.right; c++) {
+            if (worldMap[floorRow][c] && worldMap[floorRow][c].t === E) return true;
+          }
+        }
+      }
+      return false;
     }
 
     function computePool(zone) {
@@ -2373,7 +2398,12 @@
         }
       }
 
-      // Volume is conserved — water only redistributes, never lost
+      // Volume is conserved unless pool is breached (wall/floor broken)
+      if (isPoolBreached(zone)) {
+        // Drain: lose volume gradually
+        var drain = Math.max(1, Math.floor(vol * 0.05));
+        poolVolumes[zone] = Math.max(0, vol - drain);
+      }
       poolCells[zone] = cells;
     }
 
