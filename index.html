@@ -2373,13 +2373,7 @@
         }
       }
 
-      // Phase 3: Drain — water outside clearing slowly reduces volume (dilution)
-      if (outsideCount > 0) {
-        // Lose 1 volume per 2 outside tiles each computation (gradual drain)
-        var drain = Math.max(1, Math.floor(outsideCount / 2));
-        poolVolumes[zone] = Math.max(0, vol - drain);
-      }
-
+      // Volume is conserved — water only redistributes, never lost
       poolCells[zone] = cells;
     }
 
