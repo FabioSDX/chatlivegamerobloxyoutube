@@ -2351,10 +2351,7 @@
         }
       }
 
-      // Volume loss: if remaining > 0, some water couldn't be placed (dissipated)
-      if (remaining > 0) {
-        poolVolumes[zone] = vol - remaining;
-      }
+      // Volume is conserved — if water couldn't be placed, it stays for next frame
       poolCells[zone] = cells;
     }
 
@@ -2380,7 +2377,10 @@
         initPool(zone);
         computePool(zone);
         var cells = poolCells[zone];
-        if (!cells || cells.size === 0) continue;
+        if (!cells || cells.size === 0) {
+          if (poolVolumes[zone] > 0) console.log('WATER DEBUG zone=' + zone + ' vol=' + poolVolumes[zone] + ' cells=0');
+          continue;
+        }
 
         var zoneStart = zone * CLEARING_INTERVAL;
         // Find top water row for surface wave
