@@ -623,6 +623,20 @@
             break;
           }
 
+      // Place torches on clearing walls (every 3 rows, left and right walls)
+      if (isNearClearing && zone >= 1) {
+        var localRow = r - zone * CLEARING_INTERVAL;
+        if (localRow >= 1 && localRow < CLEARING_HEIGHT - 1 && localRow % 3 === 1) {
+          var tShape = getClearingShape(zone);
+          var tb = tShape[localRow];
+          if (tb) {
+            // Left wall torch
+            torchList.push({ x: tb.left * TILE + TILE * 0.3, y: r * TILE + TILE * 0.3, wallDir: 'left', zone: zone, wallCol: tb.left - 1, wallRow: r });
+            // Right wall torch
+            torchList.push({ x: (tb.right + 1) * TILE - TILE * 0.3, y: r * TILE + TILE * 0.3, wallDir: 'right', zone: zone, wallCol: tb.right + 1, wallRow: r });
+          }
+        }
+      }
 
           // move até o ponto de colisão (com pequena margem)
           b.x += remainVx * (earliest.t - 0.001);
@@ -1040,6 +1054,7 @@
     // Array of crystal decorations growing INTO the empty space
     // Each: { x, y, variant, rotation, scale, type, zone }
     var crystalDecoList = [];
+    var torchList = []; // { x, y, wallDir, zone }
 
     // Seeded random for deterministic clearing shapes
     function seededRand(seed) {
@@ -1539,7 +1554,7 @@
       stopBossMusic();
       score = 0; maxDepth = 0; parts = []; texts = []; debris = []; announcements = [];
       var ov = document.getElementById('announceOverlay'); if (ov) ov.innerHTML = '';
-      worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; clearingCrystals = {}; megaClearedZones = {};
+      worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; torchList = []; clearingCrystals = {}; megaClearedZones = {};
       miniClearedZones = {};
       extraPicks = []; userPicks = []; lastActivity = {};
       doublePickActive = false; doublePickTimer = 0; updateDoublePickHUD();
@@ -2835,6 +2850,79 @@
         ctx.restore();
       }
       ctx.globalAlpha = 1;
+
+      // ── Torches with light and shadow ──
+      var tTime = Date.now() * 0.005;
+      for (var ti = 0; ti < torchList.length; ti++) {
+        var torch = torchList[ti];
+        if (torch.y < viewTop - TILE * 3 || torch.y > viewBot + TILE * 3) continue;
+        // Remove torch if wall block destroyed
+        if ((bgTick + ti) % 60 === 0) {
+          var twc = getCell(torch.wallRow, torch.wallCol);
+          if (!twc || twc.t === E) { torchList.splice(ti, 1); ti--; continue; }
+        }
+        var tx = torch.x, ty = torch.y;
+        var flicker = 0.7 + Math.sin(tTime * 3 + ti * 2.1) * 0.15 + Math.sin(tTime * 7 + ti * 5.3) * 0.1 + Math.random() * 0.05;
+        var lightR = TILE * 3 * flicker;
+
+        // Light glow (drawn behind everything via globalCompositeOperation)
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        var lg = ctx.createRadialGradient(tx, ty, 0, tx, ty, lightR);
+        lg.addColorStop(0, 'rgba(255,180,60,' + (0.12 * flicker) + ')');
+        lg.addColorStop(0.3, 'rgba(255,120,20,' + (0.06 * flicker) + ')');
+        lg.addColorStop(1, 'rgba(255,80,0,0)');
+        ctx.fillStyle = lg;
+        ctx.beginPath(); ctx.arc(tx, ty, lightR, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.restore();
+
+        // Torch stick
+        ctx.save();
+        ctx.fillStyle = '#5a3a1a';
+        ctx.fillRect(tx - 2, ty, 4, 18);
+        // Torch head
+        ctx.fillStyle = '#8a5a2a';
+        ctx.fillRect(tx - 4, ty - 2, 8, 6);
+
+        // Flame (animated)
+        var fh = 10 + Math.sin(tTime * 4 + ti * 3) * 3;
+        var fw = 5 + Math.sin(tTime * 6 + ti * 1.7) * 1.5;
+        // Outer flame (orange)
+        ctx.fillStyle = 'rgba(255,120,20,' + (0.8 * flicker) + ')';
+        ctx.beginPath();
+        ctx.moveTo(tx - fw, ty - 2);
+        ctx.quadraticCurveTo(tx - fw * 0.3, ty - fh * 0.7, tx, ty - fh);
+        ctx.quadraticCurveTo(tx + fw * 0.3, ty - fh * 0.7, tx + fw, ty - 2);
+        ctx.fill();
+        // Inner flame (yellow)
+        ctx.fillStyle = 'rgba(255,220,80,' + (0.9 * flicker) + ')';
+        ctx.beginPath();
+        ctx.moveTo(tx - fw * 0.5, ty - 2);
+        ctx.quadraticCurveTo(tx - fw * 0.15, ty - fh * 0.5, tx, ty - fh * 0.7);
+        ctx.quadraticCurveTo(tx + fw * 0.15, ty - fh * 0.5, tx + fw * 0.5, ty - 2);
+        ctx.fill();
+        // Core (white-hot)
+        ctx.fillStyle = 'rgba(255,255,200,' + (0.7 * flicker) + ')';
+        ctx.beginPath();
+        ctx.arc(tx, ty - 3, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Occasional spark particle
+        if (Math.random() < 0.02) {
+          parts.push({
+            x: tx + (Math.random() - 0.5) * 6,
+            y: ty - fh - Math.random() * 5,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: -0.8 - Math.random() * 1.2,
+            life: 0.6 + Math.random() * 0.4,
+            dec: 0.03 + Math.random() * 0.02,
+            r: 1 + Math.random() * 1.5,
+            c: Math.random() < 0.5 ? '#ffcc44' : '#ff8800'
+          });
+        }
+      }
 
       // partículas
       for (var i = 0; i < parts.length; i++) {
