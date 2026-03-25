@@ -2389,33 +2389,30 @@
     function placeWaterInClearing(zone) {
       var shape = getClearingShape(zone);
       var zoneStart = zone * CLEARING_INTERVAL;
-      // Place water in rows that have solid floor below them
-      // Use rows CLEARING_HEIGHT-4 to CLEARING_HEIGHT-2 (avoid the very bottom which may lack floor)
-      var waterTop = CLEARING_HEIGHT - WATER_DEPTH_ROWS;
-      var waterBot = CLEARING_HEIGHT - 2; // stop 2 rows before clearing ends
-      if (waterTop >= waterBot) return;
-      // Find narrowest shape across water rows
-      var wLeft = 0, wRight = COLS - 1;
-      var first = true;
-      for (var lr = waterTop; lr <= waterBot; lr++) {
-        var b = shape[lr];
-        if (!b) continue;
-        if (first) { wLeft = b.left; wRight = b.right; first = false; }
-        else {
-          if (b.left > wLeft) wLeft = b.left;
-          if (b.right < wRight) wRight = b.right;
-        }
+      // The clearing occupies local rows 0 to CLEARING_HEIGHT-1
+      // Solid ground is at row zoneStart + CLEARING_HEIGHT (first row below clearing)
+      var floorRow = zoneStart + CLEARING_HEIGHT;
+      // Ensure floor row exists and is solid across the water span
+      if (!worldMap[floorRow]) {
+        // Generate it if needed
+        ensureRows(floorRow, floorRow + 1);
       }
-      wLeft += 1; wRight -= 1; // margin from walls
+      // Use the bottom clearing row shape for width reference
+      var botShape = shape[CLEARING_HEIGHT - 1];
+      if (!botShape) return;
+      var wLeft = botShape.left + 1;
+      var wRight = botShape.right - 1;
       if (wLeft >= wRight) return;
-      // Verify floor is solid below the bottom water row
-      var floorRow = zoneStart + waterBot + 1;
+      // Verify floor is solid
       if (!worldMap[floorRow]) return;
       for (var c = wLeft; c <= wRight; c++) {
-        if (!worldMap[floorRow][c] || worldMap[floorRow][c].t === E) return; // no solid floor, skip
+        if (!worldMap[floorRow][c] || worldMap[floorRow][c].t === E) {
+          // Make floor solid if it's empty (place cobblestone)
+          worldMap[floorRow][c] = { t: COBBLE, hp: 9999, cr: 0 };
+        }
       }
-      // Place water
-      for (var lr = waterTop; lr <= waterBot; lr++) {
+      // Place water in the bottom 2 rows of the clearing (right above the floor)
+      for (var lr = CLEARING_HEIGHT - 2; lr < CLEARING_HEIGHT; lr++) {
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
         for (var c = wLeft; c <= wRight; c++) {
