@@ -2285,22 +2285,25 @@
     function isPoolBreached(zone) {
       var shape = getClearingShape(zone);
       var zoneStart = zone * CLEARING_INTERVAL;
+      // Check if wall blocks OUTSIDE the clearing (adjacent to water area) are broken
       for (var lr = CLEARING_HEIGHT - 3; lr < CLEARING_HEIGHT; lr++) {
         var b = shape[lr];
         if (!b) continue;
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
-        // Check left wall
-        if (worldMap[row][b.left] && worldMap[row][b.left].t === E) return true;
-        // Check right wall
-        if (worldMap[row][b.right] && worldMap[row][b.right].t === E) return true;
+        // Left wall: block just outside clearing left edge
+        var wl = b.left - 1;
+        if (wl >= 0 && worldMap[row][wl] && worldMap[row][wl].t === E) return true;
+        // Right wall: block just outside clearing right edge
+        var wr = b.right + 1;
+        if (wr < COLS && worldMap[row][wr] && worldMap[row][wr].t === E) return true;
       }
-      // Check floor (row below bottom of clearing)
+      // Floor: blocks just below the clearing bottom row
       var floorRow = zoneStart + CLEARING_HEIGHT;
       if (worldMap[floorRow]) {
         var botShape = shape[CLEARING_HEIGHT - 1];
         if (botShape) {
-          for (var c = botShape.left; c <= botShape.right; c++) {
+          for (var c = botShape.left + 1; c < botShape.right; c++) {
             if (worldMap[floorRow][c] && worldMap[floorRow][c].t === E) return true;
           }
         }
@@ -2400,9 +2403,13 @@
 
       // Volume is conserved unless pool is breached (wall/floor broken)
       if (isPoolBreached(zone)) {
-        // Drain: lose volume gradually
-        var drain = Math.max(1, Math.floor(vol * 0.05));
-        poolVolumes[zone] = Math.max(0, vol - drain);
+        // Drain slowly: lose 1 volume every few draw calls
+        if (!poolVolumes[zone + '_drainTick']) poolVolumes[zone + '_drainTick'] = 0;
+        poolVolumes[zone + '_drainTick']++;
+        if (poolVolumes[zone + '_drainTick'] >= 30) { // ~0.5s per drain tick
+          poolVolumes[zone + '_drainTick'] = 0;
+          poolVolumes[zone] = Math.max(0, vol - 1);
+        }
       }
       poolCells[zone] = cells;
     }
