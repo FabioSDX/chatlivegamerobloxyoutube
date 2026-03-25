@@ -2389,33 +2389,40 @@
     function placeWaterInClearing(zone) {
       var shape = getClearingShape(zone);
       var zoneStart = zone * CLEARING_INTERVAL;
-      var waterStartLocal = CLEARING_HEIGHT - WATER_DEPTH_ROWS;
-      // Start from the bottom row and work up
-      // Each row can only be as wide as the row below it (or narrower)
-      var prevLeft = COLS, prevRight = 0;
-      // First, determine the bottom row bounds (this sets the max width)
-      var botShape = shape[CLEARING_HEIGHT - 1];
-      if (!botShape) return;
-      prevLeft = botShape.left + 2;
-      prevRight = botShape.right - 2;
-      if (prevLeft >= prevRight) return;
-      // Place water bottom-up, each row clamped to previous row's width
-      for (var lr = CLEARING_HEIGHT - 1; lr >= waterStartLocal; lr--) {
+      // Place water in rows that have solid floor below them
+      // Use rows CLEARING_HEIGHT-4 to CLEARING_HEIGHT-2 (avoid the very bottom which may lack floor)
+      var waterTop = CLEARING_HEIGHT - WATER_DEPTH_ROWS;
+      var waterBot = CLEARING_HEIGHT - 2; // stop 2 rows before clearing ends
+      if (waterTop >= waterBot) return;
+      // Find narrowest shape across water rows
+      var wLeft = 0, wRight = COLS - 1;
+      var first = true;
+      for (var lr = waterTop; lr <= waterBot; lr++) {
         var b = shape[lr];
         if (!b) continue;
-        var rowLeft = Math.max(prevLeft, b.left + 1);
-        var rowRight = Math.min(prevRight, b.right - 1);
-        if (rowLeft >= rowRight) continue;
+        if (first) { wLeft = b.left; wRight = b.right; first = false; }
+        else {
+          if (b.left > wLeft) wLeft = b.left;
+          if (b.right < wRight) wRight = b.right;
+        }
+      }
+      wLeft += 1; wRight -= 1; // margin from walls
+      if (wLeft >= wRight) return;
+      // Verify floor is solid below the bottom water row
+      var floorRow = zoneStart + waterBot + 1;
+      if (!worldMap[floorRow]) return;
+      for (var c = wLeft; c <= wRight; c++) {
+        if (!worldMap[floorRow][c] || worldMap[floorRow][c].t === E) return; // no solid floor, skip
+      }
+      // Place water
+      for (var lr = waterTop; lr <= waterBot; lr++) {
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
-        for (var c = rowLeft; c <= rowRight; c++) {
+        for (var c = wLeft; c <= wRight; c++) {
           if (worldMap[row][c] && worldMap[row][c].t === E) {
             worldMap[row][c] = { t: WATER, hp: 1, cr: 0 };
           }
         }
-        // Clamp next row up to this row's width
-        prevLeft = rowLeft;
-        prevRight = rowRight;
       }
     }
 
