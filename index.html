@@ -1900,6 +1900,73 @@
           setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 600);
         }, 2000);
       }
+      function showDepthWarning(meters) {
+        var warnings = [
+          { text: '☠️ 200m... THE DARKNESS GROWS', color: '#ff8844' },
+          { text: '💀 400m... TURN BACK NOW', color: '#ff4444' },
+          { text: '🔥 600m... NO ONE RETURNS', color: '#ff2222' },
+          { text: '👁️ 800m... IT WATCHES YOU', color: '#cc00ff' },
+          { text: '⚰️ 1000m... WELCOME TO HELL', color: '#ff0000' }
+        ];
+        var idx = Math.min(Math.floor(meters / 200) - 1, warnings.length - 1);
+        var w = warnings[idx] || { text: '💀 ' + meters + 'm... DEEPER INTO MADNESS', color: '#ff0044' };
+        var el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);z-index:9999;' +
+          'width:90vw;max-width:500px;font-size:clamp(18px,8vw,36px);font-weight:900;color:' + w.color + ';' +
+          'text-shadow:0 0 20px ' + w.color + ',0 0 40px #000,0 4px 8px #000;' +
+          'pointer-events:none;animation:comboPopIn 0.5s ease-out forwards;font-family:Arial,sans-serif;text-align:center;' +
+          'letter-spacing:2px;';
+        el.textContent = w.text;
+        var sub = document.createElement('div');
+        sub.style.cssText = 'font-size:clamp(12px,4vw,18px);color:#888;margin-top:8px;font-weight:normal;letter-spacing:0;';
+        sub.textContent = '— ' + meters + ' meters deep —';
+        el.appendChild(sub);
+        document.body.appendChild(el);
+        shakeAmt = Math.max(shakeAmt, 12);
+        setTimeout(function() {
+          el.style.animation = 'comboPopOut 0.8s ease-in forwards';
+          setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 800);
+        }, 2500);
+      }
+
+      function sfxEvilLaugh() {
+        var ac = getAC(); if (!ac) return;
+        var t = ac.currentTime;
+        // Deep evil laugh: descending notes with vibrato
+        var notes = [180, 160, 140, 120, 100, 85, 70];
+        for (var i = 0; i < notes.length; i++) {
+          var osc = ac.createOscillator();
+          var g = ac.createGain();
+          var vib = ac.createOscillator(); // vibrato
+          var vibG = ac.createGain();
+          osc.type = 'sawtooth';
+          var st = t + i * 0.12;
+          osc.frequency.setValueAtTime(notes[i], st);
+          osc.frequency.linearRampToValueAtTime(notes[i] * 0.85, st + 0.1);
+          // Vibrato
+          vib.type = 'sine';
+          vib.frequency.setValueAtTime(6 + i, st);
+          vibG.gain.setValueAtTime(8, st);
+          vib.connect(vibG);
+          vibG.connect(osc.frequency);
+          g.gain.setValueAtTime(0.15, st);
+          g.gain.exponentialRampToValueAtTime(0.001, st + 0.15);
+          osc.connect(g); g.connect(ac.destination);
+          osc.start(st); osc.stop(st + 0.15);
+          vib.start(st); vib.stop(st + 0.15);
+        }
+        // Deep rumble underneath
+        var rumble = ac.createOscillator();
+        var rg = ac.createGain();
+        rumble.type = 'sine';
+        rumble.frequency.setValueAtTime(35, t);
+        rumble.frequency.linearRampToValueAtTime(20, t + 1.2);
+        rg.gain.setValueAtTime(0.25, t);
+        rg.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+        rumble.connect(rg); rg.connect(ac.destination);
+        rumble.start(t); rumble.stop(t + 1.2);
+      }
+
       function sfxTormenta() {
         var ac = getAC(); if (!ac) return;
         var t = ac.currentTime;
@@ -2067,7 +2134,16 @@
         applyPhysics(pick, 28);
         var speed = Math.sqrt(pick.vx * pick.vx + pick.vy * pick.vy);
         var depth = Math.floor(pick.y / TILE);
-        if (depth > maxDepth) { maxDepth = depth; document.getElementById('depthDisplay').textContent = 'Depth: ' + maxDepth + 'm'; }
+        if (depth > maxDepth) {
+          var oldMilestone = Math.floor(maxDepth / 200);
+          maxDepth = depth;
+          document.getElementById('depthDisplay').textContent = 'Depth: ' + maxDepth + 'm';
+          var newMilestone = Math.floor(maxDepth / 200);
+          if (newMilestone > oldMilestone && newMilestone > 0) {
+            showDepthWarning(newMilestone * 200);
+            sfxEvilLaugh();
+          }
+        }
         document.getElementById('scoreDisplay').textContent = '⛏ ' + score;
         var targetCamY = pick.y - canvas.height * 0.50;
         if (targetCamY < 0) targetCamY = 0;
