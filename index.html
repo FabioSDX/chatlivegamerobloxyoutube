@@ -955,7 +955,7 @@
     var clearingShapes = {};    // cached organic shapes per zone
 
     // ── Mini-clearings (small grottos between main clearings with chests) ──
-    var MINI_CLEARING_HEIGHT = 3;
+    var MINI_CLEARING_HEIGHT = 2;
     var MINI_CLEARING_OFFSET = 14; // rows after zone start (between clearings)
     var miniClearingShapes = {};
     var miniClearedZones = {};
@@ -964,11 +964,11 @@
       if (miniClearingShapes[zone]) return miniClearingShapes[zone];
       var seed = zone * 4391 + 773;
       var shape = {};
-      // Small organic shape: 2-4 tiles wide, 3 rows tall
       var centerCol = 3 + Math.floor(seededRand(seed) * (COLS - 6));
       for (var lr = 0; lr < MINI_CLEARING_HEIGHT; lr++) {
-        var vertFactor = 1 - Math.pow((lr - 1) / 1.5, 2);
-        var halfW = Math.max(1, Math.floor(1.5 + vertFactor * 2 + seededRand(seed + lr * 41) * 1.5));
+        // Organic: wider in middle, narrow at edges
+        var vertFactor = 1 - Math.pow((lr - 0.5) / 1.0, 2);
+        var halfW = Math.max(1, Math.floor(1 + vertFactor * 1.5 + seededRand(seed + lr * 41) * 0.8));
         var wobble = Math.floor(seededRand(seed + lr * 67) * 2) - 1;
         var rc = Math.max(2, Math.min(COLS - 3, centerCol + wobble));
         shape[lr] = {
@@ -1267,6 +1267,49 @@
         }
       }
 
+      // ── Mini-clearing crystal decorations ──
+      var miniStart = zone * CLEARING_INTERVAL + MINI_CLEARING_OFFSET;
+      var isMiniRow = (r >= miniStart && r < miniStart + MINI_CLEARING_HEIGHT);
+      if (isMiniRow && zone >= 1) {
+        var mct = clearingCrystals[zone] || CRYSTAL_TYPES[Math.floor(seededRand(zone * 53) * CRYSTAL_TYPES.length)];
+        for (var c = 1; c < COLS - 1; c++) {
+          if (row[c].t !== E || !isMiniClearingCell(r, c)) continue;
+          var mwalls = [];
+          if (!isMiniClearingCell(r, c - 1)) mwalls.push({ dir: 'left', wr: r, wc: c - 1 });
+          if (!isMiniClearingCell(r, c + 1)) mwalls.push({ dir: 'right', wr: r, wc: c + 1 });
+          if (!isMiniClearingCell(r - 1, c)) mwalls.push({ dir: 'up', wr: r - 1, wc: c });
+          if (!isMiniClearingCell(r + 1, c)) mwalls.push({ dir: 'down', wr: r + 1, wc: c });
+          if (mwalls.length === 0) continue;
+          var mseed = r * 1000 + c + 30000;
+          for (var mwi = 0; mwi < mwalls.length; mwi++) {
+            var mw = mwalls[mwi];
+            var mBaseRot, mBaseAX = c * TILE + TILE / 2, mBaseAY = r * TILE + TILE / 2;
+            if (mw.dir === 'up')         { mBaseRot = 0;              mBaseAY = r * TILE + TILE * 0.05; }
+            else if (mw.dir === 'down')  { mBaseRot = Math.PI;        mBaseAY = r * TILE + TILE * 0.95; }
+            else if (mw.dir === 'left')  { mBaseRot = Math.PI * 0.5;  mBaseAX = c * TILE + TILE * 0.05; }
+            else                         { mBaseRot = -Math.PI * 0.5; mBaseAX = c * TILE + TILE * 0.95; }
+            var mcount = 2 + Math.floor(seededRand(mseed * 43 + mwi * 71) * 2);
+            for (var mci = 0; mci < mcount; mci++) {
+              var mcs = mseed * 100 + mwi * 50 + mci;
+              var mspread = (seededRand(mcs * 61) - 0.5) * TILE * 0.8;
+              var moffPerp = (seededRand(mcs * 73) - 0.5) * TILE * 0.12;
+              var mcx, mcy;
+              if (mw.dir === 'up' || mw.dir === 'down') { mcx = mBaseAX + mspread; mcy = mBaseAY + moffPerp; }
+              else { mcx = mBaseAX + moffPerp; mcy = mBaseAY + mspread; }
+              crystalDecoList.push({
+                x: mcx, y: mcy,
+                variant: Math.floor(seededRand(mcs * 13) * 2),
+                rotation: mBaseRot + (seededRand(mcs * 97) - 0.5) * 0.5,
+                scale: 0.3 + seededRand(mcs * 31) * 0.35,
+                type: mct,
+                zone: zone,
+                wallRow: mw.wr, wallCol: mw.wc
+              });
+            }
+          }
+        }
+      }
+
       // ── Mini-clearing: spawn chest ──
       var miniStart = zone * CLEARING_INTERVAL + MINI_CLEARING_OFFSET;
       var miniLastRow = miniStart + MINI_CLEARING_HEIGHT - 1;
@@ -1278,13 +1321,13 @@
         if (!miniEliminated) {
           miniClearedZones[zone] = true;
           var mShape = getMiniClearingShape(zone);
-          var mBounds = mShape[1]; // middle row
+          var mBounds = mShape[0]; // first row (smaller clearing)
           if (mBounds) {
             var chestCol = Math.floor((mBounds.left + mBounds.right) / 2);
             var chestType = CHEST_TYPES[Math.floor(seededRand(zone * 311) * CHEST_TYPES.length)];
             chests.push({
               x: chestCol * TILE + TILE / 2,
-              y: (miniStart + 1) * TILE + TILE / 2,
+              y: miniStart * TILE + TILE / 2,
               zone: zone,
               opened: false,
               type: chestType
