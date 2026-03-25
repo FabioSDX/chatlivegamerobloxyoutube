@@ -177,7 +177,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding-top: 28%;
+      padding-top: 35%;
     }
 
     .announce-card {
@@ -1288,7 +1288,7 @@
             else if (mw.dir === 'down')  { mBaseRot = Math.PI;        mBaseAY = r * TILE + TILE * 0.95; }
             else if (mw.dir === 'left')  { mBaseRot = Math.PI * 0.5;  mBaseAX = c * TILE + TILE * 0.05; }
             else                         { mBaseRot = -Math.PI * 0.5; mBaseAX = c * TILE + TILE * 0.95; }
-            var mcount = 3 + Math.floor(seededRand(mseed * 43 + mwi * 71) * 3);
+            var mcount = 8 + Math.floor(seededRand(mseed * 43 + mwi * 71) * 5);
             for (var mci = 0; mci < mcount; mci++) {
               var mcs = mseed * 100 + mwi * 50 + mci;
               var mspread = (seededRand(mcs * 61) - 0.5) * TILE * 0.8;
@@ -1300,7 +1300,7 @@
                 x: mcx, y: mcy,
                 variant: Math.floor(seededRand(mcs * 13) * 2),
                 rotation: mBaseRot + (seededRand(mcs * 97) - 0.5) * 0.5,
-                scale: 0.3 + seededRand(mcs * 31) * 0.35,
+                scale: 0.55 + seededRand(mcs * 31) * 0.5,
                 type: mct,
                 zone: zone,
                 wallRow: mw.wr, wallCol: mw.wc
@@ -1520,15 +1520,14 @@
 
     // ── Mineral piles in mini-clearings ──
     var MINERAL_PILE_DEFS = [
-      // { type, weight (higher = more common), minCount, maxCount }
-      { t: COAL,    weight: 30, min: 6, max: 10 },
-      { t: COPPER,  weight: 20, min: 5, max: 8 },
-      { t: IRON,    weight: 18, min: 4, max: 7 },
-      { t: LAPIS,   weight: 12, min: 3, max: 6 },
-      { t: GOLD,    weight: 10, min: 3, max: 5 },
-      { t: REDSTONE,weight: 8,  min: 2, max: 5 },
-      { t: DIAMOND, weight: 3,  min: 2, max: 4 },
-      { t: EMERALD, weight: 2,  min: 1, max: 3 }
+      { t: COAL,    weight: 30, min: 120, max: 200 },
+      { t: COPPER,  weight: 20, min: 100, max: 160 },
+      { t: IRON,    weight: 18, min: 80,  max: 140 },
+      { t: LAPIS,   weight: 12, min: 60,  max: 120 },
+      { t: GOLD,    weight: 10, min: 60,  max: 100 },
+      { t: REDSTONE,weight: 8,  min: 40,  max: 100 },
+      { t: DIAMOND, weight: 3,  min: 40,  max: 80 },
+      { t: EMERALD, weight: 2,  min: 20,  max: 60 }
     ];
     var tntFuseSounds = {};
     var shakeAmt = 0;
@@ -1707,11 +1706,11 @@
               var pp = allP[pi];
               if (!pp) continue;
               var gdx = pp.x - it.x, gdy = pp.y - it.y;
-              if (Math.sqrt(gdx * gdx + gdy * gdy) < TILE * 2.5) {
+              if (Math.sqrt(gdx * gdx + gdy * gdy) < TILE * 3) {
                 it.owner = pp;
-                it.wait = 15; // short wait then fly to player
-                it.vy = -3 - Math.random() * 2;
-                it.vx = (Math.random() - 0.5) * 4;
+                it.wait = 5; // instant pickup
+                it.vy = -2 - Math.random() * 1.5;
+                it.vx = (Math.random() - 0.5) * 3;
                 break;
               }
             }
@@ -1846,9 +1845,10 @@
       }
       function showComboPopup(label, color, userName) {
         var el = document.createElement('div');
-        el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9998;' +
-          'font-size:48px;font-weight:900;color:' + color + ';text-shadow:0 0 20px ' + color + ',0 0 40px ' + color + ',0 2px 4px #000;' +
-          'pointer-events:none;animation:comboPopIn 0.35s ease-out forwards;font-family:Arial,sans-serif;text-align:center;white-space:nowrap;';
+        el.style.cssText = 'position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);z-index:9998;' +
+          'width:90vw;max-width:400px;font-size:clamp(20px,12vw,48px);font-weight:900;color:' + color + ';' +
+          'text-shadow:0 0 15px ' + color + ',0 0 30px ' + color + ',0 2px 4px #000;' +
+          'pointer-events:none;animation:comboPopIn 0.35s ease-out forwards;font-family:Arial,sans-serif;text-align:center;word-wrap:break-word;';
         el.textContent = label;
         if (userName) {
           var sub = document.createElement('div');
@@ -1885,13 +1885,13 @@
       }
       function showTormentaPopup() {
         var el = document.createElement('div');
-        el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;' +
-          'font-size:64px;font-weight:900;color:#ff4400;' +
-          'text-shadow:0 0 30px #ff4400,0 0 60px #ff8800,0 0 90px #ffcc00,0 4px 8px #000;' +
-          'pointer-events:none;animation:comboPopIn 0.4s ease-out forwards;font-family:Arial,sans-serif;text-align:center;white-space:nowrap;';
+        el.style.cssText = 'position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);z-index:9999;' +
+          'width:90vw;max-width:400px;font-size:clamp(24px,14vw,64px);font-weight:900;color:#ff4400;' +
+          'text-shadow:0 0 20px #ff4400,0 0 40px #ff8800,0 0 60px #ffcc00,0 4px 8px #000;' +
+          'pointer-events:none;animation:comboPopIn 0.4s ease-out forwards;font-family:Arial,sans-serif;text-align:center;word-wrap:break-word;';
         el.innerHTML = '🔥 FIRESTORM 🔥';
         var sub = document.createElement('div');
-        sub.style.cssText = 'font-size:22px;color:#ffcc00;margin-top:8px;animation:comboShake 0.5s ease infinite;text-shadow:0 0 10px #ff8800;';
+        sub.style.cssText = 'font-size:clamp(12px,5vw,22px);color:#ffcc00;margin-top:6px;animation:comboShake 0.5s ease infinite;text-shadow:0 0 10px #ff8800;';
         sub.textContent = 'TOTAL DESTRUCTION';
         el.appendChild(sub);
         document.body.appendChild(el);
@@ -2132,7 +2132,7 @@
                   var zbX = TILE + zbSpacing * (zbi + 1);
                   spawnZombieBoss(zbX, zbY, mz);
                 }
-                spawnText(pick.x, pick.y - 60, '⚠️ ZOMBIE HORDE!', '#44ff00');
+                spawnText(canvas.width / 2, pick.y - 60, '⚠️ ZOMBIE HORDE!', '#44ff00');
               } else {
                 // ── QUEEN GATE: spawn bats + queens (original) ──
                 var megaNum = Math.min(MAX_BATS_MEGA, 100 + Math.floor(mz * 10));
@@ -2150,7 +2150,7 @@
                   var queenX = TILE + spacing * (qi + 1);
                   spawnQueen(queenX, queenY, mz);
                 }
-                spawnText(pick.x, pick.y - 60, '⚠️ MEGA ZONE!', '#ff4444');
+                spawnText(canvas.width / 2, pick.y - 60, '⚠️ MEGA ZONE!', '#ff4444');
               }
             }
             // Check if all gate bosses for this zone are dead → passage opened
@@ -2168,7 +2168,7 @@
               }
               if (aliveBosses === 0) {
                 megaClearedZones[mz + '_gateOpen'] = true;
-                spawnText(pick.x, pick.y - 80, '🚪 PASSAGE OPEN!', '#44ff44');
+                spawnText(canvas.width / 2, pick.y - 80, '🚪 PASSAGE OPEN!', '#44ff44');
                 shakeAmt = 20;
               }
             }
@@ -6029,6 +6029,37 @@
       spawnText(cx, cy + 15, '+' + cfg.pts, cfg.color);
       if (_audioStarted) sfxSkillActivate();
 
+      // Confetti rain
+      var confettiColors = ['#ff4444','#44ff44','#4444ff','#ffff44','#ff44ff','#44ffff','#ff8800','#ffffff'];
+      for (var ci = 0; ci < 40; ci++) {
+        parts.push({
+          x: cx + (Math.random() - 0.5) * canvas.width * 0.8,
+          y: cy - 200 - Math.random() * 300,
+          vx: (Math.random() - 0.5) * 6,
+          vy: 1 + Math.random() * 3,
+          life: 1, dec: 0.005 + Math.random() * 0.005,
+          r: 3 + Math.random() * 4,
+          c: confettiColors[Math.floor(Math.random() * confettiColors.length)]
+        });
+      }
+      // Firework bursts
+      for (var fi = 0; fi < 3; fi++) {
+        var fx = cx + (Math.random() - 0.5) * 300;
+        var fy = cy - 100 - Math.random() * 200;
+        for (var fj = 0; fj < 15; fj++) {
+          var fa = Math.random() * Math.PI * 2;
+          var fs = 3 + Math.random() * 5;
+          parts.push({
+            x: fx, y: fy,
+            vx: Math.cos(fa) * fs,
+            vy: Math.sin(fa) * fs,
+            life: 1, dec: 0.02 + Math.random() * 0.02,
+            r: 2 + Math.random() * 3,
+            c: cfg.color
+          });
+        }
+      }
+
       // efeitos por tipo
       if (type === 'follow') {
         for (var i = 0; i < 3; i++) activateTNT(cx + (i - 1) * TILE * 2, cy, name, '');
@@ -6281,28 +6312,28 @@
                 if (followMatch) {
                   botrixName = followMatch[1];
                   var fp = userPicks.find(function(u){ return u.userName === botrixName; });
-                  botrixAvatar = fp ? fp.avatarUrl : null;
+                  botrixAvatar = fp ? fp.userAvatarUrl : null;
                   triggerBotrixEvent('follow', botrixName, botrixAvatar);
                 }
                 var scMatch = rawMsg.match(/thanks @?(\S+) for the superchat/i);
                 if (scMatch) {
                   botrixName = scMatch[1];
                   var sp = userPicks.find(function(u){ return u.userName === botrixName; });
-                  botrixAvatar = sp ? sp.avatarUrl : null;
+                  botrixAvatar = sp ? sp.userAvatarUrl : null;
                   triggerBotrixEvent('superchat', botrixName, botrixAvatar);
                 }
                 var memberMatch = rawMsg.match(/thank you for the member @?(\S+)/i);
                 if (memberMatch) {
                   botrixName = memberMatch[1];
                   var mp = userPicks.find(function(u){ return u.userName === botrixName; });
-                  botrixAvatar = mp ? mp.avatarUrl : null;
+                  botrixAvatar = mp ? mp.userAvatarUrl : null;
                   triggerBotrixEvent('member', botrixName, botrixAvatar);
                 }
                 var giftMatch = rawMsg.match(/thank you for gifting a member @?(\S+)/i);
                 if (giftMatch) {
                   botrixName = giftMatch[1];
                   var gp = userPicks.find(function(u){ return u.userName === botrixName; });
-                  botrixAvatar = gp ? gp.avatarUrl : null;
+                  botrixAvatar = gp ? gp.userAvatarUrl : null;
                   triggerBotrixEvent('gift', botrixName, botrixAvatar);
                 }
               });
