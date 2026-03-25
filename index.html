@@ -2271,34 +2271,52 @@
       var cells = new Set();
       var remaining = vol;
 
-      // Scan bottom-up, only fill tiles that are contained
-      for (var lr = CLEARING_HEIGHT - 1; lr >= 0 && remaining > 0; lr--) {
-        var b = shape[lr];
-        if (!b) continue;
-        var row = zoneStart + lr;
+      // Scan from below the clearing upward, including broken blocks below
+      var scanBottom = zoneStart + CLEARING_HEIGHT + 10; // scan up to 10 rows below clearing
+      var scanTop = zoneStart;
+
+      for (var row = scanBottom; row >= scanTop && remaining > 0; row--) {
         if (!worldMap[row]) continue;
         var belowRow = row + 1;
+        var localRow = row - zoneStart;
+
+        // Determine scan width: inside clearing use shape, below clearing use last shape row
+        var scanLeft, scanRight;
+        if (localRow >= 0 && localRow < CLEARING_HEIGHT) {
+          var b = shape[localRow];
+          if (!b) continue;
+          scanLeft = b.left;
+          scanRight = b.right;
+        } else if (localRow >= CLEARING_HEIGHT) {
+          // Below clearing: use bottom clearing row width
+          var botShape = shape[CLEARING_HEIGHT - 1];
+          if (!botShape) continue;
+          scanLeft = botShape.left;
+          scanRight = botShape.right;
+        } else {
+          continue;
+        }
 
         // Collect contained empty cells in this row
         var contained = [];
-        for (var c = b.left; c <= b.right; c++) {
+        for (var c = scanLeft; c <= scanRight; c++) {
           if (!worldMap[row][c] || worldMap[row][c].t !== E) continue;
-          // Floor check: tile below must be solid, or water (already filled), or below clearing
+          // Floor check
           var hasFloor = false;
           if (worldMap[belowRow] && worldMap[belowRow][c]) {
             if (worldMap[belowRow][c].t !== E) hasFloor = true;
-            else if (cells.has(belowRow + ',' + c)) hasFloor = true; // water below
+            else if (cells.has(belowRow + ',' + c)) hasFloor = true;
           } else {
-            hasFloor = true; // outside worldMap = solid terrain
+            hasFloor = true;
           }
           if (!hasFloor) continue;
-          // Left containment: scan left until solid
+          // Left wall check
           var leftOk = false;
           for (var lc = c - 1; lc >= 0; lc--) {
             if (worldMap[row][lc] && worldMap[row][lc].t !== E) { leftOk = true; break; }
           }
           if (!leftOk) continue;
-          // Right containment: scan right until solid
+          // Right wall check
           var rightOk = false;
           for (var rc = c + 1; rc < COLS; rc++) {
             if (worldMap[row][rc] && worldMap[row][rc].t !== E) { rightOk = true; break; }
@@ -2309,49 +2327,32 @@
         if (contained.length === 0) continue;
 
         if (contained.length <= remaining) {
-          // Full row: fill everything
           for (var i = 0; i < contained.length; i++) {
             cells.add(row + ',' + contained[i]);
           }
           remaining -= contained.length;
         } else {
-          // Not enough water to fill this entire row — stop here (keep surface flat)
+          // Not enough water to fill this entire row — stop (keep surface flat)
           remaining = 0;
         }
       }
 
-      // Leak detection: reduce volume if water touches broken walls/floor
-      var leaked = 0;
+      // Leak detection: only lose volume if water has no containment (escaped clearing)
+      // Check bottom row of water — if below is empty AND outside clearing bounds, leak
+      var shape2 = getClearingShape(zone);
       cells.forEach(function(key) {
         var p = key.split(',');
         var r = parseInt(p[0]), c = parseInt(p[1]);
-        // Check below
-        if (worldMap[r + 1] && worldMap[r + 1][c] && worldMap[r + 1][c].t === E && !cells.has((r + 1) + ',' + c)) {
-          leaked++;
-        }
-        // Check left
-        if (c > 0 && worldMap[r][c - 1] && worldMap[r][c - 1].t === E && !cells.has(r + ',' + (c - 1))) {
-          // Scan further left — if no solid wall before edge, it's a leak
-          var wallFound = false;
-          for (var lc = c - 1; lc >= 0; lc--) {
-            if (worldMap[r][lc] && worldMap[r][lc].t !== E) { wallFound = true; break; }
-            if (cells.has(r + ',' + lc)) { wallFound = true; break; }
+        var localRow = r - zoneStart;
+        // Only check the bottom-most water cells
+        if (cells.has((r + 1) + ',' + c)) return; // has water below, not bottom
+        // If below is empty and we're at or past the clearing bottom, water escapes
+        if (localRow >= CLEARING_HEIGHT - 1) {
+          if (worldMap[r + 1] && worldMap[r + 1][c] && worldMap[r + 1][c].t === E) {
+            poolVolumes[zone] = Math.max(0, poolVolumes[zone] - 1);
           }
-          if (!wallFound) leaked++;
-        }
-        // Check right
-        if (c < COLS - 1 && worldMap[r][c + 1] && worldMap[r][c + 1].t === E && !cells.has(r + ',' + (c + 1))) {
-          var wallFound2 = false;
-          for (var rc = c + 1; rc < COLS; rc++) {
-            if (worldMap[r][rc] && worldMap[r][rc].t !== E) { wallFound2 = true; break; }
-            if (cells.has(r + ',' + rc)) { wallFound2 = true; break; }
-          }
-          if (!wallFound2) leaked++;
         }
       });
-      if (leaked > 0) {
-        poolVolumes[zone] = Math.max(0, poolVolumes[zone] - Math.ceil(leaked * 0.3));
-      }
       poolCells[zone] = cells;
     }
 
