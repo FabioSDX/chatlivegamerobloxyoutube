@@ -954,6 +954,50 @@
     var clearedZones = {};      // track which clearings already spawned zombies
     var clearingShapes = {};    // cached organic shapes per zone
 
+    // ── Mini-clearings (small grottos between main clearings with chests) ──
+    var MINI_CLEARING_HEIGHT = 3;
+    var MINI_CLEARING_OFFSET = 14; // rows after zone start (between clearings)
+    var miniClearingShapes = {};
+    var miniClearedZones = {};
+
+    function getMiniClearingShape(zone) {
+      if (miniClearingShapes[zone]) return miniClearingShapes[zone];
+      var seed = zone * 4391 + 773;
+      var shape = {};
+      // Small organic shape: 2-4 tiles wide, 3 rows tall
+      var centerCol = 3 + Math.floor(seededRand(seed) * (COLS - 6));
+      for (var lr = 0; lr < MINI_CLEARING_HEIGHT; lr++) {
+        var vertFactor = 1 - Math.pow((lr - 1) / 1.5, 2);
+        var halfW = Math.max(1, Math.floor(1.5 + vertFactor * 2 + seededRand(seed + lr * 41) * 1.5));
+        var wobble = Math.floor(seededRand(seed + lr * 67) * 2) - 1;
+        var rc = Math.max(2, Math.min(COLS - 3, centerCol + wobble));
+        shape[lr] = {
+          left: Math.max(1, rc - halfW),
+          right: Math.min(COLS - 2, rc + halfW)
+        };
+      }
+      miniClearingShapes[zone] = shape;
+      return shape;
+    }
+
+    function isMiniClearingCell(r, c) {
+      if (isMegaClearingRow(r)) return false;
+      if (r < CLEARING_INTERVAL + CLEARING_HEIGHT) return false;
+      var zone = Math.floor(r / CLEARING_INTERVAL);
+      var zoneStart = zone * CLEARING_INTERVAL;
+      var miniStart = zoneStart + MINI_CLEARING_OFFSET;
+      var localRow = r - miniStart;
+      if (localRow < 0 || localRow >= MINI_CLEARING_HEIGHT) return false;
+      // Skip if near mega-clearing
+      for (var cr = miniStart - 5; cr <= miniStart + MINI_CLEARING_HEIGHT + 5; cr++) {
+        if (isMegaClearingRow(cr)) return false;
+      }
+      var shape = getMiniClearingShape(zone);
+      var b = shape[localRow];
+      if (!b) return false;
+      return c >= b.left && c <= b.right;
+    }
+
     // ── Mega Clearings (every 400 rows, 200 rows tall, wall-to-wall) ──
     var MEGA_CLEARING_INTERVAL = 400; // space between mega-clearing starts
     var MEGA_CLEARING_HEIGHT = 200;
@@ -1117,6 +1161,7 @@
         if (depth < 2) { t = E; }
         else if (isMegaClearingCell(r, c)) { t = E; }
         else if (isClearingCell(r, c)) { t = E; }
+        else if (isMiniClearingCell(r, c)) { t = E; }
         else { t = pickBlock(depth); }
         row[c] = { t: t, hp: (t === E ? 0 : BDEF[t].hp), cr: 0 };
       }
@@ -1218,6 +1263,32 @@
             var bx = batCol * TILE + TILE / 2;
             var by = (zone * CLEARING_INTERVAL + midRow) * TILE + TILE / 2;
             spawnBat(bx, by, zone, bi === 0);
+          }
+        }
+      }
+
+      // ── Mini-clearing: spawn chest ──
+      var miniStart = zone * CLEARING_INTERVAL + MINI_CLEARING_OFFSET;
+      var miniLastRow = miniStart + MINI_CLEARING_HEIGHT - 1;
+      if (r === miniLastRow && zone >= 1 && !miniClearedZones[zone]) {
+        var miniEliminated = false;
+        for (var mcr = miniStart - 5; mcr <= miniStart + MINI_CLEARING_HEIGHT + 5; mcr++) {
+          if (isMegaClearingRow(mcr)) { miniEliminated = true; break; }
+        }
+        if (!miniEliminated) {
+          miniClearedZones[zone] = true;
+          var mShape = getMiniClearingShape(zone);
+          var mBounds = mShape[1]; // middle row
+          if (mBounds) {
+            var chestCol = Math.floor((mBounds.left + mBounds.right) / 2);
+            var chestType = CHEST_TYPES[Math.floor(seededRand(zone * 311) * CHEST_TYPES.length)];
+            chests.push({
+              x: chestCol * TILE + TILE / 2,
+              y: (miniStart + 1) * TILE + TILE / 2,
+              zone: zone,
+              opened: false,
+              type: chestType
+            });
           }
         }
       }
@@ -1385,6 +1456,15 @@
     var items = [];
     var explosions = [];
     var tntBlocks = [];
+
+    // ── Chests in mini-clearings ──
+    var chests = []; // { x, y, zone, opened, type }
+    var CHEST_SIZE = 40;
+    var CHEST_TYPES = [
+      { name: 'Gold',    color: '#ffcc00', glow: '#ffe066', points: 500,  emoji: '💰' },
+      { name: 'Diamond', color: '#44ddff', glow: '#88ffff', points: 1000, emoji: '💎' },
+      { name: 'Ancient', color: '#ff44ff', glow: '#ff88ff', points: 2000, emoji: '👑' }
+    ];
     var tntFuseSounds = {};
     var shakeAmt = 0;
     var shakeDec = 0.88;
@@ -1394,6 +1474,7 @@
       score = 0; maxDepth = 0; parts = []; texts = []; debris = []; announcements = [];
       var ov = document.getElementById('announceOverlay'); if (ov) ov.innerHTML = '';
       worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; clearingCrystals = {}; megaClearedZones = {};
+      chests = []; miniClearedZones = {};
       extraPicks = []; userPicks = []; lastActivity = {};
       doublePickActive = false; doublePickTimer = 0; updateDoublePickHUD();
       stormActive = false; stormTimer = 0; updateStormHUD();
@@ -1925,6 +2006,7 @@
         updateSpins();
         updateZombies();
         checkPickZombieCollisions();
+        checkPickChestCollisions();
         updateBats();
         // ── Mega-clearing: spawn flyers when pick enters the zone ──
         if (pick) {
@@ -2629,6 +2711,36 @@
       }
 
       // blocos TNT caindo
+      // ── Draw chests ──
+      for (var ci = 0; ci < chests.length; ci++) {
+        var ch = chests[ci];
+        if (ch.opened) continue;
+        var chY = ch.y;
+        var chX = ch.x;
+        if (chY < camY - 100 || chY > camY + canvas.height + 100) continue;
+        var t2 = Date.now() * 0.003;
+        var bob = Math.sin(t2 + ci * 2) * 3; // gentle bobbing
+        ctx.save();
+        ctx.translate(chX, chY + bob);
+        // Chest body
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(-CHEST_SIZE / 2, -CHEST_SIZE / 2 + 4, CHEST_SIZE, CHEST_SIZE * 0.6);
+        // Chest lid
+        ctx.fillStyle = '#A0522D';
+        ctx.fillRect(-CHEST_SIZE / 2 - 2, -CHEST_SIZE / 2, CHEST_SIZE + 4, CHEST_SIZE * 0.35);
+        // Lock/gem
+        ctx.fillStyle = ch.type.color;
+        ctx.shadowBlur = 8; ctx.shadowColor = ch.type.glow;
+        ctx.fillRect(-5, -CHEST_SIZE / 2 + 6, 10, 10);
+        ctx.shadowBlur = 0;
+        // Sparkle
+        ctx.globalAlpha = 0.4 + Math.sin(t2 * 2 + ci) * 0.3;
+        ctx.fillStyle = ch.type.glow;
+        ctx.font = '16px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('✨', Math.sin(t2 + ci * 3) * 15, -CHEST_SIZE / 2 - 8);
+        ctx.restore();
+      }
+
       for (var i = 0; i < tntBlocks.length; i++) {
         var b = tntBlocks[i];
         var glowSpeed = b.fuse <= 1 ? 8 : b.fuse <= 3 ? 4 : 1.5;
@@ -3574,6 +3686,38 @@
         zone: zone,
         pts: 600 + zone * 60
       });
+    }
+
+    function checkPickChestCollisions() {
+      var allPicks = [pick].concat(userPicks, extraPicks);
+      for (var ci = chests.length - 1; ci >= 0; ci--) {
+        var ch = chests[ci];
+        if (ch.opened) continue;
+        for (var pi = 0; pi < allPicks.length; pi++) {
+          var p = allPicks[pi];
+          if (!p) continue;
+          var dx = p.x - ch.x, dy = p.y - ch.y;
+          if (Math.sqrt(dx * dx + dy * dy) < CHEST_SIZE) {
+            ch.opened = true;
+            var pts = ch.type.points;
+            score += pts;
+            spawnText(ch.x, ch.y - 30, ch.type.emoji + ' ' + ch.type.name + '! +' + pts, ch.type.color);
+            var pName = p.userName || p.cloneOwner;
+            if (pName) {
+              if (!persistentScores[pName]) persistentScores[pName] = { score: 0, avatar: '' };
+              persistentScores[pName].score += pts;
+            }
+            for (var bi = 0; bi < 5; bi++) {
+              var bType = [DIAMOND, EMERALD, GOLD][Math.floor(Math.random() * 3)];
+              spawnItem(ch.x + (Math.random() - 0.5) * 60, ch.y - 20, bType, p);
+            }
+            shakeAmt = 8;
+            spawnParts(ch.x, ch.y, ch.type.glow, 20);
+            if (_audioStarted) sfxSkillActivate();
+            break;
+          }
+        }
+      }
     }
 
     function checkPickZombieCollisions() {
