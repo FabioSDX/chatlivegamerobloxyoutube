@@ -2324,14 +2324,13 @@
       var reachable = new Set();
       var queue = [];
 
-      // Seed: empty cells in bottom 3 rows of clearing only (water area)
-      var waterTopLocal = CLEARING_HEIGHT - 3;
-      for (var lr = waterTopLocal; lr < CLEARING_HEIGHT; lr++) {
+      // Seed: all empty cells inside clearing
+      for (var lr = 0; lr < CLEARING_HEIGHT; lr++) {
         var b = shape[lr];
         if (!b) continue;
         var row = zoneStart + lr;
         if (!worldMap[row]) continue;
-        for (var c = b.left + 1; c < b.right; c++) {
+        for (var c = b.left; c <= b.right; c++) {
           if (worldMap[row][c] && worldMap[row][c].t === E) {
             reachable.add(row + ',' + c);
             queue.push(row, c);
@@ -2368,15 +2367,8 @@
           }
 
           if (neighborInClearing) {
-            // Inside clearing: only expand within water area bounds, not upward
-            var nLrLocal = nr - zoneStart;
-            if (nLrLocal >= waterTopLocal && nLrLocal < CLEARING_HEIGHT) {
-              var nb2 = shape[nLrLocal];
-              if (nb2 && nc > nb2.left && nc < nb2.right) {
-                reachable.add(nk);
-                queue.push(nr, nc);
-              }
-            }
+            reachable.add(nk);
+            queue.push(nr, nc);
           } else if (insideClearing) {
             if (nr >= qr) { reachable.add(nk); queue.push(nr, nc); }
           } else {
