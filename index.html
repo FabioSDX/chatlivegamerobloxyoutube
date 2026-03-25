@@ -2251,34 +2251,15 @@
 
     function initPool(zone) {
       if (poolVolumes[zone] !== undefined) return;
-      // Calculate initial volume: count CONTAINED empty tiles in bottom 3 rows
-      // A tile is contained if it has solid blocks on both sides and below
+      // Calculate initial volume from clearing shape (no worldMap dependency)
       var shape = getClearingShape(zone);
-      var zoneStart = zone * CLEARING_INTERVAL;
       var vol = 0;
       for (var lr = CLEARING_HEIGHT - 3; lr < CLEARING_HEIGHT; lr++) {
         var b = shape[lr];
         if (!b) continue;
-        var row = zoneStart + lr;
-        if (!worldMap[row]) continue;
-        var belowRow = row + 1;
-        for (var c = b.left + 1; c < b.right; c++) { // skip edge columns
-          if (!worldMap[row][c] || worldMap[row][c].t !== E) continue;
-          // Check floor: below must be solid (or below clearing = solid terrain)
-          var floorOk = false;
-          if (lr === CLEARING_HEIGHT - 1) {
-            // Bottom row: check actual worldMap below
-            if (worldMap[belowRow] && worldMap[belowRow][c] && worldMap[belowRow][c].t !== E) floorOk = true;
-          } else {
-            floorOk = true; // not bottom row, will be supported by water below
-          }
-          if (!floorOk) continue;
-          // Check walls: left and right neighbors at clearing edge must be solid
-          var leftWall = worldMap[row][b.left] && worldMap[row][b.left].t !== E;
-          var rightWall = worldMap[row][b.right] && worldMap[row][b.right].t !== E;
-          if (!leftWall || !rightWall) continue;
-          vol++;
-        }
+        // Count inner tiles (skip 1 from each edge for walls)
+        var width = b.right - b.left - 1;
+        if (width > 0) vol += width;
       }
       poolVolumes[zone] = vol;
     }
