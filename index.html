@@ -1535,7 +1535,7 @@
       score = 0; maxDepth = 0; parts = []; texts = []; debris = []; announcements = [];
       var ov = document.getElementById('announceOverlay'); if (ov) ov.innerHTML = '';
       worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; clearingCrystals = {}; megaClearedZones = {};
-      chests = []; miniClearedZones = {};
+      miniClearedZones = {};
       extraPicks = []; userPicks = []; lastActivity = {};
       doublePickActive = false; doublePickTimer = 0; updateDoublePickHUD();
       stormActive = false; stormTimer = 0; updateStormHUD();
@@ -2067,7 +2067,6 @@
         updateSpins();
         updateZombies();
         checkPickZombieCollisions();
-        checkPickChestCollisions();
         updateBats();
         // ── Mega-clearing: spawn flyers when pick enters the zone ──
         if (pick) {
@@ -3717,38 +3716,6 @@
         zone: zone,
         pts: 600 + zone * 60
       });
-    }
-
-    function checkPickChestCollisions() {
-      var allPicks = [pick].concat(userPicks, extraPicks);
-      for (var ci = chests.length - 1; ci >= 0; ci--) {
-        var ch = chests[ci];
-        if (ch.opened) continue;
-        for (var pi = 0; pi < allPicks.length; pi++) {
-          var p = allPicks[pi];
-          if (!p) continue;
-          var dx = p.x - ch.x, dy = p.y - ch.y;
-          if (Math.sqrt(dx * dx + dy * dy) < CHEST_SIZE) {
-            ch.opened = true;
-            var pts = ch.type.points;
-            score += pts;
-            spawnText(ch.x, ch.y - 30, ch.type.emoji + ' ' + ch.type.name + '! +' + pts, ch.type.color);
-            var pName = p.userName || p.cloneOwner;
-            if (pName) {
-              if (!persistentScores[pName]) persistentScores[pName] = { score: 0, avatar: '' };
-              persistentScores[pName].score += pts;
-            }
-            for (var bi = 0; bi < 5; bi++) {
-              var bType = [DIAMOND, EMERALD, GOLD][Math.floor(Math.random() * 3)];
-              spawnItem(ch.x + (Math.random() - 0.5) * 60, ch.y - 20, bType, p);
-            }
-            shakeAmt = 8;
-            spawnParts(ch.x, ch.y, ch.type.glow, 20);
-            if (_audioStarted) sfxSkillActivate();
-            break;
-          }
-        }
-      }
     }
 
     function checkPickZombieCollisions() {
