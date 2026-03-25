@@ -2290,74 +2290,29 @@
       var cells = new Set();
       var remaining = vol;
 
-      // Scan from well below the clearing upward
-      var scanBottom = zoneStart + CLEARING_HEIGHT + 50;
-      var scanTop = zoneStart;
-
-      for (var row = scanBottom; row >= scanTop && remaining > 0; row--) {
+      // Scan clearing rows bottom-up, strictly within shape bounds
+      for (var lr = CLEARING_HEIGHT - 1; lr >= 0 && remaining > 0; lr--) {
+        var b = shape[lr];
+        if (!b) continue;
+        var row = zoneStart + lr;
         if (!worldMap[row]) continue;
-        var belowRow = row + 1;
-        var localRow = row - zoneStart;
 
-        // Determine scan bounds: use clearing shape if inside, expand if walls broken
-        var baseLeft, baseRight;
-        if (localRow >= 0 && localRow < CLEARING_HEIGHT) {
-          var b = shape[localRow];
-          if (!b) continue;
-          baseLeft = b.left;
-          baseRight = b.right;
-        } else {
-          // Below clearing: use widest of bottom 2 clearing rows
-          var b1 = shape[CLEARING_HEIGHT - 1];
-          var b2 = shape[CLEARING_HEIGHT - 2];
-          if (!b1) continue;
-          baseLeft = b1.left;
-          baseRight = b1.right;
-          if (b2) {
-            if (b2.left < baseLeft) baseLeft = b2.left;
-            if (b2.right > baseRight) baseRight = b2.right;
-          }
-        }
-
-        // Expand bounds if wall blocks are broken (check 3 tiles beyond each side)
-        var expandLeft = baseLeft;
-        var expandRight = baseRight;
-        for (var el = baseLeft - 1; el >= Math.max(0, baseLeft - 3); el--) {
-          if (worldMap[row][el] && worldMap[row][el].t === E) expandLeft = el;
-          else break;
-        }
-        for (var er = baseRight + 1; er <= Math.min(COLS - 1, baseRight + 3); er++) {
-          if (worldMap[row][er] && worldMap[row][er].t === E) expandRight = er;
-          else break;
-        }
-
-        // Collect contained empty cells
+        // Collect empty cells strictly within clearing shape
         var contained = [];
-        for (var c = expandLeft; c <= expandRight; c++) {
+        for (var c = b.left + 1; c < b.right; c++) {
           if (!worldMap[row][c] || worldMap[row][c].t !== E) continue;
-          // Floor check
-          var hasFloor = false;
-          if (worldMap[belowRow] && worldMap[belowRow][c]) {
-            if (worldMap[belowRow][c].t !== E) hasFloor = true;
-            else if (cells.has(belowRow + ',' + c)) hasFloor = true;
-          } else {
-            hasFloor = true; // row not generated yet = solid terrain
+          // Floor check: solid below, water below, or bottom of clearing
+          var hasFloor = (lr === CLEARING_HEIGHT - 1);
+          if (!hasFloor) {
+            var belowRow = row + 1;
+            if (worldMap[belowRow] && worldMap[belowRow][c]) {
+              if (worldMap[belowRow][c].t !== E) hasFloor = true;
+              else if (cells.has(belowRow + ',' + c)) hasFloor = true;
+            } else {
+              hasFloor = true;
+            }
           }
-          // Bottom of clearing always has floor (natural terrain below)
-          if (localRow === CLEARING_HEIGHT - 1) hasFloor = true;
           if (!hasFloor) continue;
-          // Left wall
-          var leftOk = false;
-          for (var lc = c - 1; lc >= 0; lc--) {
-            if (worldMap[row][lc] && worldMap[row][lc].t !== E) { leftOk = true; break; }
-          }
-          if (!leftOk) continue;
-          // Right wall
-          var rightOk = false;
-          for (var rc = c + 1; rc < COLS; rc++) {
-            if (worldMap[row][rc] && worldMap[row][rc].t !== E) { rightOk = true; break; }
-          }
-          if (!rightOk) continue;
           contained.push(c);
         }
         if (contained.length === 0) continue;
@@ -2372,7 +2327,6 @@
         }
       }
 
-      // Volume is conserved — if water couldn't be placed, it stays for next frame
       poolCells[zone] = cells;
     }
 
