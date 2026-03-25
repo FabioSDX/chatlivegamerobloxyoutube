@@ -2431,135 +2431,15 @@
       if (waterSimTick % WATER_SIM_RATE !== 0) return;
       var rStart = Math.max(0, Math.floor(camY / TILE) - 5);
       var rEnd = Math.ceil((camY + canvas.height) / TILE) + 5;
-
-      // ── Phase 1: Gravity — water falls down ──
+      // Simple: water only falls straight down when block below is empty
       for (var r = rEnd; r >= rStart; r--) {
         if (!worldMap[r]) continue;
         for (var c = 0; c < COLS; c++) {
           var cell = worldMap[r][c];
           if (!cell || cell.t !== WATER) continue;
-          // Fall straight down
           if (worldMap[r + 1] && worldMap[r + 1][c] && worldMap[r + 1][c].t === E) {
             worldMap[r + 1][c] = { t: WATER, hp: 1, cr: 0 };
             worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-            continue;
-          }
-          // Fall diagonally
-          var dc = (waterSimTick + c) % 2 === 0 ? -1 : 1;
-          for (var d = 0; d < 2; d++) {
-            var nc = c + (d === 0 ? dc : -dc);
-            if (nc >= 0 && nc < COLS && worldMap[r + 1] && worldMap[r + 1][nc] && worldMap[r + 1][nc].t === E) {
-              worldMap[r + 1][nc] = { t: WATER, hp: 1, cr: 0 };
-              worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-              break;
-            }
-          }
-          // Side has no block? check for lower level
-          if (worldMap[r][c] && worldMap[r][c].t === WATER) {
-            var sdc = (waterSimTick + r) % 2 === 0 ? -1 : 1;
-            for (var sd = 0; sd < 2; sd++) {
-              var sc = c + (sd === 0 ? sdc : -sdc);
-              if (sc < 0 || sc >= COLS) continue;
-              if (!worldMap[r] || !worldMap[r][sc]) continue;
-              if (worldMap[r][sc].t !== E) continue;
-              var hasDropBelow = false;
-              for (var dr = r + 1; dr <= r + 5 && dr <= rEnd; dr++) {
-                if (!worldMap[dr]) break;
-                var belowSide = worldMap[dr][sc];
-                if (!belowSide || belowSide.t === E) { hasDropBelow = true; break; }
-                if (belowSide.t !== WATER) break;
-              }
-              if (hasDropBelow) {
-                worldMap[r][sc] = { t: WATER, hp: 1, cr: 0 };
-                worldMap[r][c] = { t: E, hp: 0, cr: 0 };
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      // ── Phase 2: Surface drain — pull water down from row above ──
-      for (var r = rEnd; r >= rStart + 1; r--) {
-        if (!worldMap[r] || !worldMap[r - 1]) continue;
-        for (var c = 0; c < COLS; c++) {
-          // If this cell is empty and cell above has water, pull it down
-          if (worldMap[r][c] && worldMap[r][c].t === E) {
-            var above = worldMap[r - 1][c];
-            if (above && above.t === WATER) {
-              worldMap[r][c] = { t: WATER, hp: 1, cr: 0 };
-              worldMap[r - 1][c] = { t: E, hp: 0, cr: 0 };
-            }
-          }
-        }
-      }
-
-      // ── Phase 3: Level water — equalize heights between adjacent columns ──
-      // For each column, find the top water tile. If neighbor column's top is lower, move water there.
-      for (var c = 0; c < COLS; c++) {
-        // Find topmost water in this column (within visible range)
-        var myTop = -1, myBot = -1;
-        for (var r = rStart; r <= rEnd; r++) {
-          if (!worldMap[r]) continue;
-          var cell = worldMap[r][c];
-          if (cell && cell.t === WATER) {
-            if (myTop === -1) myTop = r;
-            myBot = r;
-          }
-        }
-        if (myTop === -1) continue;
-        var myHeight = myBot - myTop + 1;
-        // Check neighbor (alternate direction per tick)
-        var nc = c + ((waterSimTick + c) % 2 === 0 ? 1 : -1);
-        if (nc < 0 || nc >= COLS) continue;
-        // Find topmost water in neighbor column
-        var nTop = -1, nBot = -1;
-        for (var r = rStart; r <= rEnd; r++) {
-          if (!worldMap[r]) continue;
-          var cell = worldMap[r][nc];
-          if (cell && cell.t === WATER) {
-            if (nTop === -1) nTop = r;
-            nBot = r;
-          }
-        }
-        var nHeight = nTop === -1 ? 0 : (nBot - nTop + 1);
-        // If my column is 2+ tiles taller, move top water to neighbor's level
-        if (myHeight > nHeight + 1) {
-          // Target row: one above neighbor's top, or same as my bottom if neighbor is empty
-          var targetRow = nTop === -1 ? myBot : (nTop - 1);
-          if (targetRow < rStart) continue;
-          if (!worldMap[targetRow]) continue;
-          var targetCell = worldMap[targetRow][nc];
-          if (targetCell && targetCell.t === E) {
-            worldMap[targetRow][nc] = { t: WATER, hp: 1, cr: 0 };
-            worldMap[myTop][c] = { t: E, hp: 0, cr: 0 };
-          }
-        }
-      }
-
-      // ── Phase 4: Eliminate sparse rows — if gaps >= water tiles, remove row ──
-      for (var r = rStart; r <= rEnd; r++) {
-        if (!worldMap[r]) continue;
-        var waterCols = [];
-        var gapCount = 0;
-        for (var c = 0; c < COLS; c++) {
-          var cell = worldMap[r][c];
-          if (!cell) continue;
-          if (cell.t === WATER) {
-            waterCols.push(c);
-          } else if (cell.t === E) {
-            var hasWN = false;
-            if (c > 0 && worldMap[r][c - 1] && worldMap[r][c - 1].t === WATER) hasWN = true;
-            if (c < COLS - 1 && worldMap[r][c + 1] && worldMap[r][c + 1].t === WATER) hasWN = true;
-            if (hasWN) {
-              var bC = worldMap[r + 1] ? worldMap[r + 1][c] : null;
-              if (bC && bC.t !== E) gapCount++;
-            }
-          }
-        }
-        if (waterCols.length > 0 && gapCount >= waterCols.length) {
-          for (var wi = 0; wi < waterCols.length; wi++) {
-            worldMap[r][waterCols[wi]] = { t: E, hp: 0, cr: 0 };
           }
         }
       }
