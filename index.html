@@ -5556,17 +5556,18 @@
       var sucEl = document.getElementById('apiSetupSuccess');
       var errEl = document.getElementById('apiSetupError');
       errEl.style.display = 'none'; sucEl.style.display = 'none';
-      if (!_activeApiKey) { errEl.style.display = 'block'; errEl.textContent = 'Connect an API key first (Test & Connect).'; return; }
+      var apiKey = getCurrentApiKey();
+      if (!apiKey) { errEl.style.display = 'block'; errEl.textContent = 'Connect an API key first (Test & Connect).'; return; }
       if (!input) { errEl.style.display = 'block'; errEl.textContent = 'Enter a live video URL or ID.'; return; }
       // Extract video ID from various URL formats
       var videoId = input;
       var urlMatch = input.match(/[?&]v=([a-zA-Z0-9_-]{11})/) || input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) || input.match(/\/live\/([a-zA-Z0-9_-]{11})/) || input.match(/^([a-zA-Z0-9_-]{11})$/);
       if (urlMatch) videoId = urlMatch[1];
       videoId = videoId.replace(/[^a-zA-Z0-9_-]/g, '');
-      console.log('[ConnectLive] Input:', input, '→ videoId:', videoId, 'apiKey:', _activeApiKey ? 'set' : 'EMPTY', 'channelId:', _userChannelId);
+      console.log('[ConnectLive] Input:', input, '→ videoId:', videoId, 'apiKey:', apiKey ? 'set' : 'EMPTY', 'channelId:', _userChannelId);
       if (!videoId || videoId.length < 8) { errEl.style.display = 'block'; errEl.textContent = 'Invalid video ID or URL.'; return; }
       btn.textContent = 'Connecting...'; btn.disabled = true;
-      fetch('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=' + encodeURIComponent(videoId) + '&key=' + encodeURIComponent(_activeApiKey))
+      fetch('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=' + encodeURIComponent(videoId) + '&key=' + encodeURIComponent(apiKey))
       .then(function(r) { return r.json().catch(function() { throw new Error('Network error: ' + r.status); }); })
       .then(function(data) {
         console.log('[ConnectLive] API response:', JSON.stringify(data).substring(0, 300));
@@ -6259,7 +6260,8 @@
 
     var _resolvingLive = false;
     function resolveLive(callback) {
-      if (_resolvingLive || !_apiConnected || !_activeApiKey || !_userChannelId) {
+      var apiKey = getCurrentApiKey();
+      if (_resolvingLive || !_apiConnected || !apiKey || !_userChannelId) {
         if (callback) callback(false);
         return;
       }
@@ -6270,13 +6272,19 @@
       if (dotLive) { dotLive.classList.remove('online'); dotLive.classList.add('warning'); }
 
       // Search for active live stream directly via YouTube API
-      fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=' + encodeURIComponent(_userChannelId) + '&type=video&eventType=live&key=' + encodeURIComponent(_activeApiKey))
+      fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=' + encodeURIComponent(_userChannelId) + '&type=video&eventType=live&key=' + encodeURIComponent(apiKey))
       .then(function(r) { return r.json().catch(function() { throw new Error('Network error: ' + r.status); }); })
       .then(function(data) {
         console.log('[resolveLive] search response:', JSON.stringify(data).substring(0, 300));
         if (data.error) {
           console.warn('[resolveLive] API error:', data.error.message, 'code:', data.error.code);
           _resolvingLive = false;
+          // Only mark key failed on quota/403
+          if (data.error.code === 403) {
+            markKeyFailed(apiKey, 'quota/403 on search');
+          } else {
+            getNextApiKey(); // rotate, don't remove
+          }
           if (dotLive) { dotLive.classList.remove('online'); dotLive.classList.add('warning'); }
           if (txtLive) { txtLive.textContent = 'Live: Error ' + (data.error.code || ''); txtLive.style.color = '#ff4444'; }
           if (callback) callback(false);
@@ -6293,8 +6301,8 @@
         }
         var videoId = data.items[0].id.videoId;
         console.log('[resolveLive] Found live video:', videoId);
-        // Get liveChatId from video details
-        return fetch('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=' + encodeURIComponent(videoId) + '&key=' + encodeURIComponent(_activeApiKey))
+        var apiKey2 = getCurrentApiKey(); // get fresh key for second call
+        return fetch('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=' + encodeURIComponent(videoId) + '&key=' + encodeURIComponent(apiKey2))
         .then(function(r) { return r.json().catch(function() { throw new Error('Network error: ' + r.status); }); })
         .then(function(vdata) {
           _resolvingLive = false;
@@ -6321,7 +6329,9 @@
     var _nextPageToken = '';
     var _lastResolveTry = 0;
     function checkConnection() {
-      if (!_apiConnected || !_activeApiKey || !_userChannelId) return;
+      if (!_apiConnected || !_userChannelId) return;
+      var apiKey = getCurrentApiKey();
+      if (!apiKey) return;
 
       // If no liveChatId, try to auto-resolve every 60s
       if (!_liveChatId) {
@@ -6342,7 +6352,7 @@
       }
 
       // Fetch live chat messages directly from YouTube API
-      var chatUrl = 'https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=' + encodeURIComponent(_liveChatId) + '&part=snippet,authorDetails&maxResults=200&key=' + encodeURIComponent(_activeApiKey);
+      var chatUrl = 'https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=' + encodeURIComponent(_liveChatId) + '&part=snippet,authorDetails&maxResults=200&key=' + encodeURIComponent(apiKey);
       if (_nextPageToken) chatUrl += '&pageToken=' + encodeURIComponent(_nextPageToken);
 
       fetch(chatUrl)
@@ -6356,7 +6366,7 @@
           if (data.error) {
             var errMsg = data.error.message || '';
             var errCode = data.error.code || 0;
-            var usedKey = _activeApiKey; // capture before rotation
+            var usedKey = apiKey; // capture before rotation
             // Quota exceeded or forbidden — remove this key, keep polling with others
             if (errCode === 403 || errMsg.toLowerCase().indexOf('quota') !== -1) {
               console.warn('[checkConnection] Key quota/403, removing:', usedKey.substring(0, 8) + '...', errMsg);
