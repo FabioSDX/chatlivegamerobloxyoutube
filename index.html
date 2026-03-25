@@ -2318,6 +2318,7 @@
       if (vol <= 0) { poolCells[zone] = new Set(); return; }
 
       var clearingBottom = zoneStart + CLEARING_HEIGHT;
+      var breached = isPoolBreached(zone);
 
       // Phase 1: Find reachable empty cells via BFS from clearing
       var reachable = new Set();
@@ -2371,8 +2372,14 @@
           } else if (insideClearing) {
             if (nr >= qr) { reachable.add(nk); queue.push(nr, nc); }
           } else {
-            // Outside clearing: ONLY straight down, no lateral movement
-            if (nr > qr && nc === qc) { reachable.add(nk); queue.push(nr, nc); }
+            // Outside clearing
+            if (breached) {
+              // Breached: water flows down and laterally (spreading while draining)
+              if (nr >= qr) { reachable.add(nk); queue.push(nr, nc); }
+            } else {
+              // Intact: only straight down
+              if (nr > qr && nc === qc) { reachable.add(nk); queue.push(nr, nc); }
+            }
           }
         }
       }
@@ -2402,7 +2409,7 @@
       }
 
       // Volume is conserved unless pool is breached (wall/floor broken)
-      if (isPoolBreached(zone)) {
+      if (breached) {
         // Drain slowly: lose 1 volume every few draw calls
         if (!poolVolumes[zone + '_drainTick']) poolVolumes[zone + '_drainTick'] = 0;
         poolVolumes[zone + '_drainTick']++;
