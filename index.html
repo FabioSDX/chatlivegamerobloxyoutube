@@ -2309,16 +2309,13 @@
         if (contained.length === 0) continue;
 
         if (contained.length <= remaining) {
+          // Full row: fill everything
           for (var i = 0; i < contained.length; i++) {
             cells.add(row + ',' + contained[i]);
           }
           remaining -= contained.length;
         } else {
-          // Partial fill: center
-          var start = Math.floor((contained.length - remaining) / 2);
-          for (var i = start; i < start + remaining; i++) {
-            cells.add(row + ',' + contained[i]);
-          }
+          // Not enough water to fill this entire row — stop here (keep surface flat)
           remaining = 0;
         }
       }
