@@ -1026,6 +1026,11 @@
       if (r < CLEARING_INTERVAL) return false;
       var zone = Math.floor(r / CLEARING_INTERVAL);
       var zoneStart = zone * CLEARING_INTERVAL;
+      var zoneEnd = zoneStart + CLEARING_HEIGHT;
+      // Skip if this clearing overlaps or is near a mega-clearing (10 row buffer)
+      for (var cr = zoneStart - 10; cr <= zoneEnd + 10; cr++) {
+        if (isMegaClearingRow(cr)) return false;
+      }
       var localRow = r - zoneStart;
       if (localRow < 0 || localRow >= CLEARING_HEIGHT) return false;
       var shape = getClearingShape(zone);
@@ -1170,7 +1175,14 @@
 
       // Spawn zombies inside the clearing (last empty row)
       var lastEmptyRow = zone * CLEARING_INTERVAL + CLEARING_HEIGHT - 1;
-      if (r === lastEmptyRow && zone >= 1 && !clearedZones[zone]) {
+      // Skip if clearing is eliminated (near mega-clearing)
+      var clearingEliminated = false;
+      var czStart = zone * CLEARING_INTERVAL;
+      var czEnd = czStart + CLEARING_HEIGHT;
+      for (var czr = czStart - 10; czr <= czEnd + 10; czr++) {
+        if (isMegaClearingRow(czr)) { clearingEliminated = true; break; }
+      }
+      if (r === lastEmptyRow && zone >= 1 && !clearedZones[zone] && !clearingEliminated) {
         clearedZones[zone] = true;
         if (typeof zombies !== 'undefined' && zombies) {
           var shape = getClearingShape(zone);
@@ -2246,7 +2258,14 @@
     var poolCells = {};   // { zone: Set of "r,c" strings that are water this frame }
 
     function hasPool(zone) {
-      return zone >= 2 && zone % 2 === 0;
+      if (zone < 2 || zone % 2 !== 0) return false;
+      // No pool if clearing overlaps with mega-clearing
+      var zoneStart = zone * CLEARING_INTERVAL;
+      var zoneEnd = zoneStart + CLEARING_HEIGHT;
+      for (var cr = zoneStart - 10; cr <= zoneEnd + 10; cr++) {
+        if (isMegaClearingRow(cr)) return false;
+      }
+      return true;
     }
 
     function initPool(zone) {
