@@ -541,6 +541,13 @@
         var hs = b.mega ? TILE * 0.9 : TILE * 0.5;
         b.blinkTimer++;
         b.vy += TNT_GRAVITY;
+        // TNT floats in water
+        if (isInWater(b.x, b.y)) {
+          b.vx *= 0.9;
+          b.vy *= 0.8;
+          b.vy -= TNT_GRAVITY * 1.2; // strong buoyancy — TNT floats
+          b.spin = (b.spin || 0) * 0.95; // slow rotation in water
+        }
         b.ang = (b.ang || 0) + (b.spin || 0);
 
         // sanitizar NaN/Infinity
@@ -1545,7 +1552,12 @@
       function updateItems() {
         for (var i = items.length - 1; i >= 0; i--) {
           var it = items[i];
-          if (it.wait > 0) { it.wait--; it.vx *= 0.96; it.vy += 0.3; it.x += it.vx; it.y += it.vy; continue; }
+          if (it.wait > 0) {
+            it.wait--; it.vx *= 0.96; it.vy += 0.3;
+            // Items float in water
+            if (isInWater(it.x, it.y)) { it.vx *= 0.9; it.vy *= 0.8; it.vy -= 0.35; }
+            it.x += it.vx; it.y += it.vy; continue;
+          }
           var target = it.owner || pick;
           var dx = target.x - it.x, dy = target.y - it.y;
           var dist = Math.sqrt(dx * dx + dy * dy);
@@ -3639,7 +3651,9 @@
           z.animTimer += ZOMBIE_ANIMS.dead.speed;
           if (z.animTimer >= ZOMBIE_ANIMS.dead.count) z.animTimer = ZOMBIE_ANIMS.dead.count - 0.01;
           // still apply gravity so corpse falls
-          z.vy += ZG; z.y += z.vy;
+          z.vy += ZG;
+          if (isInWater(z.x, z.y)) { z.vx *= 0.85; z.vy *= 0.8; z.vy -= ZG * 0.8; }
+          z.y += z.vy;
           var dFootRow = Math.floor((z.y + ZOMBIE_SIZE * 0.5) / TILE);
           var dGround = getCell(dFootRow, Math.floor(z.x / TILE));
           if (dGround && dGround.t !== E) { z.y = dFootRow * TILE - ZOMBIE_SIZE * 0.5; z.vy = 0; }
@@ -3652,7 +3666,9 @@
           z.hurtTimer--;
           z.animTimer += ZOMBIE_ANIMS.hurt.speed;
           // apply gravity during hurt
-          z.vy += ZG; z.y += z.vy;
+          z.vy += ZG;
+          if (isInWater(z.x, z.y)) { z.vx *= 0.85; z.vy *= 0.8; z.vy -= ZG * 0.7; }
+          z.y += z.vy;
           var hFootRow = Math.floor((z.y + ZOMBIE_SIZE * 0.5) / TILE);
           var hGround = getCell(hFootRow, Math.floor(z.x / TILE));
           if (hGround && hGround.t !== E) { z.y = hFootRow * TILE - ZOMBIE_SIZE * 0.5; z.vy = 0; }
@@ -3686,6 +3702,12 @@
         // ── Physics ──
         var wasGrounded = z.grounded;
         z.vy += ZG;
+        // Water interaction: zombies slow down and float
+        if (isInWater(z.x, z.y)) {
+          z.vx *= 0.88;
+          z.vy *= 0.85;
+          z.vy -= ZG * 0.7; // buoyancy
+        }
         z.x += z.vx;
         z.y += z.vy;
 
