@@ -2256,15 +2256,21 @@
                 shakeAmt = 20;
               }
             }
-            // Continuous reinforcement every 90 frames (~1.5s) — always bats
-            if (mz >= 0 && megaClearedZones[mz]) {
+            // Continuous reinforcement every 120 frames (~2s) — only while gate is closed
+            if (mz >= 0 && megaClearedZones[mz] && !megaClearedZones[mz + '_gateOpen']) {
               megaClearedZones[mz + '_tick'] = (megaClearedZones[mz + '_tick'] || 0) + 1;
-              if (megaClearedZones[mz + '_tick'] % 90 === 0 && bats.length < MAX_BATS_MEGA) {
+              if (megaClearedZones[mz + '_tick'] % 120 === 0 && bats.length < MAX_BATS_MEGA * 0.7) {
                 var rx = (1 + Math.floor(Math.random() * (COLS - 2))) * TILE + TILE / 2;
-                var ry = pick.y + 200 + Math.random() * 400;
+                // Spawn around player, not just below
+                var ry = pick.y + (Math.random() - 0.3) * 600;
                 var ryRow = Math.floor(ry / TILE);
+                // Clamp to mega-clearing bounds (not near edges)
+                var mStartRow = getMegaStart(mz >= 0 ? mz : 0);
+                if (ryRow < mStartRow + 10) ryRow = mStartRow + 10;
+                if (ryRow > mStartRow + MEGA_CLEARING_HEIGHT - 20) ryRow = mStartRow + MEGA_CLEARING_HEIGHT - 20;
+                ry = ryRow * TILE + TILE / 2;
                 if (isMegaClearingRow(ryRow)) {
-                  spawnBat(rx, ry, mz, Math.random() < 0.2);
+                  spawnBat(rx, ry, mz, Math.random() < 0.15);
                 }
               }
             }
