@@ -872,18 +872,22 @@
     <script>
         var canvas = document.getElementById('gameCanvas');
         var ctx = canvas.getContext('2d');
-        var COLS = 15, TILE = 72;
-        var VIS = 27;
-        canvas.width = COLS * TILE;
-        canvas.height = VIS * TILE;
-
 
         // ── Mobile detection & performance scaling ──
         var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-        var MAX_PARTS = isMobile ? 40 : 300;
-        var MAX_DEBRIS = isMobile ? 30 : 100;
-        var MAX_TEXTS = isMobile ? 12 : 30;
+
+        var COLS = 15, TILE = isMobile ? 48 : 72;
+        var VIS = isMobile ? 40 : 27; // more rows visible at smaller tile size
+        canvas.width = COLS * TILE;
+        canvas.height = VIS * TILE;
+
+        var MAX_PARTS = isMobile ? 20 : 300;
+        var MAX_DEBRIS = isMobile ? 15 : 100;
+        var MAX_TEXTS = isMobile ? 6 : 30;
+        var MAX_ITEMS = 30;
         var SHADOW_ENABLED = !isMobile;
+        var SHIMMER_ENABLED = !isMobile;
+        var BG_DETAIL = isMobile ? 0 : 1; // 0=simple, 1=full crystals
         // ── Tipos ──
         var E = 0, DIRT = 1, STONE = 2, COAL = 3, IRON = 4, GOLD = 5, REDSTONE = 6, DIAMOND = 7, EMERALD = 8, BEDROCK = 9,
             GRASS = 10, ANDESITE = 11, DIORITE = 12, GRANITE = 13, COBBLE = 14, MOSSY = 15, COPPER = 16, LAPIS = 17, OBSIDIAN = 18;
@@ -1969,7 +1973,6 @@
         // ── Estado ───────────────────────────────────────────────────────────────────
         var maxDepth = 0;
         var parts = [], texts = [], debris = [];
-        var MAX_PARTS = 200, MAX_TEXTS = 50, MAX_DEBRIS = 150, MAX_ITEMS = 30;
         var announcements = [];
         var persistentScores = {};
 
@@ -2661,7 +2664,7 @@
             }
         }
         function drawTormentaAura(p) {
-            if (!tormentaActive || !p) return;
+            if (!tormentaActive || !p || isMobile) return;
             ctx.save();
             var pulse = 0.8 + Math.sin(tormentaTimer * 0.15) * 0.2;
             var r = TORMENTA_RADIUS * pulse;
@@ -3132,6 +3135,15 @@
             var W = canvas.width, H = canvas.height;
             var t = Math.min(1, camY / (60 * TILE));
 
+            // Mobile: simple gradient background only
+            if (BG_DETAIL === 0) {
+                var pal = bgPalette(Math.floor(camY / TILE));
+                var sg = ctx.createLinearGradient(0, 0, 0, H);
+                sg.addColorStop(0, pal.top); sg.addColorStop(1, pal.bot);
+                ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+                return;
+            }
+
             // gradiente de fundo
             var chunkMid = Math.floor((camY / TILE + VIS / 2) / BG_CHUNK);
             var pal = (getBgChunk(chunkMid)).pal;
@@ -3594,7 +3606,7 @@
                         ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
                     }
                     // Ore shimmer — brightens only the colored mineral pixels
-                    if (_oreShimmer[cell.t]) {
+                    if (SHIMMER_ENABLED && _oreShimmer[cell.t]) {
                         var phase = _shimmerTime + r * 0.7 + c * 0.5;
                         var glow = (Math.sin(phase) + 1) * 0.5;
                         var alpha = 0.05 + glow * 0.2;
