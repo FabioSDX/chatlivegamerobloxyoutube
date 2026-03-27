@@ -6298,28 +6298,60 @@
         // ── Monitor de Conexão e Chat ────────────────────────────────────────────────
         var processedComments = new Set();
         var avatarCache = {};
-        var _avatarLoading = {}; // prevent duplicate fetches
+        var _avatarLoading = {};
         var _firstFetchDone = false;
+
+        // Load avatar image cache from localStorage
+        var _avatarDataCache = {};
+        try {
+            _avatarDataCache = JSON.parse(localStorage.getItem('pd_avatar_data') || '{}');
+        } catch(e) { _avatarDataCache = {}; }
+
+        function _saveAvatarDataCache() {
+            try {
+                // Keep max 50 entries to avoid localStorage bloat
+                var keys = Object.keys(_avatarDataCache);
+                if (keys.length > 50) {
+                    keys.slice(0, keys.length - 50).forEach(function(k) { delete _avatarDataCache[k]; });
+                }
+                localStorage.setItem('pd_avatar_data', JSON.stringify(_avatarDataCache));
+            } catch(e) {}
+        }
 
         function loadAvatar(url) {
             if (!url || avatarCache[url] || _avatarLoading[url]) return;
+
+            // Try cached data URL first (instant, no network)
+            if (_avatarDataCache[url]) {
+                var cached = new Image();
+                cached.onload = function() { avatarCache[url] = cached; };
+                cached.src = _avatarDataCache[url];
+                _avatarLoading[url] = true;
+                return;
+            }
+
             _avatarLoading[url] = true;
-            // Use fetch + blob to bypass CORS issues with ggpht.com
             fetch(url, { mode: 'cors' }).then(function(r) {
                 if (!r.ok) throw new Error(r.status);
                 return r.blob();
             }).then(function(blob) {
-                var blobUrl = URL.createObjectURL(blob);
-                var img = new Image();
-                img.onload = function() { avatarCache[url] = img; };
-                img.src = blobUrl;
+                // Convert to data URL for localStorage persistence
+                var reader = new FileReader();
+                reader.onloadend = function() {
+                    var dataUrl = reader.result;
+                    _avatarDataCache[url] = dataUrl;
+                    _saveAvatarDataCache();
+                    var img = new Image();
+                    img.onload = function() { avatarCache[url] = img; };
+                    img.src = dataUrl;
+                };
+                reader.readAsDataURL(blob);
             }).catch(function() {
-                // Fallback: try direct load (works for some CDNs)
                 var img = new Image();
                 img.onload = function() { if (img.naturalWidth > 0) avatarCache[url] = img; };
                 img.src = url;
             });
-        } // skip commands on first fetch
+        }
 
         // Restore ALL avatars from persistentScores into avatarCache on load
         (function () {
@@ -6807,12 +6839,15 @@
             var html = '';
             sorted.forEach((u, i) => {
                 var av = u.userAvatarUrl || '';
+                // Use blob URL from avatarCache if available (already loaded)
+                var cachedImg = avatarCache[av];
+                var avSrc = (cachedImg && cachedImg.src && cachedImg.naturalWidth > 0) ? cachedImg.src : av;
                 var pickImg = u.pickaxe ? u.pickaxe.img : 'pickaxe/wooden_pickaxe.png';
                 var pickName = u.pickaxe ? u.pickaxe.name : 'Wood';
                 var pickColor = u.pickaxe ? u.pickaxe.color : '#c8a464';
                 var rClass = rankClass[i] || '';
                 var rankLabel = i < 3 ? rankEmoji[i] : '#' + (i + 1);
-                html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${av}" onerror="this.src='pickaxe/wooden_pickaxe.png'"><span class="lb-name">${u.userName}</span><img class="lb-pickaxe" src="${pickImg}" title="${pickName}"><span class="lb-score" style="color:${pickColor}">${Math.floor(u.score || 0)}</span></div>`;
+                html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${avSrc}" onerror="this.onerror=null;this.style.display='none'"><span class="lb-name">${u.userName}</span><img class="lb-pickaxe" src="${pickImg}" title="${pickName}"><span class="lb-score" style="color:${pickColor}">${Math.floor(u.score || 0)}</span></div>`;
             });
             list.innerHTML = html;
         }
