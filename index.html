@@ -158,60 +158,62 @@
         .announce-card {
             pointer-events: none;
             text-align: center;
-            padding: 18px 48px;
-            border-radius: 16px;
-            background: rgba(0, 0, 0, 0.80);
-            margin-bottom: 12px;
-            animation: announceIn 0.35s ease-out forwards;
+            padding: 6px 16px;
+            border-radius: 8px;
+            background: none;
+            margin-bottom: 6px;
+            animation: announceIn 0.3s ease-out forwards;
         }
 
         .announce-card.fade-out {
-            animation: announceOut 0.5s ease-in forwards;
+            animation: announceOut 0.4s ease-in forwards;
         }
 
         .announce-card .announce-icon {
-            font-size: 40px;
+            font-size: 28px;
         }
 
         .announce-card .announce-title {
-            font-size: 26px;
-            font-weight: bold;
-            margin: 4px 0;
+            font-size: 20px;
+            font-weight: 900;
+            margin: 2px 0;
         }
 
         .announce-avatar {
-            width: 64px;
-            height: 64px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 3px solid #fff;
+            border: 2px solid #fff;
             object-fit: cover;
-            margin: 0 auto 6px;
+            margin: 0 auto 4px;
             display: block;
         }
 
         .announce-avatar-placeholder {
-            width: 64px;
-            height: 64px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 3px solid #fff;
-            margin: 0 auto 6px;
+            border: 2px solid #fff;
+            margin: 0 auto 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 16px;
             background: rgba(255, 255, 255, 0.1);
         }
 
         .announce-card .announce-name {
-            font-size: 20px;
+            font-size: 14px;
             font-weight: bold;
             color: #fff;
+            text-shadow: 0 1px 4px #000;
         }
 
         .announce-card .announce-pts {
-            font-size: 16px;
-            margin-top: 4px;
+            font-size: 13px;
+            margin-top: 2px;
             opacity: 0.85;
+            text-shadow: 0 1px 3px #000;
         }
 
         @keyframes announceIn {
@@ -2418,21 +2420,14 @@
             var overlay = document.getElementById('announceOverlay');
             var card = document.createElement('div');
             card.className = 'announce-card';
-            card.style.border = '2px solid ' + color;
-            card.style.boxShadow = '0 0 30px ' + color;
-            var avatarHtml = '';
-            if (avatarUrl) {
-                avatarHtml = '<img class="announce-avatar" src="' + avatarUrl + '" style="border-color:' + color + ';box-shadow:0 0 12px ' + color + '" />';
-            }
             card.innerHTML =
-                avatarHtml +
-                '<div class="announce-title" style="color:' + color + ';text-shadow:0 0 12px ' + color + ';font-size:clamp(18px,8vw,36px);">' + label + '</div>' +
-                (userName ? '<div class="announce-name">' + userName + '</div>' : '');
+                '<div class="announce-title" style="color:' + color + ';text-shadow:0 0 15px ' + color + ',0 1px 4px #000;font-size:clamp(16px,6vw,28px);">' + label + '</div>' +
+                (userName ? '<div class="announce-name" style="color:' + color + ';opacity:0.7;">' + userName + '</div>' : '');
             overlay.appendChild(card);
             setTimeout(function () {
                 card.classList.add('fade-out');
-                setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 500);
-            }, 1200);
+                setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 400);
+            }, 1000);
         }
         function sfxCombo(count) {
             var ac = getAC(); if (!ac) return;
@@ -2469,12 +2464,10 @@
             var overlay = document.getElementById('announceOverlay');
             var card = document.createElement('div');
             card.className = 'announce-card';
-            card.style.border = '2px solid #ff4400';
-            card.style.boxShadow = '0 0 40px #ff4400, 0 0 80px #ff8800';
             card.innerHTML =
-                '<div class="announce-icon">🔥</div>' +
-                '<div class="announce-title" style="color:#ff4400;text-shadow:0 0 20px #ff4400,0 0 40px #ff8800;font-size:clamp(22px,10vw,48px);">FIRESTORM</div>' +
-                '<div class="announce-pts" style="color:#ffcc00;animation:comboShake 0.5s ease infinite;">TOTAL DESTRUCTION</div>';
+                '<div style="font-size:20px;">🔥</div>' +
+                '<div class="announce-title" style="color:#ff4400;text-shadow:0 0 15px #ff4400,0 0 30px #ff8800,0 1px 4px #000;font-size:clamp(18px,8vw,32px);">FIRESTORM</div>' +
+                '<div class="announce-pts" style="color:#ffcc00;text-shadow:0 0 8px #ff8800,0 1px 3px #000;">TOTAL DESTRUCTION</div>';
             overlay.appendChild(card);
             setTimeout(function () {
                 card.classList.add('fade-out');
