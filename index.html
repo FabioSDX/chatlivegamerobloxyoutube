@@ -2423,10 +2423,13 @@
 
         // ── Tormenta Powerup ────────────────────────────────────────────────────
         function activateTormenta(p) {
-            // Allow tormenta even if already in storm — combo reward overrides
-            p.stormTimer = TORMENTA_DURATION;
+            // Activate fire aura that kills enemies in radius
+            tormentaActive = true;
+            tormentaTimer = TORMENTA_DURATION;
+            tormentaPick = p;
             p.combo = 0;
-            // Kick for ping-pong mode
+            // Also activate ping-pong bounce mode
+            p.stormTimer = TORMENTA_DURATION;
             p.vx = (Math.random() - 0.5) * 25;
             p.vy = -18;
             p.stuck = false;
