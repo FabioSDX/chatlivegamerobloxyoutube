@@ -3973,6 +3973,11 @@
                     var _ri2 = new Image(); _ri2.src = up.userAvatarUrl; avatarCache[up.userAvatarUrl] = _ri2;
                 }
                 var avImg = avatarCache[up.userAvatarUrl];
+                // DEBUG: log avatar status once per player
+                if (!up._avatarLogged) {
+                    up._avatarLogged = true;
+                    console.log('[Avatar]', up.userName, 'url:', up.userAvatarUrl ? up.userAvatarUrl.substring(0, 60) : 'EMPTY', 'inCache:', !!avImg, 'complete:', avImg ? avImg.complete : '-', 'natW:', avImg ? avImg.naturalWidth : '-');
+                }
                 var avSize = isMobile ? 32 : 48;
                 var avY = up.y - PICK_HALF - (isMobile ? 30 : 44);
                 if (avImg && avImg.complete && avImg.naturalWidth > 0) {
