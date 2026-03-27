@@ -2146,10 +2146,28 @@
             var ceiling = camY;
             if (p.y - r < ceiling) { p.y = ceiling + r; p.vy = Math.abs(p.vy) * (hasPingPong ? 1.0 : BOUNCE); }
 
-            // Canvas Edges Bounce (Ping Pong)
-            if (hasPingPong) {
-                if (p.x - r < 0) { p.x = r; p.vx = Math.abs(p.vx); }
-                else if (p.x + r > canvas.width) { p.x = canvas.width - r; p.vx = -Math.abs(p.vx); }
+            // ── Robust boundary system — prevent escaping the map ──
+            var wallL = TILE + r + 1;       // inside left bedrock
+            var wallR = (COLS - 1) * TILE - r - 1; // inside right bedrock
+            var floor = camY + canvas.height + 600; // max fall distance below camera
+
+            // Left wall
+            if (p.x < wallL) { p.x = wallL; p.vx = Math.abs(p.vx) * BOUNCE; }
+            // Right wall
+            if (p.x > wallR) { p.x = wallR; p.vx = -Math.abs(p.vx) * BOUNCE; }
+            // Floor — teleport back if fell too far
+            if (p.y > floor) {
+                p.x = TILE * 2 + Math.random() * ((COLS - 4) * TILE);
+                p.y = camY + canvas.height * 0.3;
+                p.vx = (Math.random() - 0.5) * 4;
+                p.vy = -3;
+                p.stuck = false; p.stuckTimer = 0;
+            }
+            // NaN/Infinity safety
+            if (!isFinite(p.x) || !isFinite(p.y)) {
+                p.x = TILE * 2 + Math.random() * ((COLS - 4) * TILE);
+                p.y = camY + canvas.height * 0.3;
+                p.vx = 0; p.vy = 0;
             }
 
             p.ang += p.spin;
