@@ -3847,10 +3847,10 @@
                     ctx.save();
                     // Auto-reload owner avatar if missing from cache
                     if (pick.userAvatarUrl && !avatarCache[pick.userAvatarUrl]) {
-                        var _oi = new Image(); _oi.src = pick.userAvatarUrl; avatarCache[pick.userAvatarUrl] = _oi;
+                        loadAvatar(pick.userAvatarUrl);
                     } else if (!pick.userAvatarUrl && persistentScores[pick.userName] && persistentScores[pick.userName].avatar) {
                         pick.userAvatarUrl = persistentScores[pick.userName].avatar;
-                        var _oi2 = new Image(); _oi2.src = pick.userAvatarUrl; avatarCache[pick.userAvatarUrl] = _oi2;
+                        loadAvatar(pick.userAvatarUrl);
                     }
                     var ownerAvImg = avatarCache[pick.userAvatarUrl];
                     var oAvSize = isMobile ? 32 : 48;
@@ -3967,10 +3967,10 @@
                 ctx.save();
                 // Auto-reload avatar from persistentScores if missing from cache
                 if (up.userAvatarUrl && !avatarCache[up.userAvatarUrl]) {
-                    var _ri = new Image(); _ri.src = up.userAvatarUrl; avatarCache[up.userAvatarUrl] = _ri;
+                    loadAvatar(up.userAvatarUrl);
                 } else if (!up.userAvatarUrl && persistentScores[up.userName] && persistentScores[up.userName].avatar) {
                     up.userAvatarUrl = persistentScores[up.userName].avatar;
-                    var _ri2 = new Image(); _ri2.src = up.userAvatarUrl; avatarCache[up.userAvatarUrl] = _ri2;
+                    loadAvatar(up.userAvatarUrl);
                 }
                 var avImg = avatarCache[up.userAvatarUrl];
                 // DEBUG: log avatar status once per player
@@ -6054,8 +6054,7 @@
                         pick.userAvatarUrl = chAvatar;
                         persistentScores[ownerName].avatar = chAvatar;
                         if (!avatarCache[chAvatar]) {
-                            var avImg = new Image(); avImg.src = chAvatar;
-                            avatarCache[chAvatar] = avImg;
+                            loadAvatar(chAvatar);
                         }
                     }
                 }
@@ -6229,10 +6228,7 @@
                                 var chAvatar = snippet.thumbnails && snippet.thumbnails.default ? snippet.thumbnails.default.url : '';
                                 if (chAvatar) {
                                     pick.userAvatarUrl = chAvatar;
-                                    if (typeof avatarCache !== 'undefined' && !avatarCache[chAvatar]) {
-                                        var avImg = new Image(); avImg.src = chAvatar;
-                                        avatarCache[chAvatar] = avImg;
-                                    }
+                                    if (typeof loadAvatar === 'function') loadAvatar(chAvatar);
                                     if (!persistentScores[ownerName]) persistentScores[ownerName] = { score: 0, avatar: chAvatar, color: '#ffdd44' };
                                     else persistentScores[ownerName].avatar = chAvatar;
                                 }
@@ -6333,17 +6329,35 @@
         // ── Monitor de Conexão e Chat ────────────────────────────────────────────────
         var processedComments = new Set();
         var avatarCache = {};
-        var _firstFetchDone = false; // skip commands on first fetch
+        var _avatarLoading = {}; // prevent duplicate fetches
+        var _firstFetchDone = false;
+
+        function loadAvatar(url) {
+            if (!url || avatarCache[url] || _avatarLoading[url]) return;
+            _avatarLoading[url] = true;
+            // Use fetch + blob to bypass CORS issues with ggpht.com
+            fetch(url, { mode: 'cors' }).then(function(r) {
+                if (!r.ok) throw new Error(r.status);
+                return r.blob();
+            }).then(function(blob) {
+                var blobUrl = URL.createObjectURL(blob);
+                var img = new Image();
+                img.onload = function() { avatarCache[url] = img; };
+                img.src = blobUrl;
+            }).catch(function() {
+                // Fallback: try direct load (works for some CDNs)
+                var img = new Image();
+                img.onload = function() { if (img.naturalWidth > 0) avatarCache[url] = img; };
+                img.src = url;
+            });
+        } // skip commands on first fetch
 
         // Restore ALL avatars from persistentScores into avatarCache on load
         (function () {
             var keys = Object.keys(persistentScores);
             for (var i = 0; i < keys.length; i++) {
                 var av = persistentScores[keys[i]].avatar;
-                if (av && !avatarCache[av]) {
-                    var img = new Image(); img.src = av;
-                    avatarCache[av] = img;
-                }
+                if (av) loadAvatar(av);
             }
             if (ownerName && persistentScores[ownerName] && persistentScores[ownerName].avatar) {
                 pick.userAvatarUrl = persistentScores[ownerName].avatar;
@@ -6361,11 +6375,7 @@
             }
 
             // Precarrega avatar
-            if (avatarUrl && !avatarCache[avatarUrl]) {
-                var img = new Image();
-                img.src = avatarUrl;
-                avatarCache[avatarUrl] = img;
-            }
+            if (avatarUrl) loadAvatar(avatarUrl);
 
             var p = {
                 x: pick.x,
@@ -7130,7 +7140,7 @@
                                 if (fUser && fUser[0] !== '@') fUser = '@' + fUser;
                                 var fAvatar = item.authorDetails.profileImageUrl || '';
                                 if (fAvatar && !avatarCache[fAvatar]) {
-                                    var fi = new Image(); fi.src = fAvatar; avatarCache[fAvatar] = fi;
+                                    loadAvatar(fAvatar);
                                 }
                                 if (fAvatar) {
                                     if (!persistentScores[fUser]) persistentScores[fUser] = { score: 0, avatar: fAvatar, color: '' };
@@ -7157,7 +7167,7 @@
 
                                 // Cache avatar for all users
                                 if (cAvatarUrl && !avatarCache[cAvatarUrl]) {
-                                    var _cai = new Image(); _cai.src = cAvatarUrl; avatarCache[cAvatarUrl] = _cai;
+                                    loadAvatar(cAvatarUrl);
                                 }
 
                                 var isOwner = _userChannelId && item.authorDetails.channelId === _userChannelId;
