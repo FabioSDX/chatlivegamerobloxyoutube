@@ -395,12 +395,22 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 1px 0;
+            padding: 3px 4px;
             margin-bottom: 0px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.15s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .cmd-row:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .cmd-row:active {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(0.95);
         }
 
         .cmd-icon {
@@ -792,47 +802,47 @@
 
             <!-- Single Column Layout -->
             <div style="display: flex; flex-direction: column; gap: 2px;">
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','right')">
                     <span class="cmd-icon" style="color:#00ddff; font-weight:bold;">➔</span>
                     <span class="cmd-badge badge-cyan">sr</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','left')">
                     <span class="cmd-icon" style="color:#00ddff; font-weight:bold;">⬅</span>
                     <span class="cmd-badge badge-cyan">sl</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','up')">
                     <span class="cmd-icon" style="color:#00ddff; font-weight:bold;">⬆</span>
                     <span class="cmd-badge badge-cyan">su</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','down')">
                     <span class="cmd-icon" style="color:#00ddff; font-weight:bold;">⬇</span>
                     <span class="cmd-badge badge-cyan">sd</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">💥</span>
                     <span class="cmd-badge badge-orange">tnt</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateMegaTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">🔥</span>
                     <span class="cmd-badge badge-red">mega</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateThor(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">⚡</span>
                     <span class="cmd-badge badge-cyan">thor</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateNuke(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">☢️</span>
                     <span class="cmd-badge badge-red">nuke</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();activateStorm(pick)">
                     <span class="cmd-icon">🏓</span>
                     <span class="cmd-badge badge-pink">pp</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';spawnClone(m,pick?pick.userAvatarUrl:'')">
                     <span class="cmd-icon">👥</span>
                     <span class="cmd-badge badge-green">clone</span>
                 </div>
-                <div class="cmd-row">
+                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateBlackHole(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">🕳️</span>
                     <span class="cmd-badge badge-purple">bh</span>
                 </div>
