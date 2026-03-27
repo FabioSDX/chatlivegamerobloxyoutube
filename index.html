@@ -1927,6 +1927,8 @@
         var ownerName = ''; // loaded from config
         var pick = { x: 540, y: 100, vx: 0, vy: 0, ang: 0, spin: 0, stuck: false, stuckTimer: 0, userName: '', userAvatarUrl: '', stormTimer: 0 };
         if (ownerName) pick.userName = ownerName;
+        // Ensure pick always has a userName for offline play
+        if (!pick.userName) pick.userName = '@Player';
 
         function spawnPick() {
             var savedUser = pick.userName;
@@ -6531,8 +6533,8 @@
             userName = userName.replace(/^@@+/, '@');
             var cdKey = userName + '_clone';
             if (skillCooldowns[cdKey] && skillCooldowns[cdKey] > 0) return;
-            var sourcePick = (ownerName && userName === ownerName) ? pick : userPicks.find(function (up) { return up.userName === userName; });
-            if (!sourcePick) return;
+            var sourcePick = (ownerName && userName === ownerName) ? pick : (pick.userName === userName) ? pick : userPicks.find(function (up) { return up.userName === userName; });
+            if (!sourcePick) sourcePick = pick; // fallback to main pick for offline play
 
             skillCooldowns[cdKey] = cloneCooldown;
             for (var i = 0; i < 5; i++) {
@@ -6996,7 +6998,7 @@
             var targetPick = null;
             if (pick && pick.userName === userName) targetPick = pick;
             else targetPick = userPicks.find(function (up) { return up.userName === userName; });
-            if (!targetPick) return;
+            if (!targetPick) targetPick = pick; // fallback for offline play
 
             var dir = { x: 0, y: 0 };
             if (direction === 'right') dir.x = 1;
