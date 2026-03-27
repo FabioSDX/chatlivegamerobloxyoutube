@@ -6597,19 +6597,22 @@
                     if (b.state === 'dead') continue;
                     var dx = bh.x - b.x, dy = bh.y - b.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
-                    var alreadyCaptured = b._bhScale !== undefined && b._bhScale < 0.95;
+                    var alreadyCaptured = b._bhCaptured;
                     if (dist < R || alreadyCaptured) {
                         hasCaptured = true;
-                        var nx = dx / (dist || 1), ny = dy / (dist || 1);
-                        var closeness = 1 - Math.min(dist, R) / R; // 0=edge, 1=center
-                        // Orbital force (perpendicular) + radial pull
-                        var orbitStr = 3.5 * (0.5 + closeness * 0.5);
-                        var pullStr = 1.0 + closeness * 3;
-                        b.vx += nx * pullStr + ny * orbitStr;
-                        b.vy += ny * pullStr - nx * orbitStr;
-                        b.vx *= 0.94; b.vy *= 0.94;
-                        b._bhScale = Math.max(0.05, dist / R);
                         b._bhCaptured = true;
+                        var nx = dx / (dist || 1), ny = dy / (dist || 1);
+                        var closeness = 1 - Math.min(dist, R) / R;
+                        // Target velocity: spiral inward (strong radial + moderate orbital)
+                        var targetSpeed = 2 + closeness * 4;
+                        var orbitRatio = Math.max(0.1, 0.5 - closeness * 0.4); // less orbit when close
+                        var tvx = nx * targetSpeed * (1 - orbitRatio) + ny * targetSpeed * orbitRatio;
+                        var tvy = ny * targetSpeed * (1 - orbitRatio) - nx * targetSpeed * orbitRatio;
+                        // Blend current velocity toward target (stronger blend when closer)
+                        var blend = 0.08 + closeness * 0.15;
+                        b.vx = b.vx * (1 - blend) + tvx * blend;
+                        b.vy = b.vy * (1 - blend) + tvy * blend;
+                        b._bhScale = Math.max(0.05, dist / R);
                         b._bhSpin = (b._bhSpin || 0) + 0.25 * closeness;
                         if (dist < 18) {
                             b.hp = 0; b.state = 'dead'; b.anim = 0; b.deadTimer = 80;
@@ -6633,19 +6636,22 @@
                     if (z.state === 'dead') continue;
                     var zdx = bh.x - z.x, zdy = bh.y - z.y;
                     var zdist = Math.sqrt(zdx * zdx + zdy * zdy);
-                    var zCaptured = z._bhScale !== undefined && z._bhScale < 0.95;
+                    var zCaptured = z._bhCaptured;
                     if (zdist < R || zCaptured) {
                         hasCaptured = true;
+                        z._bhCaptured = true;
                         var znx = zdx / (zdist || 1), zny = zdy / (zdist || 1);
                         var zclose = 1 - Math.min(zdist, R) / R;
-                        var zorbit = 3.0 * (0.5 + zclose * 0.5);
-                        var zpull = 0.8 + zclose * 2.5;
-                        z.vx += znx * zpull + zny * zorbit;
-                        z.vy += zny * zpull - znx * zorbit;
-                        z.vx *= 0.93; z.vy *= 0.93;
+                        var ztSpeed = 1.5 + zclose * 3.5;
+                        var zorbitR = Math.max(0.1, 0.5 - zclose * 0.4);
+                        var ztvx = znx * ztSpeed * (1 - zorbitR) + zny * ztSpeed * zorbitR;
+                        var ztvy = zny * ztSpeed * (1 - zorbitR) - znx * ztSpeed * zorbitR;
+                        var zblend = 0.07 + zclose * 0.12;
+                        z.vx = z.vx * (1 - zblend) + ztvx * zblend;
+                        z.vy = z.vy * (1 - zblend) + ztvy * zblend;
                         z._bhScale = Math.max(0.05, zdist / R);
                         z._bhCaptured = true;
-                        z._bhSpin = (z._bhSpin || 0) + 0.15 * (1 - Math.min(zdist, R) / R);
+                        z._bhSpin = (z._bhSpin || 0) + 0.15 * zclose;
                         if (zdist < 25) {
                             z.hp = 0; z.state = 'dead'; z.animTimer = 0; z.deadTimer = 80;
                             z._bhScale = 0;
