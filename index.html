@@ -2322,7 +2322,7 @@
 
         function spawnParts(x, y, color, n) {
             if (parts.length > MAX_PARTS) return;
-            var count = isMobile ? Math.min(n, 3) : n;
+            var count = Math.min(n, 2); // cap particles for performance
             for (var i = 0; i < count; i++) {
                 var a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 4;
                 parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, dec: 0.025 + Math.random() * 0.03, r: 2 + Math.random() * 4, c: color });
@@ -2332,7 +2332,7 @@
         function spawnDebris(bx, by, blockType, source) {
             if (debris.length > MAX_DEBRIS) return;
             var target = source || pick;
-            var n = isMobile ? 1 : 2 + Math.floor(Math.random() * 3);
+            var n = isMobile ? 1 : 1 + Math.floor(Math.random() * 2);
             for (var i = 0; i < n; i++) {
                 var ox = (Math.random() - 0.5) * TILE * 0.6, oy = (Math.random() - 0.5) * TILE * 0.6;
                 var dx = (target ? target.x : bx) - (bx + ox), dy = (target ? target.y : by) - (by + oy);
@@ -2350,6 +2350,11 @@
         }
 
         function spawnText(x, y, txt, color) {
+            // Skip small point texts (+5, +10, -1) for performance — only show big events
+            if (txt.charAt(0) === '+' || txt.charAt(0) === '-') {
+                var val = parseInt(txt.replace(/[^0-9]/g, ''));
+                if (val < 50) return; // skip small values
+            }
             if (texts.length > MAX_TEXTS) return;
             texts.push({ x: x, y: y, txt: txt, c: color, life: 1, vy: -1.4 });
         }
