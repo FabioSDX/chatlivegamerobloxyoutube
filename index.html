@@ -3565,6 +3565,10 @@
             var rStart = Math.floor(camY / TILE);
             var rEnd = Math.ceil((camY + canvas.height) / TILE) + 1;
 
+            // Ore shimmer set — blocks that glow
+            var _oreShimmer = { 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 16:1, 17:1 };
+            var _shimmerTime = Date.now() * 0.003;
+
             for (var r = rStart; r <= rEnd; r++) {
                 for (var c = 0; c < COLS; c++) {
                     var cell = getCell(r, c);
@@ -3577,6 +3581,21 @@
                     } else {
                         ctx.fillStyle = BDEF[cell.t].color;
                         ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
+                    }
+                    // Ore shimmer — only brightens the colored mineral spots, not the grey stone
+                    if (_oreShimmer[cell.t]) {
+                        var phase = _shimmerTime + r * 0.7 + c * 0.5;
+                        var glow = (Math.sin(phase) + 1) * 0.5;
+                        var alpha = 0.05 + glow * 0.2;
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'lighter';
+                        ctx.globalAlpha = alpha;
+                        // Re-draw the block texture — 'lighter' adds to existing pixels
+                        // Colored mineral pixels get brighter, grey stone stays dim
+                        if (tex && tex.complete && tex.naturalWidth > 0) {
+                            ctx.drawImage(tex, x - 0.5, y - 0.5, TILE + 1, TILE + 1);
+                        }
+                        ctx.restore();
                     }
                     if (cell.cr > 0.01) {
                         var stage = Math.min(9, Math.floor(cell.cr * 10));
