@@ -2155,7 +2155,7 @@
             p.ang += p.spin;
             if (hitAny) p.spin = p.spin * 0.9 + (Math.random() - 0.5) * 0.12; else p.spin *= 0.995;
             // Combo armor: when hitting block, give 1s immunity before combo can reset
-            if (hitAny && p.combo > 0) { p.comboArmor = 60; }
+            if (hitAny && p.combo > 0) { p.comboArmor = 120; }
             // Combo timer decay — reset combo if no enemy hit for 3 seconds (but armor protects)
             if (p.comboTimer > 0) { p.comboTimer--; } else if (!p.comboArmor || p.comboArmor <= 0) { resetCombo(p); }
             if (p.comboArmor > 0) p.comboArmor--;
@@ -2366,10 +2366,11 @@
         function registerComboHit(p, enemyX, enemyY) {
             if (!p) return;
             p.combo = (p.combo || 0) + 1;
-            p.comboTimer = 180; // 3 seconds to keep combo alive
+            p.comboTimer = 300; // 5 seconds to keep combo alive
             var c = p.combo;
             if (c >= TORMENTA_COMBO_THRESHOLD) {
                 activateTormenta(p);
+                return;
             }
             if (c % 5 === 0 && c >= 5) {
                 var label = getComboLabel(c);
@@ -2422,7 +2423,7 @@
 
         // ── Tormenta Powerup ────────────────────────────────────────────────────
         function activateTormenta(p) {
-            if (p.stormTimer > 0) return;
+            // Allow tormenta even if already in storm — combo reward overrides
             p.stormTimer = TORMENTA_DURATION;
             p.combo = 0;
             // Kick for ping-pong mode
@@ -3973,11 +3974,6 @@
                     loadAvatar(up.userAvatarUrl);
                 }
                 var avImg = avatarCache[up.userAvatarUrl];
-                // DEBUG: log avatar status once per player
-                if (!up._avatarLogged) {
-                    up._avatarLogged = true;
-                    console.log('[Avatar]', up.userName, 'url:', up.userAvatarUrl ? up.userAvatarUrl.substring(0, 60) : 'EMPTY', 'inCache:', !!avImg, 'complete:', avImg ? avImg.complete : '-', 'natW:', avImg ? avImg.naturalWidth : '-');
-                }
                 var avSize = isMobile ? 32 : 48;
                 var avY = up.y - PICK_HALF - (isMobile ? 30 : 44);
                 if (avImg && avImg.complete && avImg.naturalWidth > 0) {
