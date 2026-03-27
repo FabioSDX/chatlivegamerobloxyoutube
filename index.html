@@ -3845,6 +3845,13 @@
                 // Owner name & avatar on main pickaxe
                 if (pick.userName) {
                     ctx.save();
+                    // Auto-reload owner avatar if missing from cache
+                    if (pick.userAvatarUrl && !avatarCache[pick.userAvatarUrl]) {
+                        var _oi = new Image(); _oi.src = pick.userAvatarUrl; avatarCache[pick.userAvatarUrl] = _oi;
+                    } else if (!pick.userAvatarUrl && persistentScores[pick.userName] && persistentScores[pick.userName].avatar) {
+                        pick.userAvatarUrl = persistentScores[pick.userName].avatar;
+                        var _oi2 = new Image(); _oi2.src = pick.userAvatarUrl; avatarCache[pick.userAvatarUrl] = _oi2;
+                    }
                     var ownerAvImg = avatarCache[pick.userAvatarUrl];
                     var oAvSize = isMobile ? 32 : 48;
                     var oAvY = pick.y - PICK_HALF - (isMobile ? 30 : 44);
@@ -3958,6 +3965,13 @@
 
                 // nome e avatar
                 ctx.save();
+                // Auto-reload avatar from persistentScores if missing from cache
+                if (up.userAvatarUrl && !avatarCache[up.userAvatarUrl]) {
+                    var _ri = new Image(); _ri.src = up.userAvatarUrl; avatarCache[up.userAvatarUrl] = _ri;
+                } else if (!up.userAvatarUrl && persistentScores[up.userName] && persistentScores[up.userName].avatar) {
+                    up.userAvatarUrl = persistentScores[up.userName].avatar;
+                    var _ri2 = new Image(); _ri2.src = up.userAvatarUrl; avatarCache[up.userAvatarUrl] = _ri2;
+                }
                 var avImg = avatarCache[up.userAvatarUrl];
                 var avSize = isMobile ? 32 : 48;
                 var avY = up.y - PICK_HALF - (isMobile ? 30 : 44);
@@ -7101,7 +7115,27 @@
                     // Process chat messages
                     if (data.items && data.items.length > 0) {
                         if (!_firstFetchDone) {
-                            data.items.forEach(function (item) { processedComments.add(item.id); });
+                            // First fetch: skip commands but cache avatars and detect owner
+                            data.items.forEach(function (item) {
+                                processedComments.add(item.id);
+                                var fUser = (item.authorDetails.displayName || '').replace(/^@@+/, '@');
+                                if (fUser && fUser[0] !== '@') fUser = '@' + fUser;
+                                var fAvatar = item.authorDetails.profileImageUrl || '';
+                                if (fAvatar && !avatarCache[fAvatar]) {
+                                    var fi = new Image(); fi.src = fAvatar; avatarCache[fAvatar] = fi;
+                                }
+                                if (fAvatar) {
+                                    if (!persistentScores[fUser]) persistentScores[fUser] = { score: 0, avatar: fAvatar, color: '' };
+                                    else if (!persistentScores[fUser].avatar) persistentScores[fUser].avatar = fAvatar;
+                                }
+                                // Detect owner on first fetch too
+                                var fIsOwner = _userChannelId && item.authorDetails.channelId === _userChannelId;
+                                if (fIsOwner) {
+                                    ownerName = fUser;
+                                    pick.userName = ownerName;
+                                    if (fAvatar) pick.userAvatarUrl = fAvatar;
+                                }
+                            });
                             _firstFetchDone = true;
                         } else {
                             data.items.forEach(function (item) {
@@ -7113,20 +7147,30 @@
                                 var cText = item.snippet.displayMessage || '';
                                 lastActivity[cUser] = Date.now();
 
+                                // Cache avatar for all users
+                                if (cAvatarUrl && !avatarCache[cAvatarUrl]) {
+                                    var _cai = new Image(); _cai.src = cAvatarUrl; avatarCache[cAvatarUrl] = _cai;
+                                }
+
                                 var isOwner = _userChannelId && item.authorDetails.channelId === _userChannelId;
                                 if (isOwner) {
-                                    // Update ownerName to match actual display name from chat
                                     ownerName = cUser;
                                     pick.userName = ownerName;
-                                    if (cAvatarUrl) {
-                                        pick.userAvatarUrl = cAvatarUrl;
-                                        if (!avatarCache[cAvatarUrl]) {
-                                            var avImg = new Image(); avImg.src = cAvatarUrl;
-                                            avatarCache[cAvatarUrl] = avImg;
-                                        }
-                                    }
+                                    if (cAvatarUrl) pick.userAvatarUrl = cAvatarUrl;
                                     if (!persistentScores[ownerName]) persistentScores[ownerName] = { score: 0, avatar: cAvatarUrl || '', color: '#ffdd44' };
                                     else if (cAvatarUrl) persistentScores[ownerName].avatar = cAvatarUrl;
+                                }
+
+                                // Update avatar in persistentScores for any user
+                                if (cAvatarUrl) {
+                                    if (!persistentScores[cUser]) persistentScores[cUser] = { score: 0, avatar: cAvatarUrl, color: '' };
+                                    else if (!persistentScores[cUser].avatar) persistentScores[cUser].avatar = cAvatarUrl;
+                                }
+
+                                // Update avatar on existing userPick if missing
+                                var existingPick = userPicks.find(function(up) { return up.userName === cUser; });
+                                if (existingPick && cAvatarUrl && !existingPick.userAvatarUrl) {
+                                    existingPick.userAvatarUrl = cAvatarUrl;
                                 }
 
                                 if (!isOwner && persistentScores[cUser] && !userPicks.some(function (up) { return up.userName === cUser; })) {
