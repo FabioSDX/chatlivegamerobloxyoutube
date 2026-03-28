@@ -4512,7 +4512,7 @@
 
 
         function draw() {
-            // Chroma key green screen
+            // Always clear canvas first
             if (chromaKey) {
                 ctx.fillStyle = '#00ff00';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -7309,7 +7309,7 @@
             if (e.key === '8') activateTormenta(pick);
             if (e.key === 'u' || e.key === 'U') triggerBotrixEvent('follow', '@fabiosdx');
             if (e.key === 'i' || e.key === 'I') triggerBotrixEvent('superchat', '@fabiosdx');
-            if (e.key === 'o' || e.key === 'O') { chromaKey = !chromaKey; spawnText(canvas.width / 2, camY + 100, chromaKey ? '🟢 CHROMA KEY ON' : '🔴 CHROMA KEY OFF', '#00ff00'); }
+            if (e.key === 'o' || e.key === 'O') { chromaKey = !chromaKey; }
             if (e.key === 'p' || e.key === 'P') triggerBotrixEvent('gift', '@fabiosdx');
             if (e.key === 's' || e.key === 'S') {
                 for (var i = 0; i < 20; i++) {
@@ -7324,6 +7324,15 @@
                 if (e.key === 'ArrowLeft') { e.preventDefault(); activateSpin(pick.userName, 'left'); }
                 if (e.key === 'ArrowDown') { e.preventDefault(); activateSpin(pick.userName, 'down'); }
                 if (e.key === 'ArrowUp') { e.preventDefault(); activateSpin(pick.userName, 'up'); }
+            }
+        });
+
+        // Chroma key toggle — separate listener on document to work even with input focus
+        document.addEventListener('keydown', function(e) {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+            if (e.key === 'o' || e.key === 'O') {
+                chromaKey = !chromaKey;
+                document.title = chromaKey ? '[CHROMA] Chat Live Game' : 'Chat Live Game';
             }
         });
 
