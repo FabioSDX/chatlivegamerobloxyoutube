@@ -4670,35 +4670,47 @@
                 var p = allPicks[pi];
                 if (!p || p.stuck) continue;
                 var pSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-                if (pSpeed < 1.5) continue;
+                if (pSpeed < 0.8) continue;
                 for (var si = spiders.length - 1; si >= 0; si--) {
                     var s = spiders[si];
                     if (s.state === 'dead') continue;
-                    var SR = SPIDER_SIZE * 0.4 * (s.isMother ? SPIDER_MOTHER_SCALE : 1);
+                    if (s._bhCaptured) continue;
+                    var SR = SPIDER_SIZE * 0.35 * (s.isMother ? SPIDER_MOTHER_SCALE : 1);
                     var dx = p.x - s.x, dy = p.y - s.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < PICK_R + SR) {
+                    var minDist = PICK_R + SR;
+                    if (dist < minDist) {
                         var nx = dist > 0 ? dx / dist : 0;
                         var ny = dist > 0 ? dy / dist : -1;
-                        var bounceForce = Math.max(3, pSpeed * 0.6);
-                        p.vx = nx * bounceForce;
-                        p.vy = ny * bounceForce - 2;
-                        p.spin += (Math.random() - 0.5) * 0.3;
-                        p.x = s.x + nx * (PICK_R + SR + 1);
-                        p.y = s.y + ny * (PICK_R + SR + 1);
-                        s.hp -= 1;
-                        s.state = 'hurt'; s.hurtTimer = 12; s.animTimer = 0;
-                        s.vx += nx * -2; s.vy -= 1;
-                        sfxZombieHurt();
-                        registerComboHit(p, s.x, s.y);
-                        if (s.hp <= 0) {
-                            s.state = 'dead'; s.animTimer = 0; s.deadTimer = 0;
-                            score += s.pts;
-                            if (p.userName) {
-                                if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
-                                persistentScores[p.userName].score += s.pts;
+                        var overlap = minDist - dist;
+                        p.x += nx * overlap * 0.3;
+                        p.y += ny * overlap * 0.3;
+                        s.x -= nx * overlap * 0.7;
+                        s.y -= ny * overlap * 0.7;
+                        var relVx = p.vx - (s.vx || 0), relVy = p.vy - (s.vy || 0);
+                        var dot = relVx * (-nx) + relVy * (-ny);
+                        if (dot > 0) {
+                            var pushForce = dot * 1.0;
+                            p.vx += nx * pushForce * 0.35;
+                            p.vy += ny * pushForce * 0.35;
+                            s.vx -= nx * pushForce * 0.65;
+                            s.vy -= ny * pushForce * 0.65 - 0.5;
+                        }
+                        p.spin += (Math.random() - 0.5) * 0.2;
+                        if (pSpeed > 1.5) {
+                            s.hp -= 1;
+                            s.state = 'hurt'; s.hurtTimer = 12; s.animTimer = 0;
+                            sfxZombieHurt();
+                            registerComboHit(p, s.x, s.y);
+                            if (s.hp <= 0) {
+                                s.state = 'dead'; s.animTimer = 0; s.deadTimer = 0;
+                                score += s.pts;
+                                if (p.userName) {
+                                    if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
+                                    persistentScores[p.userName].score += s.pts;
+                                }
+                                sfxZombieDeath();
                             }
-                            sfxZombieDeath();
                         }
                         break;
                     }
@@ -5105,6 +5117,25 @@
                         }
                     }
                 }
+
+                // Bubble-bubble collision (push apart)
+                var bR = BAT_SIZE * 0.45 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                for (var j = i + 1; j < bats.length; j++) {
+                    var o = bats[j];
+                    if (o.state === 'dead' || o._bhCaptured) continue;
+                    var oR = BAT_SIZE * 0.45 * (o.isQueen ? QUEEN_SCALE : (o.isMother ? MOTHER_SCALE : 1));
+                    var bbdx = b.x - o.x, bbdy = b.y - o.y;
+                    var bbdist = Math.sqrt(bbdx * bbdx + bbdy * bbdy);
+                    var bbmin = bR + oR;
+                    if (bbdist < bbmin && bbdist > 0) {
+                        var bbnx = bbdx / bbdist, bbny = bbdy / bbdist;
+                        var bbov = (bbmin - bbdist) * 0.5;
+                        b.x += bbnx * bbov; b.y += bbny * bbov;
+                        o.x -= bbnx * bbov; o.y -= bbny * bbov;
+                        b.vx += bbnx * 0.3; b.vy += bbny * 0.3;
+                        o.vx -= bbnx * 0.3; o.vy -= bbny * 0.3;
+                    }
+                }
             }
         }
 
@@ -5115,45 +5146,53 @@
                 var p = allPicks[pi];
                 if (!p || p.stuck) continue;
                 var pSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-                if (pSpeed < 1.2) continue;
+                if (pSpeed < 0.8) continue;
                 for (var bi = bats.length - 1; bi >= 0; bi--) {
                     var b = bats[bi];
-                    if (b.state === 'dead' || b.state === 'hurt') continue;
-                    var BR = BAT_SIZE * 0.4 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                    if (b.state === 'dead') continue;
+                    if (b._bhCaptured) continue;
+                    var BR = BAT_SIZE * 0.45 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
                     var dx = p.x - b.x, dy = p.y - b.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < PICK_R + BR) {
+                    var minDist = PICK_R + BR;
+                    if (dist < minDist) {
                         var nx = dist > 0 ? dx / dist : 0;
                         var ny = dist > 0 ? dy / dist : -1;
-
-                        var isPP = (p === pick && (stormActive || tormentaActive));
-                        var bounceForce = isPP ? Math.max(8, pSpeed) : Math.max(2.5, pSpeed * 0.5);
-
-                        p.vx = nx * bounceForce;
-                        p.vy = ny * bounceForce + (isPP ? 0 : -1.5);
-                        p.spin += (Math.random() - 0.5) * 0.2;
-                        p.x = b.x + nx * (PICK_R + BR + 1);
-                        p.y = b.y + ny * (PICK_R + BR + 1);
-
-                        b.hp -= 1;
-                        b.hurtTimer = 10;
-                        b.anim = 0;
-                        b.vx += nx * -2;
-                        b.vy -= 1;
-                        sfxBatHurt();
-                        spawnText(b.x, b.y - BAT_SIZE * 0.4, '-1', '#ff88cc');
-                        registerComboHit(p, b.x, b.y);
-                        if (b.hp <= 0) {
-                            b.state = 'dead'; b.anim = 0; b.deadTimer = 0;
-                            score += b.pts;
-                            if (p.userName) {
-                                if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
-                                persistentScores[p.userName].score += b.pts;
+                        // Separate (push apart)
+                        var overlap = minDist - dist;
+                        p.x += nx * overlap * 0.4;
+                        p.y += ny * overlap * 0.4;
+                        b.x -= nx * overlap * 0.6;
+                        b.y -= ny * overlap * 0.6;
+                        // Transfer momentum (billiard style)
+                        var relVx = p.vx - (b.vx || 0), relVy = p.vy - (b.vy || 0);
+                        var dot = relVx * (-nx) + relVy * (-ny);
+                        if (dot > 0) {
+                            var pushForce = dot * 1.2;
+                            p.vx += nx * pushForce * 0.3;
+                            p.vy += ny * pushForce * 0.3;
+                            b.vx -= nx * pushForce * 0.8;
+                            b.vy -= ny * pushForce * 0.8;
+                        }
+                        p.spin += (Math.random() - 0.5) * 0.15;
+                        // Damage
+                        if (pSpeed > 1.5) {
+                            b.hp -= 1;
+                            b.hurtTimer = 10;
+                            b.anim = 0;
+                            sfxBatHurt();
+                            registerComboHit(p, b.x, b.y);
+                            if (b.hp <= 0) {
+                                b.state = 'dead'; b.anim = 0; b.deadTimer = 0;
+                                score += b.pts;
+                                if (p.userName) {
+                                    if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
+                                    persistentScores[p.userName].score += b.pts;
+                                }
+                                sfxBatDeath();
+                            } else {
+                                b.state = 'hurt';
                             }
-                            spawnText(b.x, b.y - BAT_SIZE * 0.5, '+' + b.pts, '#ffdd44');
-                            sfxBatDeath();
-                        } else {
-                            b.state = 'hurt';
                         }
                         break;
                     }
@@ -5361,54 +5400,58 @@
         }
 
         function checkPickZombieCollisions() {
-            var PICK_R = 28; // pick collision radius
+            var PICK_R = 28;
             var allPicks = [pick].concat(userPicks, extraPicks);
             for (var pi = 0; pi < allPicks.length; pi++) {
                 var p = allPicks[pi];
                 if (!p || p.stuck) continue;
                 var pSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-                if (pSpeed < 1.5) continue; // too slow to deal damage
+                if (pSpeed < 0.8) continue;
                 for (var zi = zombies.length - 1; zi >= 0; zi--) {
                     var z = zombies[zi];
                     if (z.state === 'dead') continue;
-                    var ZR = ZOMBIE_SIZE * 0.45 * (z.isZBoss ? ZBOSS_SCALE : 1);
+                    if (z._bhCaptured) continue;
+                    var ZR = ZOMBIE_SIZE * 0.4 * (z.isZBoss ? ZBOSS_SCALE : 1);
                     var dx = p.x - z.x, dy = p.y - z.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < PICK_R + ZR) {
-                        // Bounce the pickaxe off the zombie
+                    var minDist = PICK_R + ZR;
+                    if (dist < minDist) {
                         var nx = dist > 0 ? dx / dist : 0;
                         var ny = dist > 0 ? dy / dist : -1;
-
-                        var isPP = (p === pick && (stormActive || tormentaActive));
-                        var bounceForce = isPP ? Math.max(8, pSpeed) : Math.max(3, pSpeed * 0.6);
-
-                        p.vx = nx * bounceForce;
-                        p.vy = ny * bounceForce + (isPP ? 0 : -2);
-                        p.spin += (Math.random() - 0.5) * 0.3;
-                        // Push pick out of zombie
-                        p.x = z.x + nx * (PICK_R + ZR + 1);
-                        p.y = z.y + ny * (PICK_R + ZR + 1);
-
-                        // Damage zombie (1 hp)
-                        z.hp -= 1;
-                        z.state = 'hurt'; z.hurtTimer = 12; z.animTimer = 0;
-                        // Knockback zombie slightly
-                        z.vx += nx * -2;
-                        z.vy -= 1;
-                        sfxZombieHurt();
-                        spawnText(z.x, z.y - ZOMBIE_SIZE * 0.5, '-1', '#ff8844');
-                        registerComboHit(p, z.x, z.y);
-                        if (z.hp <= 0) {
-                            z.state = 'dead'; z.animTimer = 0; z.deadTimer = 0;
-                            score += z.pts;
-                            if (p.userName) {
-                                if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
-                                persistentScores[p.userName].score += z.pts;
-                            }
-                            spawnText(z.x, z.y - ZOMBIE_SIZE * 0.6, '+' + z.pts, '#ffdd44');
-                            sfxZombieDeath();
+                        // Separate
+                        var overlap = minDist - dist;
+                        p.x += nx * overlap * 0.3;
+                        p.y += ny * overlap * 0.3;
+                        z.x -= nx * overlap * 0.7;
+                        z.y -= ny * overlap * 0.7;
+                        // Transfer momentum (heavier than bubbles)
+                        var relVx = p.vx - (z.vx || 0), relVy = p.vy - (z.vy || 0);
+                        var dot = relVx * (-nx) + relVy * (-ny);
+                        if (dot > 0) {
+                            var pushForce = dot * 1.0;
+                            p.vx += nx * pushForce * 0.4;
+                            p.vy += ny * pushForce * 0.4;
+                            z.vx -= nx * pushForce * 0.6;
+                            z.vy -= ny * pushForce * 0.6 - 1;
                         }
-                        break; // one zombie per pick per frame
+                        p.spin += (Math.random() - 0.5) * 0.2;
+                        // Damage
+                        if (pSpeed > 1.5) {
+                            z.hp -= 1;
+                            z.state = 'hurt'; z.hurtTimer = 12; z.animTimer = 0;
+                            sfxZombieHurt();
+                            registerComboHit(p, z.x, z.y);
+                            if (z.hp <= 0) {
+                                z.state = 'dead'; z.animTimer = 0; z.deadTimer = 0;
+                                score += z.pts;
+                                if (p.userName) {
+                                    if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
+                                    persistentScores[p.userName].score += z.pts;
+                                }
+                                sfxZombieDeath();
+                            }
+                        }
+                        break;
                     }
                 }
             }
