@@ -4696,6 +4696,8 @@
                             s.vx -= nx * pushForce * 1.2;
                             s.vy -= ny * pushForce * 1.2 - 2;
                         }
+                        // Kick pickaxe upward
+                        p.vy = Math.min(p.vy, -3);
                         p.spin += (Math.random() - 0.5) * 0.2;
                         if (pSpeed > 1.5) {
                             s.hp -= 1;
@@ -5174,6 +5176,8 @@
                             b.vx -= nx * pushForce * 1.5;
                             b.vy -= ny * pushForce * 1.5;
                         }
+                        // Kick pickaxe upward on any hit
+                        p.vy = Math.min(p.vy, -3);
                         p.spin += (Math.random() - 0.5) * 0.15;
                         // Damage
                         if (pSpeed > 1.5) {
@@ -5434,6 +5438,8 @@
                             z.vx -= nx * pushForce * 1.2;
                             z.vy -= ny * pushForce * 1.2 - 3;
                         }
+                        // Kick pickaxe upward
+                        p.vy = Math.min(p.vy, -3.5);
                         p.spin += (Math.random() - 0.5) * 0.2;
                         // Damage
                         if (pSpeed > 1.5) {
