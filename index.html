@@ -2050,7 +2050,6 @@
             var top3 = _cycleOverlay.top3;
             var medals = ['🥇', '🥈', '🥉'];
             var medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-            var podiumH = [H * 0.38, H * 0.44, H * 0.50]; // y positions (1st higher)
 
             ctx.save();
 
@@ -2082,30 +2081,31 @@
             }
 
             // ── Title banner ──
-            var titleY = H * 0.08;
+            var titleY = H * 0.06;
             var bannerScale = Math.min(1, _cycleOverlayTimer / 20);
             ctx.save();
             ctx.translate(W / 2, titleY);
             ctx.scale(bannerScale, bannerScale);
             // Banner bg
-            var bw = Math.min(W * 0.85, 500);
+            var bw = Math.min(W * 0.95, 900);
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            _roundRect(ctx, -bw/2, -25, bw, 50, 15);
+            _roundRect(ctx, -bw/2, -40, bw, 80, 20);
             ctx.fill();
-            ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 2;
-            _roundRect(ctx, -bw/2, -25, bw, 50, 15);
+            ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 3;
+            _roundRect(ctx, -bw/2, -40, bw, 80, 20);
             ctx.stroke();
-            ctx.font = 'bold ' + Math.min(24, Math.floor(W * 0.055)) + 'px Arial';
+            ctx.font = 'bold ' + Math.min(48, Math.floor(W * 0.11)) + 'px Arial';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillStyle = '#ffdd44';
             ctx.fillText('🏆 CYCLE ' + (_cycleOverlay.cycle * 400) + 'm', 0, 0);
             ctx.restore();
 
             // ── Podium cards ──
-            var cardW = Math.min(W * 0.8, 420);
-            var cardH = Math.min(70, H * 0.12);
-            var avSize = Math.min(52, cardH - 10);
+            var cardW = Math.min(W * 0.92, 840);
+            var cardH = Math.min(140, H * 0.22);
+            var avSize = Math.min(100, cardH - 16);
             var cardX = W / 2 - cardW / 2;
+            var podiumH = [H * 0.18, H * 0.18 + cardH + 12, H * 0.18 + (cardH + 12) * 2];
 
             for (var i = 0; i < top3.length; i++) {
                 var p = top3[i];
@@ -2127,25 +2127,25 @@
                 else if (i === 1) { grad.addColorStop(0, 'rgba(192,192,192,0.25)'); grad.addColorStop(1, 'rgba(192,192,192,0.06)'); }
                 else { grad.addColorStop(0, 'rgba(205,127,50,0.25)'); grad.addColorStop(1, 'rgba(205,127,50,0.06)'); }
                 ctx.fillStyle = grad;
-                _roundRect(ctx, cardX, cardY, cardW, cardH, 12);
+                _roundRect(ctx, cardX, cardY, cardW, cardH, 18);
                 ctx.fill();
                 // Border
                 ctx.strokeStyle = medalColors[i];
-                ctx.lineWidth = i === 0 ? 2.5 : 1.5;
-                _roundRect(ctx, cardX, cardY, cardW, cardH, 12);
+                ctx.lineWidth = i === 0 ? 4 : 2.5;
+                _roundRect(ctx, cardX, cardY, cardW, cardH, 18);
                 ctx.stroke();
 
                 // Position number (big)
-                var numX = cardX + 8;
+                var numX = cardX + 14;
                 var numY = cardY + cardH / 2;
-                ctx.font = 'bold ' + Math.min(36, Math.floor(cardH * 0.6)) + 'px Arial';
+                ctx.font = 'bold ' + Math.min(64, Math.floor(cardH * 0.55)) + 'px Arial';
                 ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                 ctx.fillStyle = medalColors[i];
                 ctx.fillText(medals[i], numX, numY);
                 var numW = ctx.measureText(medals[i]).width + 8;
 
                 // Avatar circle
-                var avX = numX + numW + avSize / 2 + 4;
+                var avX = numX + numW + avSize / 2 + 8;
                 var avY = cardY + cardH / 2;
                 ctx.save();
                 ctx.beginPath();
@@ -2168,17 +2168,17 @@
                 // Avatar ring
                 ctx.beginPath();
                 ctx.arc(avX, avY, avSize / 2 + 1, 0, Math.PI * 2);
-                ctx.strokeStyle = medalColors[i]; ctx.lineWidth = 2;
+                ctx.strokeStyle = medalColors[i]; ctx.lineWidth = 3;
                 ctx.stroke();
 
                 // Player name
-                var nameX = avX + avSize / 2 + 10;
-                ctx.font = 'bold ' + Math.min(16, Math.floor(cardH * 0.25)) + 'px Arial';
+                var nameX = avX + avSize / 2 + 14;
+                ctx.font = 'bold ' + Math.min(28, Math.floor(cardH * 0.22)) + 'px Arial';
                 ctx.textAlign = 'left'; ctx.textBaseline = 'top';
                 ctx.fillStyle = '#fff';
                 var displayName = (p.name || '').replace('@', '');
                 if (displayName.length > 18) displayName = displayName.substring(0, 16) + '..';
-                ctx.fillText(displayName, nameX, cardY + 8);
+                ctx.fillText(displayName, nameX, cardY + 12);
 
                 // Animated score count-up
                 var countDelay = 40 + i * 20;
@@ -2187,15 +2187,15 @@
                 var displayScore = Math.floor(p.score * countProgress);
 
                 // Score number (big, colored)
-                ctx.font = 'bold ' + Math.min(22, Math.floor(cardH * 0.35)) + 'px Arial';
+                ctx.font = 'bold ' + Math.min(40, Math.floor(cardH * 0.32)) + 'px Arial';
                 ctx.textBaseline = 'bottom';
                 ctx.fillStyle = medalColors[i];
-                ctx.fillText(displayScore.toLocaleString() + ' pts', nameX, cardY + cardH - 6);
+                ctx.fillText(displayScore.toLocaleString() + ' pts', nameX, cardY + cardH - 10);
 
                 // Stats icons (right side)
-                var statsX = cardX + cardW - 10;
+                var statsX = cardX + cardW - 16;
                 ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-                ctx.font = Math.min(12, Math.floor(cardH * 0.18)) + 'px Arial';
+                ctx.font = Math.min(22, Math.floor(cardH * 0.17)) + 'px Arial';
                 ctx.fillStyle = '#aaa';
                 var statsY = cardY + cardH / 2;
                 var statsStr = '';
