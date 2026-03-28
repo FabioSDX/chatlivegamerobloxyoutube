@@ -1945,6 +1945,7 @@
         var camLeaderY = 0;         // y of current deepest pick
         var camLeaderTimer = 0;     // frames the leader has been deepest
         var CAM_SWITCH_FRAMES = 300; // 5 seconds at 60fps
+        var chromaKey = false;      // green screen mode (toggle with O)
 
         // ── Física ────────────────────────────────────────────────────────────────────
         var PICK_HALF = 28;
@@ -4511,9 +4512,14 @@
 
 
         function draw() {
-            // Fundo gradiente(0, 0, canvas.width, canvas.height);
-            drawBackground(); // caverna de cristais
-            drawWeatherOverlay(); // sky + weather particles (screen space)
+            // Chroma key green screen
+            if (chromaKey) {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                drawBackground();
+                drawWeatherOverlay();
+            }
             ctx.save();
             var sx = shakeAmt > 0 ? (Math.random() - 0.5) * 2 * shakeAmt : 0;
             var sy = shakeAmt > 0 ? (Math.random() - 0.5) * 2 * shakeAmt : 0;
@@ -7303,7 +7309,7 @@
             if (e.key === '8') activateTormenta(pick);
             if (e.key === 'u' || e.key === 'U') triggerBotrixEvent('follow', '@fabiosdx');
             if (e.key === 'i' || e.key === 'I') triggerBotrixEvent('superchat', '@fabiosdx');
-            if (e.key === 'o' || e.key === 'O') triggerBotrixEvent('member', '@fabiosdx');
+            if (e.key === 'o' || e.key === 'O') { chromaKey = !chromaKey; spawnText(canvas.width / 2, camY + 100, chromaKey ? '🟢 CHROMA KEY ON' : '🔴 CHROMA KEY OFF', '#00ff00'); }
             if (e.key === 'p' || e.key === 'P') triggerBotrixEvent('gift', '@fabiosdx');
             if (e.key === 's' || e.key === 'S') {
                 for (var i = 0; i < 20; i++) {
