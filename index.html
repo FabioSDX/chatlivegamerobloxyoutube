@@ -4738,7 +4738,7 @@
                 var h = baseH * squashY;
 
                 ctx.save();
-                ctx.translate(s.x, s.y);
+                ctx.translate(s.x, s.y + SPIDER_SIZE * 0.15);
 
                 if (s._bhScale !== undefined && s._bhScale < 1) ctx.rotate(s._bhSpin || 0);
                 if (s.state === 'hurt' && s.hurtTimer % 4 < 2) ctx.globalAlpha = 0.6;
@@ -5894,7 +5894,7 @@
                 if (z.isZBoss) jc = { r: 255, g: 60, b: 60 }; // boss = red
 
                 ctx.save();
-                var dx = z.x, dy = z.y;
+                var dx = z.x, dy = z.y + ZOMBIE_SIZE * 0.15;
                 ctx.translate(dx, dy);
 
                 // Black hole spin
