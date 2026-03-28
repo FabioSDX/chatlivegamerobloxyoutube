@@ -7331,6 +7331,8 @@
                     ang: sourcePick.ang + Math.random(),
                     spin: (Math.random() - 0.5) * 0.4,
                     stuck: false, stuckTimer: 0,
+                    userName: userName, // attribute points to owner
+                    userAvatarUrl: avatarUrl || sourcePick.userAvatarUrl || '',
                     cloneOwner: userName,
                     cloneAvatar: avatarUrl || sourcePick.userAvatarUrl || '',
                     cloneTimer: cloneCooldown, // sincronizado com o cooldown visual
