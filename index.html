@@ -846,10 +846,6 @@
                     <span class="cmd-icon">🕳️</span>
                     <span class="cmd-badge badge-purple">bh</span>
                 </div>
-                <div class="cmd-row" id="chromaBtn" onclick="chromaKey=!chromaKey;this.style.background=chromaKey?'#00ff00':'';this.querySelector('.cmd-badge').textContent=chromaKey?'ON':'OFF'">
-                    <span class="cmd-icon">🟢</span>
-                    <span class="cmd-badge badge-green">OFF</span>
-                </div>
             </div>
         </div>
 
@@ -2045,7 +2041,16 @@
         }
 
         function drawCycleOverlay() {
-            if (!_cycleOverlay || _cycleOverlay.timer <= 0) { _cycleOverlay = null; return; }
+            var cb = document.getElementById('commandBox');
+            var lb = document.getElementById('leaderboard');
+            if (!_cycleOverlay || _cycleOverlay.timer <= 0) {
+                _cycleOverlay = null;
+                if (cb) cb.style.display = '';
+                if (lb) lb.style.display = '';
+                return;
+            }
+            if (cb) cb.style.display = 'none';
+            if (lb) lb.style.display = 'none';
             _cycleOverlay.timer--;
             _cycleOverlayTimer++;
             var W = canvas.width, H = canvas.height;
