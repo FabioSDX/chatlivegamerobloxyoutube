@@ -1667,8 +1667,8 @@
                 row[c] = { t: t, hp: (t === E ? 0 : BDEF[t].hp), cr: 0 };
             }
 
-            // Place crystal decorations growing from walls into clearing space
-            if (isNearClearing && zone >= 1) {
+            // Crystal decorations disabled for cleaner look
+            if (false && isNearClearing && zone >= 1) {
                 if (!clearingCrystals[zone]) {
                     clearingCrystals[zone] = CRYSTAL_TYPES[Math.floor(seededRand(zone * 53) * CRYSTAL_TYPES.length)];
                 }
@@ -1768,8 +1768,8 @@
                 }
             }
 
-            // Place torches on clearing walls (every 3 rows, left and right walls)
-            if (isNearClearing && zone >= 1) {
+            // Torches disabled for cleaner look
+            if (false && isNearClearing && zone >= 1) {
                 var tLocalRow = r - zone * CLEARING_INTERVAL;
                 if (tLocalRow >= 1 && tLocalRow < CLEARING_HEIGHT - 1 && tLocalRow % 3 === 1) {
                     var tShape = getClearingShape(zone);
@@ -1781,10 +1781,10 @@
                 }
             }
 
-            // ── Mini-clearing crystal decorations ──
+            // Mini-clearing crystals disabled for cleaner look
             var miniStart = zone * CLEARING_INTERVAL + MINI_CLEARING_OFFSET;
             var isMiniRow = (r >= miniStart && r < miniStart + MINI_CLEARING_HEIGHT);
-            if (isMiniRow && zone >= 1) {
+            if (false && isMiniRow && zone >= 1) {
                 var mct = clearingCrystals[zone] || CRYSTAL_TYPES[Math.floor(seededRand(zone * 53) * CRYSTAL_TYPES.length)];
                 for (var c = 1; c < COLS - 1; c++) {
                     if (row[c].t !== E || !isMiniClearingCell(r, c)) continue;
