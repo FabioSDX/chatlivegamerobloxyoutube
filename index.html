@@ -3719,28 +3719,50 @@
                         ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
                     }
 
-                    // Top face (lighter) — only if block above is empty
+                    // Top face (texture + lighter) — only if block above is empty
                     if (aboveEmpty) {
-                        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                        ctx.save();
                         ctx.beginPath();
                         ctx.moveTo(x, y);
                         ctx.lineTo(x + _3D_SIDE, y - _3D_TOP);
                         ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
                         ctx.lineTo(x + TILE, y);
                         ctx.closePath();
+                        ctx.clip();
+                        // Draw texture stretched into the top face area
+                        if (tex && tex.complete && tex.naturalWidth > 0) {
+                            ctx.save();
+                            ctx.transform(1, 0, _3D_SIDE / TILE, -_3D_TOP / TILE, x, y);
+                            ctx.drawImage(tex, 0, 0, TILE, TILE);
+                            ctx.restore();
+                        }
+                        // Light overlay
+                        ctx.fillStyle = 'rgba(255,255,255,0.22)';
                         ctx.fill();
+                        ctx.restore();
                     }
 
-                    // Right face (darker) — only if block to right is empty
+                    // Right face (texture + darker) — only if block to right is empty
                     if (rightEmpty) {
-                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                        ctx.save();
                         ctx.beginPath();
                         ctx.moveTo(x + TILE, y);
                         ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
                         ctx.lineTo(x + TILE + _3D_SIDE, y + TILE - _3D_TOP);
                         ctx.lineTo(x + TILE, y + TILE);
                         ctx.closePath();
+                        ctx.clip();
+                        // Draw texture stretched into the side face area
+                        if (tex && tex.complete && tex.naturalWidth > 0) {
+                            ctx.save();
+                            ctx.transform(_3D_SIDE / TILE, -_3D_TOP / TILE, 0, 1, x + TILE, y);
+                            ctx.drawImage(tex, 0, 0, TILE, TILE);
+                            ctx.restore();
+                        }
+                        // Dark overlay
+                        ctx.fillStyle = 'rgba(0,0,0,0.3)';
                         ctx.fill();
+                        ctx.restore();
                     }
 
                     // Ore shimmer — brightens only the colored mineral pixels
