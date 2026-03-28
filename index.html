@@ -2426,6 +2426,12 @@
 
         function spawnItem(x, y, blockType, source) {
             if (!ITEM_DEFS[blockType]) return;
+            // If source is a clone, redirect item to the owner's main pick
+            var target = source || pick;
+            if (target.cloneOwner) {
+                var ownerPick = (ownerName && target.cloneOwner === ownerName) ? pick : userPicks.find(function(u) { return u.userName === target.cloneOwner; });
+                if (ownerPick) target = ownerPick;
+            }
             items.push({
                 x: x, y: y,
                 vx: (Math.random() - 0.5) * 10,
@@ -2433,7 +2439,7 @@
                 t: blockType, wait: 25,
                 ang: Math.random() * Math.PI * 2,
                 spin: (Math.random() - 0.5) * 0.2,
-                owner: source || pick
+                owner: target
             });
         }
 
