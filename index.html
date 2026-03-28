@@ -6090,38 +6090,38 @@
 
         function sfxHit(blockType) {
             var ac = getAC(), t = ac.currentTime;
-            // Light tap — cheerful click
-            var o = ac.createOscillator(), g = ac.createGain();
-            o.type = 'sine';
-            o.frequency.setValueAtTime(500 + blockType * 50, t);
-            o.frequency.exponentialRampToValueAtTime(300, t + 0.04);
-            g.gain.setValueAtTime(0.06, t);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-            o.connect(g); g.connect(ac.destination);
-            o.start(t); o.stop(t + 0.05);
+            var len = Math.ceil(ac.sampleRate * 0.045);
+            var buf = ac.createBuffer(1, len, ac.sampleRate);
+            var d = buf.getChannelData(0);
+            for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.5);
+            var src = ac.createBufferSource(); src.buffer = buf;
+            var filt = ac.createBiquadFilter();
+            filt.type = 'lowpass'; filt.frequency.value = 400 + blockType * 60;
+            var g = ac.createGain(); g.gain.setValueAtTime(0.09, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+            src.connect(filt); filt.connect(g); g.connect(ac.destination);
+            src.start(t);
         }
 
         function sfxBreak(blockType) {
             var ac = getAC(), t = ac.currentTime;
-            // Happy crumble — ascending twinkle + soft crunch
-            var base = 300 + blockType * 30;
-            var o = ac.createOscillator(), g = ac.createGain();
-            o.type = 'sine';
-            o.frequency.setValueAtTime(base, t);
-            o.frequency.linearRampToValueAtTime(base * 1.5, t + 0.1);
-            g.gain.setValueAtTime(0.1, t);
-            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
-            o.connect(g); g.connect(ac.destination);
-            o.start(t); o.stop(t + 0.15);
-            // Soft crunch
-            var nLen = Math.ceil(ac.sampleRate * 0.08);
-            var buf = ac.createBuffer(1, nLen, ac.sampleRate);
+            var osc = ac.createOscillator(), og = ac.createGain();
+            var baseFreq = [55, 60, 58, 52, 48, 50, 44, 42, 40][Math.min(blockType, 8)];
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(baseFreq * 1.8, t);
+            osc.frequency.exponentialRampToValueAtTime(baseFreq, t + 0.18);
+            og.gain.setValueAtTime(0.45, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+            osc.connect(og); og.connect(ac.destination); osc.start(t); osc.stop(t + 0.35);
+            var len = Math.ceil(ac.sampleRate * 0.22);
+            var buf = ac.createBuffer(1, len, ac.sampleRate);
             var d = buf.getChannelData(0);
-            for (var i = 0; i < nLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nLen, 3);
+            for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
             var src = ac.createBufferSource(); src.buffer = buf;
-            var filt = ac.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 800;
-            var ng = ac.createGain(); ng.gain.setValueAtTime(0.06, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
-            src.connect(filt); filt.connect(ng); ng.connect(ac.destination); src.start(t);
+            var filt = ac.createBiquadFilter();
+            filt.type = 'lowpass'; filt.frequency.value = 300 + blockType * 40;
+            var g = ac.createGain(); g.gain.setValueAtTime(0.35, t);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+            src.connect(filt); filt.connect(g); g.connect(ac.destination); src.start(t);
         }
 
         function sfxFuse(duration) {
