@@ -2235,12 +2235,23 @@
             var hasPingPong = ((p.stormTimer || 0) > 0);
 
             p.vy += GRAVITY;
-            // Water table drag
-            if (isInWater(p.x, p.y)) {
-                p.vx *= WATER_DRAG;
-                p.vy *= WATER_DRAG;
-                p.vy -= GRAVITY * 0.55; // buoyancy
+            // Splash effect when entering water (no drag/buoyancy — pickaxe passes through)
+            var _inWater = isInWater(p.x, p.y);
+            if (_inWater && !p._wasInWater) {
+                // Spawn splash particles
+                for (var si = 0; si < 6; si++) {
+                    parts.push({
+                        x: p.x + (Math.random() - 0.5) * 20,
+                        y: p.y,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: -2 - Math.random() * 3,
+                        life: 1, dec: 0.04,
+                        c: 'rgba(100,180,255,0.7)',
+                        r: 2 + Math.random() * 3
+                    });
+                }
             }
+            p._wasInWater = _inWater;
 
             // Clamp velocidade para evitar tunneling
             var maxV = TILE * 0.8;
