@@ -5418,21 +5418,21 @@
                     if (dist < minDist) {
                         var nx = dist > 0 ? dx / dist : 0;
                         var ny = dist > 0 ? dy / dist : -1;
-                        // Separate
-                        var overlap = minDist - dist;
-                        p.x += nx * overlap * 0.3;
-                        p.y += ny * overlap * 0.3;
-                        z.x -= nx * overlap * 0.7;
-                        z.y -= ny * overlap * 0.7;
-                        // Transfer momentum (heavier than bubbles)
+                        // Hard separation — never overlap
+                        var overlap = minDist - dist + 2;
+                        p.x += nx * overlap * 0.5;
+                        p.y += ny * overlap * 0.5;
+                        z.x -= nx * overlap * 0.5;
+                        z.y -= ny * overlap * 0.5;
+                        // Ping-pong momentum transfer
                         var relVx = p.vx - (z.vx || 0), relVy = p.vy - (z.vy || 0);
                         var dot = relVx * (-nx) + relVy * (-ny);
                         if (dot > 0) {
-                            var pushForce = dot * 1.8;
-                            p.vx += nx * pushForce * 0.3;
-                            p.vy += ny * pushForce * 0.3;
-                            z.vx -= nx * pushForce * 1.0;
-                            z.vy -= ny * pushForce * 1.0 - 2;
+                            var pushForce = dot * 2.2;
+                            p.vx += nx * pushForce * 0.4;
+                            p.vy += ny * pushForce * 0.4;
+                            z.vx -= nx * pushForce * 1.2;
+                            z.vy -= ny * pushForce * 1.2 - 3;
                         }
                         p.spin += (Math.random() - 0.5) * 0.2;
                         // Damage
@@ -5887,6 +5887,26 @@
 
                 // Ground friction
                 if (z.grounded) z.vx *= 0.85;
+
+                // Jelly-jelly collision (push apart + bounce)
+                var zR = ZOMBIE_SIZE * 0.4 * (z.isZBoss ? ZBOSS_SCALE : 1);
+                for (var j = i + 1; j < zombies.length; j++) {
+                    var o = zombies[j];
+                    if (o.state === 'dead' || o._bhCaptured) continue;
+                    var oR = ZOMBIE_SIZE * 0.4 * (o.isZBoss ? ZBOSS_SCALE : 1);
+                    var jdx = z.x - o.x, jdy = z.y - o.y;
+                    var jdist = Math.sqrt(jdx * jdx + jdy * jdy);
+                    var jmin = zR + oR;
+                    if (jdist < jmin && jdist > 0) {
+                        var jnx = jdx / jdist, jny = jdy / jdist;
+                        var jov = (jmin - jdist) * 0.5;
+                        z.x += jnx * jov; z.y += jny * jov;
+                        o.x -= jnx * jov; o.y -= jny * jov;
+                        // Bounce velocity
+                        z.vx += jnx * 1.0; z.vy += jny * 0.5;
+                        o.vx -= jnx * 1.0; o.vy -= jny * 0.5;
+                    }
+                }
             }
         }
 
