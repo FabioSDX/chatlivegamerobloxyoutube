@@ -3251,6 +3251,22 @@
                 }
             }
             if (_skyBlend < 1) _skyBlend = Math.min(1, _skyBlend + 0.008);
+
+            // Continuous respawn — keep elements populated across the whole screen
+            var types = w.decor;
+            var counts = {};
+            for (var ci = 0; ci < _bgElements.length; ci++) counts[_bgElements[ci].type] = (counts[_bgElements[ci].type] || 0) + 1;
+            for (var ti = 0; ti < types.length; ti++) {
+                var dt = types[ti];
+                if (dt === 'clouds' && (counts.cloud || 0) < 6) _bgElements.push({ type: 'cloud', x: -100 - Math.random() * 100, y: Math.random() * H * 0.4, w: 40 + Math.random() * 100, speed: 0.1 + Math.random() * 0.25, life: 600 + Math.random() * 400 });
+                if (dt === 'birds' && (counts.bird || 0) < 6) _bgElements.push({ type: 'bird', x: -50 - Math.random() * 100, y: Math.random() * H * 0.35, speed: 0.3 + Math.random() * 0.5, phase: Math.random() * Math.PI * 2, life: 500 + Math.random() * 300 });
+                if (dt === 'balloons' && (counts.balloon || 0) < 8) _bgElements.push({ type: 'balloon', x: Math.random() * W, y: H + 20, r: 8 + Math.random() * 18, color: 'hsl(' + Math.floor(Math.random() * 360) + ',80%,60%)', speed: 0.05 + Math.random() * 0.15, life: 800 + Math.random() * 400 });
+                if (dt === 'stars' && (counts.star || 0) < 30) _bgElements.push({ type: 'star', x: Math.random() * W, y: Math.random() * H * 0.6, size: 0.5 + Math.random() * 2.5, twinkle: Math.random() * Math.PI * 2, life: 900 + Math.random() * 300 });
+                if (dt === 'snow' && (counts.snow || 0) < 30) _bgElements.push({ type: 'snow', x: Math.random() * W, y: -5, vx: (Math.random() - 0.5) * 0.8, vy: 0.4 + Math.random() * 1.2, size: 1.5 + Math.random() * 3, life: 500 + Math.random() * 300 });
+                if (dt === 'comets' && (counts.comet || 0) < 1 && Math.random() < 0.005) _bgElements.push({ type: 'comet', x: -50, y: Math.random() * H * 0.3, speed: 2 + Math.random() * 3, angle: 0.3 + Math.random() * 0.4, life: 200 + Math.random() * 100 });
+                if (dt === 'aurora' && (counts.aurora || 0) < 3) _bgElements.push({ type: 'aurora', idx: Math.floor(Math.random() * 4), life: 900 });
+                if (dt === 'rainbow' && (counts.rainbow || 0) < 1) _bgElements.push({ type: 'rainbow', life: 800 });
+            }
             for (var i = _bgElements.length - 1; i >= 0; i--) {
                 var e = _bgElements[i]; e.life--;
                 if (e.life <= 0) { _bgElements.splice(i, 1); continue; }
