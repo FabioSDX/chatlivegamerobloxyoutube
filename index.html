@@ -890,7 +890,7 @@
         var BG_DETAIL = isMobile ? 0 : 1; // 0=simple, 1=full crystals
         // ── Tipos ──
         var E = 0, DIRT = 1, STONE = 2, COAL = 3, IRON = 4, GOLD = 5, REDSTONE = 6, DIAMOND = 7, EMERALD = 8, BEDROCK = 9,
-            GRASS = 10, ANDESITE = 11, DIORITE = 12, GRANITE = 13, COBBLE = 14, MOSSY = 15, COPPER = 16, LAPIS = 17, OBSIDIAN = 18;
+            GRASS = 10, ANDESITE = 11, DIORITE = 12, GRANITE = 13, COBBLE = 14, MOSSY = 15, COPPER = 16, LAPIS = 17, OBSIDIAN = 18, BONUS_BOX = 19;
         var BDEF = {
             1: { color: '#c4a423', glow: '#c88451', hp: 1, pts: 5, name: 'Dirt', img: 'block/dirt.png' },
             2: { color: '#4a5a6a', glow: '#90b0c0', hp: 3, pts: 10, name: 'Stone', img: 'block/stone.png' },
@@ -909,7 +909,8 @@
             15: { color: '#4a6a4a', glow: '#70a070', hp: 3, pts: 15, name: 'Mossy Cobblestone', img: 'block/mossy_cobblestone.png' },
             16: { color: '#b06030', glow: '#e08850', hp: 3, pts: 30, name: 'Copper', img: 'block/copper_ore.png' },
             17: { color: '#1a3a8a', glow: '#4488ff', hp: 3, pts: 45, name: 'Lapis Lazuli', img: 'block/lapis_ore.png' },
-            18: { color: '#0a0a14', glow: '#4a2a6a', hp: 8, pts: 100, name: 'Obsidian', img: 'block/obsidian.png' }
+            18: { color: '#0a0a14', glow: '#4a2a6a', hp: 8, pts: 100, name: 'Obsidian', img: 'block/obsidian.png' },
+            19: { color: '#ffdd44', glow: '#ffff88', hp: 4, pts: 50, name: 'Bonus Box', img: 'block/obsidian.png' }
         };
 
         // ── Itens Colecionáveis ──
@@ -1870,6 +1871,8 @@
         // Cada entrada: [tipo, peso] — peso maior = mais comum
         // A cada 10m de profundidade, blocos mais valiosos vão aparecendo
         function pickBlock(depth) {
+            // Rare bonus box — 0.3% chance after depth 15
+            if (depth > 15 && Math.random() < 0.003) return BONUS_BOX;
             var table = [];
             // Camada 2-4: superfície
             if (depth < 5) {
@@ -2176,7 +2179,7 @@
         function restart() {
             score = 0; maxDepth = 0; parts = []; texts = []; debris = []; announcements = [];
             var ov = document.getElementById('announceOverlay'); if (ov) ov.innerHTML = '';
-            worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; spiders = []; spiderWebs = []; fallingBlocks = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; torchList = []; clearingCrystals = {}; megaClearedZones = {};
+            worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; spiders = []; spiderWebs = []; fallingBlocks = []; bonusBalls = []; collectBoxes = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; torchList = []; clearingCrystals = {}; megaClearedZones = {};
             miniClearedZones = {};
             extraPicks = []; userPicks = []; lastActivity = {};
             doublePickActive = false; doublePickTimer = 0; updateDoublePickHUD();
@@ -3133,6 +3136,302 @@
             }
         }
 
+        // ── Bonus Ball System ─────────────────────────────────────────────────────
+        var bonusBalls = [];
+        var collectBoxes = [];
+        var BONUS_BALL_COLORS = ['#ff4466','#44bbff','#66ff66','#ffaa22','#dd44ff','#ffff44','#44ffdd','#ff88cc'];
+        var BONUS_BALL_PTS = 500;
+        var BONUS_BALLS_PER_BOX = 8;
+        var COLLECT_BOX_WIDTH = 4; // in tiles
+
+        function spawnBonusBalls(x, y, owner) {
+            // Spawn colorful balls that burst out
+            for (var i = 0; i < BONUS_BALLS_PER_BOX; i++) {
+                var ang = (i / BONUS_BALLS_PER_BOX) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+                var spd = 3 + Math.random() * 4;
+                bonusBalls.push({
+                    x: x, y: y,
+                    vx: Math.cos(ang) * spd,
+                    vy: -4 - Math.random() * 5,
+                    r: 8 + Math.random() * 6,
+                    color: BONUS_BALL_COLORS[i % BONUS_BALL_COLORS.length],
+                    owner: owner || pick,
+                    collected: false,
+                    sparkle: Math.random() * Math.PI * 2,
+                    bounces: 0,
+                    energy: 0.7 + Math.random() * 0.3
+                });
+            }
+            // Spawn a collect box further down the map
+            var boxRow = Math.floor(y / TILE) + 30 + Math.floor(Math.random() * 40);
+            var boxCol = 1 + Math.floor(Math.random() * (COLS - 2 - COLLECT_BOX_WIDTH));
+            collectBoxes.push({
+                col: boxCol,
+                row: boxRow,
+                w: COLLECT_BOX_WIDTH,
+                owner: owner || pick,
+                life: 2400, // 40 seconds at 60fps
+                pulse: 0,
+                collected: 0
+            });
+            spawnText(x, y - 20, '🎁 BONUS BALLS!', '#ffdd44');
+        }
+
+        function updateBonusBalls() {
+            // Update collect boxes life
+            for (var b = collectBoxes.length - 1; b >= 0; b--) {
+                var box = collectBoxes[b];
+                box.life--;
+                box.pulse += 0.05;
+                if (box.life <= 0) collectBoxes.splice(b, 1);
+            }
+
+            for (var i = bonusBalls.length - 1; i >= 0; i--) {
+                var ball = bonusBalls[i];
+
+                // Gravity
+                ball.vy += 0.18;
+                // Random energy jumps to keep balls moving
+                if (Math.random() < 0.02 && ball.bounces < 50) {
+                    ball.vy -= 2 + Math.random() * 3;
+                    ball.vx += (Math.random() - 0.5) * 3;
+                }
+
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                ball.vx *= 0.995;
+                ball.sparkle += 0.1;
+
+                // Block collision — bounce off solid blocks
+                var bCol = Math.floor(ball.x / TILE);
+                var bRow = Math.floor(ball.y / TILE);
+
+                // Floor collision
+                var belowRow = Math.floor((ball.y + ball.r) / TILE);
+                var belowCell = getCell(belowRow, bCol);
+                if (belowCell && belowCell.t !== E) {
+                    ball.y = belowRow * TILE - ball.r;
+                    ball.vy = -Math.abs(ball.vy) * ball.energy;
+                    ball.vx += (Math.random() - 0.5) * 1.5;
+                    ball.bounces++;
+                    if (Math.abs(ball.vy) < 0.5) ball.vy = -2 - Math.random() * 2; // keep alive
+                }
+
+                // Ceiling collision
+                var aboveRow = Math.floor((ball.y - ball.r) / TILE);
+                var aboveCell = getCell(aboveRow, bCol);
+                if (aboveCell && aboveCell.t !== E) {
+                    ball.y = (aboveRow + 1) * TILE + ball.r;
+                    ball.vy = Math.abs(ball.vy) * 0.5;
+                }
+
+                // Wall collisions
+                var leftCol = Math.floor((ball.x - ball.r) / TILE);
+                var rightCol = Math.floor((ball.x + ball.r) / TILE);
+                var wallRow = Math.floor(ball.y / TILE);
+                var leftCell = getCell(wallRow, leftCol);
+                var rightCell = getCell(wallRow, rightCol);
+                if (leftCell && leftCell.t !== E) {
+                    ball.x = (leftCol + 1) * TILE + ball.r;
+                    ball.vx = Math.abs(ball.vx) * 0.7;
+                }
+                if (rightCell && rightCell.t !== E) {
+                    ball.x = rightCol * TILE - ball.r;
+                    ball.vx = -Math.abs(ball.vx) * 0.7;
+                }
+
+                // Pickaxe push — any player can push balls
+                var allP = [pick].concat(userPicks, extraPicks);
+                for (var pi = 0; pi < allP.length; pi++) {
+                    var p = allP[pi];
+                    if (!p || p.stuck) continue;
+                    var dx = ball.x - p.x, dy = ball.y - p.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < ball.r + 14) {
+                        var nx = dx / (dist || 1), ny = dy / (dist || 1);
+                        var pushForce = 4;
+                        ball.vx += nx * pushForce + p.vx * 0.5;
+                        ball.vy += ny * pushForce + p.vy * 0.3;
+                        // Sparkle on contact
+                        if (parts.length < MAX_PARTS) {
+                            parts.push({ x: ball.x, y: ball.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3, life: 0.6, dec: 0.05, r: 3, c: ball.color });
+                        }
+                    }
+                }
+
+                // Ball-ball collision
+                for (var j = i - 1; j >= 0; j--) {
+                    var other = bonusBalls[j];
+                    var bdx = ball.x - other.x, bdy = ball.y - other.y;
+                    var bDist = Math.sqrt(bdx * bdx + bdy * bdy);
+                    var minD = ball.r + other.r;
+                    if (bDist < minD && bDist > 0) {
+                        var bnx = bdx / bDist, bny = bdy / bDist;
+                        var overlap = minD - bDist;
+                        ball.x += bnx * overlap * 0.5;
+                        ball.y += bny * overlap * 0.5;
+                        other.x -= bnx * overlap * 0.5;
+                        other.y -= bny * overlap * 0.5;
+                        var relV = (ball.vx - other.vx) * bnx + (ball.vy - other.vy) * bny;
+                        if (relV > 0) {
+                            ball.vx -= bnx * relV * 0.5;
+                            ball.vy -= bny * relV * 0.5;
+                            other.vx += bnx * relV * 0.5;
+                            other.vy += bny * relV * 0.5;
+                        }
+                    }
+                }
+
+                // Check collection box
+                for (var b = 0; b < collectBoxes.length; b++) {
+                    var box = collectBoxes[b];
+                    var boxX = box.col * TILE;
+                    var boxY = box.row * TILE;
+                    var boxW = box.w * TILE;
+                    var boxH = TILE * 2;
+                    if (ball.x > boxX && ball.x < boxX + boxW && ball.y > boxY && ball.y < boxY + boxH) {
+                        // Collected!
+                        var owner = ball.owner || pick;
+                        score += BONUS_BALL_PTS;
+                        box.collected++;
+                        if (owner.userName) {
+                            var player = userPicks.find(function(u) { return u.userName === owner.userName; });
+                            if (player) player.score = (player.score || 0) + BONUS_BALL_PTS;
+                            if (!persistentScores[owner.userName]) persistentScores[owner.userName] = { score: 0, avatar: owner.userAvatarUrl || '' };
+                            persistentScores[owner.userName].score += BONUS_BALL_PTS;
+                            addCycleScore(owner.userName, BONUS_BALL_PTS, 'item');
+                        }
+                        spawnText(ball.x, ball.y, '+' + BONUS_BALL_PTS + ' ⭐', ball.color);
+                        // Celebration particles
+                        for (var cp = 0; cp < 6; cp++) {
+                            var ca = (cp / 6) * Math.PI * 2;
+                            if (parts.length < MAX_PARTS + 10) {
+                                parts.push({ x: ball.x, y: ball.y, vx: Math.cos(ca)*3, vy: Math.sin(ca)*3, life: 1, dec: 0.03, r: 4, c: ball.color });
+                            }
+                        }
+                        sfxPop();
+                        bonusBalls.splice(i, 1);
+                        break;
+                    }
+                }
+
+                // Remove if way off screen
+                if (ball.y > camY + canvas.height + 800 || ball.x < -200 || ball.x > COLS * TILE + 200) {
+                    bonusBalls.splice(i, 1);
+                }
+            }
+        }
+
+        function drawBonusBalls() {
+            var t = Date.now() * 0.003;
+            // Draw collect boxes first (behind balls)
+            for (var b = 0; b < collectBoxes.length; b++) {
+                var box = collectBoxes[b];
+                var bx = box.col * TILE;
+                var by = box.row * TILE;
+                var bw = box.w * TILE;
+                var bh = TILE * 2;
+                if (by < camY - TILE * 3 || by > camY + canvas.height + TILE * 3) continue;
+
+                ctx.save();
+                // Pulsing glow
+                var gAlpha = 0.15 + Math.sin(box.pulse) * 0.1;
+                ctx.fillStyle = 'rgba(255,221,68,' + gAlpha + ')';
+                ctx.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
+
+                // Box body — golden gradient
+                var grad = ctx.createLinearGradient(bx, by, bx, by + bh);
+                grad.addColorStop(0, '#ffee88');
+                grad.addColorStop(0.5, '#ffcc22');
+                grad.addColorStop(1, '#cc8800');
+                ctx.fillStyle = grad;
+                ctx.fillRect(bx, by, bw, bh);
+
+                // Border
+                ctx.strokeStyle = '#aa7700';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(bx + 1, by + 1, bw - 2, bh - 2);
+
+                // Star icon in center
+                ctx.fillStyle = '#fff';
+                ctx.font = (TILE * 0.8) + 'px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('⭐', bx + bw / 2, by + bh / 2);
+
+                // Timer bar
+                var pct = box.life / 2400;
+                ctx.fillStyle = pct > 0.3 ? '#44ff44' : '#ff4444';
+                ctx.fillRect(bx, by + bh + 2, bw * pct, 3);
+
+                // Collected count
+                if (box.collected > 0) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(box.collected + '/' + BONUS_BALLS_PER_BOX, bx + bw / 2, by - 6);
+                }
+                ctx.restore();
+            }
+
+            // Draw balls
+            for (var i = 0; i < bonusBalls.length; i++) {
+                var ball = bonusBalls[i];
+                if (ball.y < camY - 30 || ball.y > camY + canvas.height + 30) continue;
+
+                ctx.save();
+                ctx.translate(ball.x, ball.y);
+
+                // Outer glow
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.r + 3, 0, Math.PI * 2);
+                ctx.fillStyle = ball.color;
+                ctx.globalAlpha = 0.2 + Math.sin(ball.sparkle) * 0.1;
+                ctx.fill();
+
+                // Main ball — gradient
+                ctx.globalAlpha = 1;
+                var g = ctx.createRadialGradient(-ball.r * 0.3, -ball.r * 0.3, ball.r * 0.1, 0, 0, ball.r);
+                g.addColorStop(0, '#fff');
+                g.addColorStop(0.4, ball.color);
+                g.addColorStop(1, ball.color);
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.r, 0, Math.PI * 2);
+                ctx.fillStyle = g;
+                ctx.fill();
+
+                // Highlight
+                ctx.beginPath();
+                ctx.arc(-ball.r * 0.25, -ball.r * 0.25, ball.r * 0.35, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fill();
+
+                // Sparkle star
+                var sAng = ball.sparkle;
+                var sSize = 2 + Math.sin(sAng * 2) * 1.5;
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = 0.6 + Math.sin(sAng) * 0.4;
+                ctx.beginPath();
+                ctx.arc(ball.r * 0.4 * Math.cos(sAng), ball.r * 0.4 * Math.sin(sAng), sSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // ── Bonus Box in block generation ──
+        // sfxPop for bonus ball collection (reuse bubble pop)
+        function sfxPop() {
+            try {
+                var ac = getAC();
+                var o = ac.createOscillator(), g = ac.createGain();
+                o.type = 'sine'; o.frequency.value = 800 + Math.random() * 400;
+                g.gain.setValueAtTime(0.15, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.15);
+                o.connect(g); g.connect(ac.destination);
+                o.start(); o.stop(ac.currentTime + 0.15);
+            } catch(e) {}
+        }
+
         function hitBlock(col, row, force, source) {
             var cell = getCell(row, col);
             if (!cell || cell.t === E) return false;
@@ -3146,7 +3445,11 @@
             if (cell.hp <= 0) {
                 var pts = def.pts || 0;
                 score += pts;
-                if (ITEM_DEFS[cell.t]) {
+                // Bonus Box — spawn bonus balls!
+                if (cell.t === BONUS_BOX) {
+                    spawnBonusBalls(col * TILE + TILE / 2, row * TILE + TILE / 2, source || pick);
+                    shakeAmt = 8;
+                } else if (ITEM_DEFS[cell.t]) {
                     spawnItem(col * TILE + TILE / 2, row * TILE + TILE / 2, cell.t, source);
                 } else {
                     spawnText(col * TILE + TILE / 2, row * TILE + TILE / 2, '+' + pts, def.glow);
@@ -3220,6 +3523,7 @@
             updateExtraPicks();
             updateTNTBlocks();
             updateFallingBlocks();
+            updateBonusBalls();
             updateItems();
             updateExplosions();
             updateStorm();
@@ -4165,6 +4469,34 @@
                         ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
                     }
 
+                    // Custom Bonus Box rendering
+                    if (cell.t === BONUS_BOX) {
+                        var bbt = Date.now() * 0.003;
+                        var bbGrad = ctx.createLinearGradient(x, y, x, y + TILE);
+                        bbGrad.addColorStop(0, '#ffee66');
+                        bbGrad.addColorStop(0.5, '#ffcc00');
+                        bbGrad.addColorStop(1, '#cc8800');
+                        ctx.fillStyle = bbGrad;
+                        ctx.fillRect(x, y, TILE, TILE);
+                        ctx.strokeStyle = '#aa6600';
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+                        // Ribbon cross
+                        ctx.strokeStyle = '#ff4444';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(x + TILE / 2, y); ctx.lineTo(x + TILE / 2, y + TILE);
+                        ctx.moveTo(x, y + TILE / 2); ctx.lineTo(x + TILE, y + TILE / 2);
+                        ctx.stroke();
+                        // Pulsing star
+                        ctx.fillStyle = '#fff';
+                        ctx.globalAlpha = 0.6 + Math.sin(bbt) * 0.4;
+                        ctx.font = (TILE * 0.5) + 'px sans-serif';
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText('⭐', x + TILE / 2, y + TILE / 2);
+                        ctx.globalAlpha = 1;
+                    }
+
                     if (SHIMMER_ENABLED && _oreShimmer[cell.t]) {
                         var phase = _shimmerTime + r * 0.7 + c * 0.5;
                         var glow = (Math.sin(phase) + 1) * 0.5;
@@ -4190,6 +4522,7 @@
             // Water table overlay
             drawWaterTable();
             drawFallingBlocks();
+            drawBonusBalls();
 
             // Crystal decorations growing from clearing walls
             var viewTop = camY - TILE * 2;
