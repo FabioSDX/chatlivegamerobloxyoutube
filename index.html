@@ -1941,6 +1941,10 @@
 
         // ── Câmera ──────────────────────────────────────────────────────────────────────
         var camY = 0;
+        var camTarget = null;       // pick being followed by camera
+        var camLeaderY = 0;         // y of current deepest pick
+        var camLeaderTimer = 0;     // frames the leader has been deepest
+        var CAM_SWITCH_FRAMES = 300; // 5 seconds at 60fps
 
         // ── Física ────────────────────────────────────────────────────────────────────
         var PICK_HALF = 28;
@@ -2182,6 +2186,7 @@
             worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; spiders = []; spiderWebs = []; fallingBlocks = []; bonusBalls = []; collectBoxes = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; torchList = []; clearingCrystals = {}; megaClearedZones = {};
             miniClearedZones = {};
             extraPicks = []; userPicks = []; lastActivity = {};
+            camTarget = null; camLeaderTimer = 0; camY = 0;
             doublePickActive = false; doublePickTimer = 0; updateDoublePickHUD();
             stormActive = false; stormTimer = 0; updateStormHUD();
             tormentaActive = false; tormentaTimer = 0; tormentaPick = null;
@@ -3499,9 +3504,39 @@
                 }
             }
             document.getElementById('scoreDisplay').textContent = '⛏ ' + score;
-            var targetCamY = pick.y - canvas.height * 0.60;
+
+            // ── Democratic Camera: follow the deepest player for 5+ seconds ──
+            var allCamPicks = [pick].concat(userPicks).filter(function(p) { return p && !p.stuck; });
+            var deepestPick = pick;
+            var deepestY = pick ? pick.y : 0;
+            for (var ci = 0; ci < allCamPicks.length; ci++) {
+                if (allCamPicks[ci].y > deepestY) {
+                    deepestY = allCamPicks[ci].y;
+                    deepestPick = allCamPicks[ci];
+                }
+            }
+            if (!camTarget) camTarget = pick;
+            if (deepestPick === camTarget) {
+                // Current leader still deepest — keep following
+                camLeaderTimer = 0;
+            } else {
+                // Someone else is deeper
+                if (deepestPick !== camTarget) {
+                    camLeaderTimer++;
+                    if (camLeaderTimer >= CAM_SWITCH_FRAMES) {
+                        camTarget = deepestPick;
+                        camLeaderTimer = 0;
+                    }
+                }
+            }
+            // If camTarget got stuck or removed, fallback to pick
+            if (!camTarget || camTarget.stuck) { camTarget = pick; camLeaderTimer = 0; }
+
+            var followPick = camTarget || pick;
+            var targetCamY = followPick.y - canvas.height * 0.60;
             if (targetCamY < 0) targetCamY = 0;
             if (targetCamY > camY) { camY += (targetCamY - camY) * 0.08; }
+            else if (targetCamY < camY - canvas.height * 0.3) { camY += (targetCamY - camY) * 0.04; }
             var visBot = Math.ceil((camY + canvas.height) / TILE) + 4;
             ensureRows(0, visBot);
             var newTopRow = Math.max(0, Math.floor(camY / TILE) - 6);
@@ -5044,6 +5079,19 @@
 
                 drawPlayerCooldowns(ctx, up.x - 10 - avSize / 2, avY, up.userName);
 
+                ctx.restore();
+            }
+
+            // ── Camera target indicator ──
+            if (camTarget && camTarget !== pick && !camTarget.stuck) {
+                ctx.save();
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillStyle = '#ffdd44';
+                ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.005) * 0.3;
+                ctx.fillText('📷', camTarget.x, camTarget.y - 30);
+                ctx.globalAlpha = 1;
                 ctx.restore();
             }
 
