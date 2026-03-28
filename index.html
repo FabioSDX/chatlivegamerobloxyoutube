@@ -1432,7 +1432,7 @@
         var clearingShapes = {};    // cached organic shapes per zone
 
         // ── Mini-clearings (small grottos between main clearings with chests) ──
-        var MINI_CLEARING_HEIGHT = 2;
+        var MINI_CLEARING_HEIGHT = 6;
         var MINI_CLEARING_OFFSET = 14; // rows after zone start (between clearings)
         var miniClearingShapes = {};
         var miniClearedZones = {};
@@ -1441,16 +1441,18 @@
             if (miniClearingShapes[zone]) return miniClearingShapes[zone];
             var seed = zone * 4391 + 773;
             var shape = {};
-            var centerCol = 3 + Math.floor(seededRand(seed) * (COLS - 6));
+            var centerCol = 4 + Math.floor(seededRand(seed) * (COLS - 8));
             for (var lr = 0; lr < MINI_CLEARING_HEIGHT; lr++) {
-                // Organic: wider in middle, narrow at edges
-                var vertFactor = 1 - Math.pow((lr - 0.5) / 1.0, 2);
-                var halfW = Math.max(1, Math.floor(1 + vertFactor * 1.5 + seededRand(seed + lr * 41) * 0.8));
+                var vertFactor = 1 - Math.pow((lr - MINI_CLEARING_HEIGHT / 2) / (MINI_CLEARING_HEIGHT / 2), 2);
+                var maxWidth = Math.floor(2 + vertFactor * (COLS - 7));
+                var halfW = Math.max(1, Math.floor(maxWidth / 2));
                 var wobble = Math.floor(seededRand(seed + lr * 67) * 2) - 1;
-                var rc = Math.max(2, Math.min(COLS - 3, centerCol + wobble));
+                var noiseL = Math.floor(seededRand(seed + lr * 17) * 2);
+                var noiseR = Math.floor(seededRand(seed + lr * 23) * 2);
+                var rc = Math.max(3, Math.min(COLS - 4, centerCol + wobble));
                 shape[lr] = {
-                    left: Math.max(1, rc - halfW),
-                    right: Math.min(COLS - 2, rc + halfW)
+                    left: Math.max(1, rc - halfW + noiseL),
+                    right: Math.min(COLS - 2, rc + halfW - noiseR)
                 };
             }
             miniClearingShapes[zone] = shape;
