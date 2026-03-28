@@ -3696,45 +3696,7 @@
             var _3D_TOP = 10;
             var _3D_SIDE = 8;
 
-            // Pass 1: Front faces + shimmer + cracks
-            for (var r = rStart; r <= rEnd; r++) {
-                for (var c = 0; c < COLS; c++) {
-                    var cell = getCell(r, c);
-                    if (!cell || cell.t === E) continue;
-                    var x = c * TILE;
-                    var y = r * TILE;
-                    var tex = BTEX[cell.t];
-
-                    if (tex && tex.complete && tex.naturalWidth > 0) {
-                        ctx.drawImage(tex, x - 0.5, y - 0.5, TILE + 1, TILE + 1);
-                    } else {
-                        ctx.fillStyle = BDEF[cell.t].color;
-                        ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
-                    }
-
-                    if (SHIMMER_ENABLED && _oreShimmer[cell.t]) {
-                        var phase = _shimmerTime + r * 0.7 + c * 0.5;
-                        var glow = (Math.sin(phase) + 1) * 0.5;
-                        var alpha = 0.05 + glow * 0.2;
-                        ctx.save();
-                        ctx.globalCompositeOperation = 'lighter';
-                        ctx.globalAlpha = alpha;
-                        if (tex && tex.complete && tex.naturalWidth > 0) {
-                            ctx.drawImage(tex, x - 0.5, y - 0.5, TILE + 1, TILE + 1);
-                        }
-                        ctx.restore();
-                    }
-                    if (cell.cr > 0.01) {
-                        var stage = Math.min(9, Math.floor(cell.cr * 10));
-                        var dtex = DESTROY_TEX[stage];
-                        if (dtex && dtex.complete && dtex.naturalWidth > 0) {
-                            ctx.drawImage(dtex, x, y, TILE, TILE);
-                        }
-                    }
-                }
-            }
-
-            // Pass 2: 3D faces (drawn on top of all front faces)
+            // Pass 1: 3D faces (drawn BEHIND front faces)
             for (var r = rStart; r <= rEnd; r++) {
                 for (var c = 0; c < COLS; c++) {
                     var cell = getCell(r, c);
@@ -3788,6 +3750,44 @@
                         ctx.fillStyle = 'rgba(0,0,0,0.3)';
                         ctx.fill();
                         ctx.restore();
+                    }
+                }
+            }
+
+            // Pass 2: Front faces + shimmer + cracks (drawn ON TOP of 3D faces)
+            for (var r = rStart; r <= rEnd; r++) {
+                for (var c = 0; c < COLS; c++) {
+                    var cell = getCell(r, c);
+                    if (!cell || cell.t === E) continue;
+                    var x = c * TILE;
+                    var y = r * TILE;
+                    var tex = BTEX[cell.t];
+
+                    if (tex && tex.complete && tex.naturalWidth > 0) {
+                        ctx.drawImage(tex, x - 0.5, y - 0.5, TILE + 1, TILE + 1);
+                    } else {
+                        ctx.fillStyle = BDEF[cell.t].color;
+                        ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
+                    }
+
+                    if (SHIMMER_ENABLED && _oreShimmer[cell.t]) {
+                        var phase = _shimmerTime + r * 0.7 + c * 0.5;
+                        var glow = (Math.sin(phase) + 1) * 0.5;
+                        var alpha = 0.05 + glow * 0.2;
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'lighter';
+                        ctx.globalAlpha = alpha;
+                        if (tex && tex.complete && tex.naturalWidth > 0) {
+                            ctx.drawImage(tex, x - 0.5, y - 0.5, TILE + 1, TILE + 1);
+                        }
+                        ctx.restore();
+                    }
+                    if (cell.cr > 0.01) {
+                        var stage = Math.min(9, Math.floor(cell.cr * 10));
+                        var dtex = DESTROY_TEX[stage];
+                        if (dtex && dtex.complete && dtex.naturalWidth > 0) {
+                            ctx.drawImage(dtex, x, y, TILE, TILE);
+                        }
                     }
                 }
             }
