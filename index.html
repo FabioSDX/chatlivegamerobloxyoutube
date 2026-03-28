@@ -7313,7 +7313,6 @@
             if (e.key === '8') activateTormenta(pick);
             if (e.key === 'u' || e.key === 'U') triggerBotrixEvent('follow', '@fabiosdx');
             if (e.key === 'i' || e.key === 'I') triggerBotrixEvent('superchat', '@fabiosdx');
-            if (e.key === 'o' || e.key === 'O') { chromaKey = !chromaKey; }
             if (e.key === 'p' || e.key === 'P') triggerBotrixEvent('gift', '@fabiosdx');
             if (e.key === 's' || e.key === 'S') {
                 for (var i = 0; i < 20; i++) {
@@ -7336,7 +7335,7 @@
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
             var k = e.key || '';
             var kc = e.keyCode || e.which || 0;
-            if (k === 'o' || k === 'O' || kc === 79) {
+            if (e.key === 'c' || e.key === 'C' || kc === 67) {
                 chromaKey = !chromaKey;
                 document.title = chromaKey ? '[CHROMA] Chat Live Game' : 'Chat Live Game';
             }
