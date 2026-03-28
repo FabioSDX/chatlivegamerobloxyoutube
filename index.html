@@ -4690,11 +4690,11 @@
                         var relVx = p.vx - (s.vx || 0), relVy = p.vy - (s.vy || 0);
                         var dot = relVx * (-nx) + relVy * (-ny);
                         if (dot > 0) {
-                            var pushForce = dot * 1.0;
-                            p.vx += nx * pushForce * 0.35;
-                            p.vy += ny * pushForce * 0.35;
-                            s.vx -= nx * pushForce * 0.65;
-                            s.vy -= ny * pushForce * 0.65 - 0.5;
+                            var pushForce = dot * 2.0;
+                            p.vx += nx * pushForce * 0.25;
+                            p.vy += ny * pushForce * 0.25;
+                            s.vx -= nx * pushForce * 1.2;
+                            s.vy -= ny * pushForce * 1.2 - 2;
                         }
                         p.spin += (Math.random() - 0.5) * 0.2;
                         if (pSpeed > 1.5) {
@@ -5132,8 +5132,8 @@
                         var bbov = (bbmin - bbdist) * 0.5;
                         b.x += bbnx * bbov; b.y += bbny * bbov;
                         o.x -= bbnx * bbov; o.y -= bbny * bbov;
-                        b.vx += bbnx * 0.3; b.vy += bbny * 0.3;
-                        o.vx -= bbnx * 0.3; o.vy -= bbny * 0.3;
+                        b.vx += bbnx * 1.2; b.vy += bbny * 1.2;
+                        o.vx -= bbnx * 1.2; o.vy -= bbny * 1.2;
                     }
                 }
             }
@@ -5168,11 +5168,11 @@
                         var relVx = p.vx - (b.vx || 0), relVy = p.vy - (b.vy || 0);
                         var dot = relVx * (-nx) + relVy * (-ny);
                         if (dot > 0) {
-                            var pushForce = dot * 1.2;
-                            p.vx += nx * pushForce * 0.3;
-                            p.vy += ny * pushForce * 0.3;
-                            b.vx -= nx * pushForce * 0.8;
-                            b.vy -= ny * pushForce * 0.8;
+                            var pushForce = dot * 2.5;
+                            p.vx += nx * pushForce * 0.2;
+                            p.vy += ny * pushForce * 0.2;
+                            b.vx -= nx * pushForce * 1.5;
+                            b.vy -= ny * pushForce * 1.5;
                         }
                         p.spin += (Math.random() - 0.5) * 0.15;
                         // Damage
@@ -5428,11 +5428,11 @@
                         var relVx = p.vx - (z.vx || 0), relVy = p.vy - (z.vy || 0);
                         var dot = relVx * (-nx) + relVy * (-ny);
                         if (dot > 0) {
-                            var pushForce = dot * 1.0;
-                            p.vx += nx * pushForce * 0.4;
-                            p.vy += ny * pushForce * 0.4;
-                            z.vx -= nx * pushForce * 0.6;
-                            z.vy -= ny * pushForce * 0.6 - 1;
+                            var pushForce = dot * 1.8;
+                            p.vx += nx * pushForce * 0.3;
+                            p.vy += ny * pushForce * 0.3;
+                            z.vx -= nx * pushForce * 1.0;
+                            z.vy -= ny * pushForce * 1.0 - 2;
                         }
                         p.spin += (Math.random() - 0.5) * 0.2;
                         // Damage
