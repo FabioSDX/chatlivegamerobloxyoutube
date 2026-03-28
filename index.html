@@ -4640,7 +4640,7 @@
                 var h = baseH * squashY;
 
                 ctx.save();
-                ctx.translate(s.x, s.y + SPIDER_SIZE * 0.15);
+                ctx.translate(s.x, s.y + SPIDER_SIZE * 0.3);
 
                 if (s._bhScale !== undefined && s._bhScale < 1) ctx.rotate(s._bhSpin || 0);
                 if (s.state === 'hurt' && s.hurtTimer % 4 < 2) ctx.globalAlpha = 0.6;
@@ -4683,16 +4683,6 @@
                 ctx.fillStyle = 'rgba(0,0,0,0.8)';
                 ctx.beginPath(); ctx.arc(-eyeSpacing + pupilOff, eyeY, eyeR * 0.45, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(eyeSpacing + pupilOff, eyeY, eyeR * 0.45, 0, Math.PI * 2); ctx.fill();
-
-                // Mother glow
-                if (s.isMother && s.state !== 'dead') {
-                    var mPulse = 0.2 + Math.sin(t * 2 + i) * 0.15;
-                    ctx.beginPath();
-                    ctx.ellipse(0, -h * 0.1, w / 2 + 6, h * 0.5 + 6, 0, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(150,50,50,' + mPulse + ')';
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                }
 
                 // HP bar
                 if (s.state !== 'dead' && s.hp < s.maxHp) {
@@ -5871,7 +5861,7 @@
                 if (z.isZBoss) jc = { r: 255, g: 60, b: 60 }; // boss = red
 
                 ctx.save();
-                var dx = z.x, dy = z.y + ZOMBIE_SIZE * 0.15;
+                var dx = z.x, dy = z.y + ZOMBIE_SIZE * 0.3;
                 ctx.translate(dx, dy);
 
                 // Black hole spin
