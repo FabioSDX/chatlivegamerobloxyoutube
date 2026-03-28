@@ -3200,21 +3200,23 @@
             cx.closePath();
         }
 
-        // ── Weather/Sky System — changes every 100m ──
+        // ── Weather/Sky System — changes every 100m with smooth transitions ──
         var WEATHER_TYPES = [
-            { name: 'sunny',    sky1: '#4a90d9', sky2: '#87ceeb', decor: 'clouds' },
-            { name: 'rainbow',  sky1: '#88bbff', sky2: '#aaddff', decor: 'rainbow' },
-            { name: 'sunset',   sky1: '#ff8855', sky2: '#ffd700', decor: 'birds' },
-            { name: 'starry',   sky1: '#1a1a4e', sky2: '#2a2a6e', decor: 'stars' },
-            { name: 'snow',     sky1: '#aabbcc', sky2: '#ddeeff', decor: 'snow' },
-            { name: 'spring',   sky1: '#66bb66', sky2: '#aaddaa', decor: 'balloons' },
-            { name: 'dawn',     sky1: '#ff9a76', sky2: '#ffecd2', decor: 'birds' },
-            { name: 'aurora',   sky1: '#1a2a4a', sky2: '#2a4a6a', decor: 'aurora' },
-            { name: 'cotton',   sky1: '#eeccff', sky2: '#ffddee', decor: 'clouds' },
-            { name: 'golden',   sky1: '#ffcc44', sky2: '#ffeeaa', decor: 'balloons' }
+            { name: 'sunny',   sky1: '#4a90d9', sky2: '#87ceeb', decor: ['clouds','birds'] },
+            { name: 'rainbow', sky1: '#88bbff', sky2: '#aaddff', decor: ['clouds','rainbow'] },
+            { name: 'sunset',  sky1: '#ff8855', sky2: '#ffd700', decor: ['birds','clouds'] },
+            { name: 'starry',  sky1: '#0a0a3e', sky2: '#1a1a5e', decor: ['stars','comets','planets'] },
+            { name: 'snow',    sky1: '#aabbcc', sky2: '#ddeeff', decor: ['snow','clouds'] },
+            { name: 'spring',  sky1: '#55bb55', sky2: '#99dd99', decor: ['balloons','birds','clouds'] },
+            { name: 'dawn',    sky1: '#ff9a76', sky2: '#ffecd2', decor: ['birds','clouds'] },
+            { name: 'aurora',  sky1: '#0a1a3a', sky2: '#1a3a5a', decor: ['aurora','stars'] },
+            { name: 'cotton',  sky1: '#ddbbff', sky2: '#ffccee', decor: ['clouds','balloons'] },
+            { name: 'golden',  sky1: '#ffbb33', sky2: '#ffee99', decor: ['balloons','birds','clouds'] }
         ];
-        var _weatherParticles = [];
-        var _bgDecor = []; // persistent decorations (clouds, birds, etc)
+        var _bgElements = [];
+        var _prevSky = { sky1: '#4a90d9', sky2: '#87ceeb' };
+        var _curSky = { sky1: '#4a90d9', sky2: '#87ceeb' };
+        var _skyBlend = 1;
         var _lastWeatherZone = -1;
 
         function getWeather() {
@@ -3222,146 +3224,67 @@
             return WEATHER_TYPES[zone % WEATHER_TYPES.length];
         }
 
-        function _spawnBgDecor() {
-            var w = getWeather();
-            var zone = Math.floor(maxDepth / 100);
-            if (zone === _lastWeatherZone && _bgDecor.length > 3) return;
-            _lastWeatherZone = zone;
-            _bgDecor = [];
-            var W = canvas.width, H = canvas.height;
-            if (w.decor === 'clouds') {
-                for (var i = 0; i < 5; i++) _bgDecor.push({ type: 'cloud', x: Math.random() * W, y: H * 0.05 + Math.random() * H * 0.3, w: 60 + Math.random() * 80, speed: 0.15 + Math.random() * 0.2 });
-            } else if (w.decor === 'birds') {
-                for (var i = 0; i < 4; i++) _bgDecor.push({ type: 'bird', x: Math.random() * W, y: H * 0.05 + Math.random() * H * 0.25, speed: 0.4 + Math.random() * 0.3, phase: Math.random() * Math.PI * 2 });
-            } else if (w.decor === 'balloons') {
-                for (var i = 0; i < 6; i++) _bgDecor.push({ type: 'balloon', x: Math.random() * W, y: H * 0.1 + Math.random() * H * 0.6, r: 10 + Math.random() * 15, color: 'hsl(' + Math.floor(Math.random() * 360) + ',80%,60%)', speed: 0.1 + Math.random() * 0.15 });
-            }
-        }
+        function _hexToRgb(hex) { var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return [r,g,b]; }
+        function _lerpColor(c1, c2, t) { var a = _hexToRgb(c1), b = _hexToRgb(c2); return 'rgb(' + Math.round(a[0]+(b[0]-a[0])*t) + ',' + Math.round(a[1]+(b[1]-a[1])*t) + ',' + Math.round(a[2]+(b[2]-a[2])*t) + ')'; }
 
         function updateWeatherParticles() {
             var w = getWeather();
-            _spawnBgDecor();
-            // Snow particles
-            if (w.decor === 'snow') {
-                if (_weatherParticles.length < 30) {
-                    _weatherParticles.push({ x: Math.random() * canvas.width, y: -5, vx: (Math.random() - 0.5) * 1, vy: 0.5 + Math.random() * 1.5, size: 2 + Math.random() * 3 });
+            var zone = Math.floor(maxDepth / 100);
+            var W = canvas.width, H = canvas.height;
+            if (zone !== _lastWeatherZone) {
+                _prevSky = { sky1: _curSky.sky1, sky2: _curSky.sky2 };
+                _curSky = { sky1: w.sky1, sky2: w.sky2 };
+                _skyBlend = 0;
+                _lastWeatherZone = zone;
+                var types = w.decor;
+                for (var ti = 0; ti < types.length; ti++) {
+                    var dt = types[ti];
+                    if (dt === 'clouds') { for (var i = 0; i < 8; i++) _bgElements.push({ type: 'cloud', x: Math.random() * W * 1.5 - W * 0.25, y: H * 0.02 + Math.random() * H * 0.35, w: 40 + Math.random() * 100, speed: 0.1 + Math.random() * 0.25, life: 600 + Math.random() * 400 }); }
+                    if (dt === 'birds') { for (var i = 0; i < 8; i++) _bgElements.push({ type: 'bird', x: -50 - Math.random() * 200, y: H * 0.03 + Math.random() * H * 0.3, speed: 0.3 + Math.random() * 0.5, phase: Math.random() * Math.PI * 2, life: 500 + Math.random() * 300 }); }
+                    if (dt === 'balloons') { for (var i = 0; i < 10; i++) _bgElements.push({ type: 'balloon', x: Math.random() * W, y: H + Math.random() * 200, r: 8 + Math.random() * 18, color: 'hsl(' + Math.floor(Math.random() * 360) + ',80%,60%)', speed: 0.05 + Math.random() * 0.15, life: 800 + Math.random() * 400 }); }
+                    if (dt === 'stars') { for (var i = 0; i < 40; i++) _bgElements.push({ type: 'star', x: Math.random() * W, y: Math.random() * H * 0.5, size: 0.5 + Math.random() * 2.5, twinkle: Math.random() * Math.PI * 2, life: 900 + Math.random() * 300 }); }
+                    if (dt === 'comets') { for (var i = 0; i < 2; i++) _bgElements.push({ type: 'comet', x: -50, y: Math.random() * H * 0.3, speed: 2 + Math.random() * 3, angle: 0.3 + Math.random() * 0.4, life: 200 + Math.random() * 100 }); }
+                    if (dt === 'planets') { _bgElements.push({ type: 'planet', x: W * 0.2 + Math.random() * W * 0.6, y: H * 0.08 + Math.random() * H * 0.15, r: 15 + Math.random() * 25, color: 'hsl(' + Math.floor(Math.random() * 360) + ',40%,50%)', life: 900 }); }
+                    if (dt === 'snow') { for (var i = 0; i < 40; i++) _bgElements.push({ type: 'snow', x: Math.random() * W, y: -Math.random() * H, vx: (Math.random() - 0.5) * 0.8, vy: 0.4 + Math.random() * 1.2, size: 1.5 + Math.random() * 3, life: 500 + Math.random() * 300 }); }
+                    if (dt === 'rainbow') { _bgElements.push({ type: 'rainbow', life: 800 }); }
+                    if (dt === 'aurora') { for (var i = 0; i < 4; i++) _bgElements.push({ type: 'aurora', idx: i, life: 900 }); }
                 }
-            } else if (w.decor === 'stars') {
-                if (_weatherParticles.length < 20) {
-                    _weatherParticles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height * 0.4, vx: 0, vy: 0, size: 1 + Math.random() * 2, twinkle: Math.random() * Math.PI * 2 });
-                }
-            } else {
-                _weatherParticles = [];
             }
-            for (var i = _weatherParticles.length - 1; i >= 0; i--) {
-                var p = _weatherParticles[i];
-                p.x += p.vx; p.y += p.vy;
-                if (p.twinkle !== undefined) p.twinkle += 0.05;
-                if (p.y > canvas.height + 10) _weatherParticles.splice(i, 1);
-            }
-            // Move decorations
-            for (var d = 0; d < _bgDecor.length; d++) {
-                var dc = _bgDecor[d];
-                dc.x += dc.speed || 0;
-                if (dc.type === 'balloon') dc.y -= 0.05;
-                if (dc.type === 'bird') dc.phase = (dc.phase || 0) + 0.08;
-                if (dc.x > canvas.width + 100) dc.x = -100;
-                if (dc.y < -50) dc.y = canvas.height + 20;
+            if (_skyBlend < 1) _skyBlend = Math.min(1, _skyBlend + 0.008);
+            for (var i = _bgElements.length - 1; i >= 0; i--) {
+                var e = _bgElements[i]; e.life--;
+                if (e.life <= 0) { _bgElements.splice(i, 1); continue; }
+                if (e.type === 'cloud') { e.x += e.speed; if (e.x > W + 150) e.x = -150; }
+                else if (e.type === 'bird') { e.x += e.speed; e.phase += 0.1; if (e.x > W + 100) e.x = -80; }
+                else if (e.type === 'balloon') { e.y -= e.speed; e.x += Math.sin(Date.now() * 0.002 + i) * 0.2; if (e.y < -50) e.y = H + 50; }
+                else if (e.type === 'star') { e.twinkle += 0.04; }
+                else if (e.type === 'comet') { e.x += e.speed; e.y += e.speed * e.angle; if (e.x > W + 50) { e.x = -50; e.y = Math.random() * H * 0.3; } }
+                else if (e.type === 'snow') { e.x += e.vx; e.y += e.vy; if (e.y > H + 10) { e.y = -5; e.x = Math.random() * W; } }
             }
         }
 
         function drawWeatherOverlay() {
-            var w = getWeather();
-            var W = canvas.width, H = canvas.height;
-            var t = Date.now() * 0.001;
-
+            var W = canvas.width, H = canvas.height, t = Date.now() * 0.001;
             ctx.save();
-            // Sky gradient
-            ctx.globalAlpha = 0.4;
-            var skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-            skyGrad.addColorStop(0, w.sky1); skyGrad.addColorStop(1, w.sky2);
-            ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, W, H);
-            ctx.globalAlpha = 1;
-
-            // Decorations
-            for (var d = 0; d < _bgDecor.length; d++) {
-                var dc = _bgDecor[d];
-                if (dc.type === 'cloud') {
-                    ctx.globalAlpha = 0.25;
-                    ctx.fillStyle = '#fff';
-                    ctx.beginPath();
-                    ctx.arc(dc.x, dc.y, dc.w * 0.3, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(dc.x + dc.w * 0.25, dc.y - dc.w * 0.1, dc.w * 0.25, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(dc.x - dc.w * 0.2, dc.y + dc.w * 0.05, dc.w * 0.2, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(dc.x + dc.w * 0.15, dc.y + dc.w * 0.08, dc.w * 0.22, 0, Math.PI * 2); ctx.fill();
-                } else if (dc.type === 'bird') {
-                    ctx.globalAlpha = 0.3;
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1.5;
-                    var wingY = Math.sin(dc.phase) * 4;
-                    ctx.beginPath();
-                    ctx.moveTo(dc.x - 8, dc.y + wingY); ctx.quadraticCurveTo(dc.x - 3, dc.y - 5 + wingY, dc.x, dc.y);
-                    ctx.quadraticCurveTo(dc.x + 3, dc.y - 5 + wingY, dc.x + 8, dc.y + wingY);
-                    ctx.stroke();
-                } else if (dc.type === 'balloon') {
-                    ctx.globalAlpha = 0.3;
-                    ctx.fillStyle = dc.color;
-                    ctx.beginPath(); ctx.ellipse(dc.x, dc.y, dc.r * 0.8, dc.r, 0, 0, Math.PI * 2); ctx.fill();
-                    ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 0.5;
-                    ctx.beginPath(); ctx.moveTo(dc.x, dc.y + dc.r); ctx.lineTo(dc.x + Math.sin(t + d) * 3, dc.y + dc.r + 20); ctx.stroke();
-                    // Highlight
-                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-                    ctx.beginPath(); ctx.arc(dc.x - dc.r * 0.2, dc.y - dc.r * 0.3, dc.r * 0.2, 0, Math.PI * 2); ctx.fill();
-                }
+            var s1 = _lerpColor(_prevSky.sky1, _curSky.sky1, _skyBlend);
+            var s2 = _lerpColor(_prevSky.sky2, _curSky.sky2, _skyBlend);
+            ctx.globalAlpha = 0.45;
+            var sg = ctx.createLinearGradient(0, 0, 0, H); sg.addColorStop(0, s1); sg.addColorStop(1, s2);
+            ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+            for (var i = 0; i < _bgElements.length; i++) {
+                var e = _bgElements[i];
+                var fi = Math.min(1, (800 - e.life) / 60), fo = Math.min(1, e.life / 60), al = Math.min(fi, fo);
+                if (e.type === 'cloud') { ctx.globalAlpha = 0.2 * al; ctx.fillStyle = '#fff'; var cw = e.w; ctx.beginPath(); ctx.arc(e.x, e.y, cw * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x + cw * 0.22, e.y - cw * 0.12, cw * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x - cw * 0.18, e.y + cw * 0.05, cw * 0.22, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x + cw * 0.12, e.y + cw * 0.1, cw * 0.2, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x - cw * 0.08, e.y - cw * 0.08, cw * 0.18, 0, Math.PI * 2); ctx.fill(); }
+                else if (e.type === 'bird') { ctx.globalAlpha = 0.35 * al; ctx.strokeStyle = '#444'; ctx.lineWidth = 1.5; var wy = Math.sin(e.phase) * 5; ctx.beginPath(); ctx.moveTo(e.x - 10, e.y + wy); ctx.quadraticCurveTo(e.x - 4, e.y - 6 + wy, e.x, e.y); ctx.quadraticCurveTo(e.x + 4, e.y - 6 + wy, e.x + 10, e.y + wy); ctx.stroke(); }
+                else if (e.type === 'balloon') { ctx.globalAlpha = 0.35 * al; ctx.fillStyle = e.color; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 0.75, e.r, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(e.x, e.y + e.r); ctx.lineTo(e.x + Math.sin(t + i) * 4, e.y + e.r + 25); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(e.x - e.r * 0.2, e.y - e.r * 0.3, e.r * 0.18, 0, Math.PI * 2); ctx.fill(); }
+                else if (e.type === 'star') { var tw = 0.2 + Math.sin(e.twinkle) * 0.3; ctx.globalAlpha = tw * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); ctx.fill(); if (e.size > 1.5 && tw > 0.35) { ctx.strokeStyle = 'rgba(255,255,255,' + (tw * 0.5) + ')'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(e.x - e.size * 2, e.y); ctx.lineTo(e.x + e.size * 2, e.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.x, e.y - e.size * 2); ctx.lineTo(e.x, e.y + e.size * 2); ctx.stroke(); } }
+                else if (e.type === 'comet') { ctx.globalAlpha = 0.4 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, 2, 0, Math.PI * 2); ctx.fill(); var cg = ctx.createLinearGradient(e.x, e.y, e.x - 30, e.y - 30 * e.angle); cg.addColorStop(0, 'rgba(255,255,200,0.4)'); cg.addColorStop(1, 'rgba(255,255,200,0)'); ctx.strokeStyle = cg; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x - 30, e.y - 30 * e.angle); ctx.stroke(); }
+                else if (e.type === 'planet') { ctx.globalAlpha = 0.2 * al; var pg = ctx.createRadialGradient(e.x - e.r * 0.2, e.y - e.r * 0.2, 0, e.x, e.y, e.r); pg.addColorStop(0, e.color); pg.addColorStop(1, 'rgba(0,0,0,0.3)'); ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 1.5, e.r * 0.3, 0.2, 0, Math.PI * 2); ctx.stroke(); }
+                else if (e.type === 'snow') { ctx.globalAlpha = 0.5 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); ctx.fill(); }
+                else if (e.type === 'rainbow') { ctx.globalAlpha = 0.1 * al; var rc = ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#4400ff','#8800ff']; for (var ri = 0; ri < rc.length; ri++) { ctx.strokeStyle = rc[ri]; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(W * 0.5, H * 0.7, W * 0.45 - ri * 12, Math.PI, 0); ctx.stroke(); } }
+                else if (e.type === 'aurora') { ctx.globalAlpha = 0.08 * al; var ay = H * 0.06 + e.idx * 22 + Math.sin(t + e.idx) * 12; var ag = ctx.createLinearGradient(0, ay, W, ay); ag.addColorStop(0, '#00ff88'); ag.addColorStop(0.3, '#00ffcc'); ag.addColorStop(0.6, '#8844ff'); ag.addColorStop(1, '#00ff88'); ctx.fillStyle = ag; ctx.fillRect(0, ay, W, 10 + Math.sin(t * 2 + e.idx) * 5); }
             }
-            ctx.globalAlpha = 1;
-
-            // Snow
-            if (w.decor === 'snow') {
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                for (var i = 0; i < _weatherParticles.length; i++) {
-                    var p = _weatherParticles[i];
-                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-                }
-            }
-            // Stars
-            if (w.decor === 'stars') {
-                for (var i = 0; i < _weatherParticles.length; i++) {
-                    var p = _weatherParticles[i];
-                    var tw = 0.3 + Math.sin(p.twinkle) * 0.3;
-                    ctx.globalAlpha = tw;
-                    ctx.fillStyle = '#fff';
-                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-                }
-                ctx.globalAlpha = 1;
-            }
-            // Rainbow
-            if (w.decor === 'rainbow') {
-                ctx.globalAlpha = 0.12;
-                var colors = ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#4400ff','#8800ff'];
-                for (var ri = 0; ri < colors.length; ri++) {
-                    ctx.strokeStyle = colors[ri];
-                    ctx.lineWidth = 8;
-                    ctx.beginPath();
-                    ctx.arc(W * 0.5, H * 0.6, W * 0.4 - ri * 10, Math.PI, 0);
-                    ctx.stroke();
-                }
-                ctx.globalAlpha = 1;
-            }
-            // Aurora
-            if (w.decor === 'aurora') {
-                ctx.globalAlpha = 0.1;
-                for (var ai = 0; ai < 3; ai++) {
-                    var ay = H * 0.08 + ai * 25 + Math.sin(t + ai) * 15;
-                    var aGrad = ctx.createLinearGradient(0, ay, W, ay);
-                    aGrad.addColorStop(0, '#00ff88'); aGrad.addColorStop(0.3, '#00ffcc');
-                    aGrad.addColorStop(0.6, '#8844ff'); aGrad.addColorStop(1, '#00ff88');
-                    ctx.fillStyle = aGrad;
-                    ctx.fillRect(0, ay, W, 12 + Math.sin(t * 2 + ai) * 6);
-                }
-                ctx.globalAlpha = 1;
-            }
-            ctx.restore();
+            ctx.globalAlpha = 1; ctx.restore();
         }
 
         function drawBackground() {
