@@ -1741,21 +1741,6 @@
                         spawnBat(bx, by, zone, bi === 0);
                     }
                 }
-                // Spawn spiders on the clearing floor — first one is Mother
-                if (typeof spiders !== 'undefined') {
-                    var spShape = getClearingShape(zone);
-                    var spBounds = spShape[CLEARING_HEIGHT - 1];
-                    var numSp = Math.min(MAX_SPIDERS - spiders.length, 2 + Math.floor(zone * 0.3));
-                    for (var spi = 0; spi < numSp; spi++) {
-                        var spMinC = (spBounds ? spBounds.left + 1 : 2);
-                        var spMaxC = (spBounds ? spBounds.right - 1 : COLS - 3);
-                        if (spMinC > spMaxC) spMinC = spMaxC;
-                        var spCol = spMinC + Math.floor(seededRand(zone * 400 + spi * 11) * (spMaxC - spMinC + 1));
-                        var spx = spCol * TILE + TILE / 2;
-                        var spy = (lastEmptyRow + 1) * TILE;
-                        spawnSpider(spx, spy, spi === 0);
-                    }
-                }
             }
 
             // Place torches on clearing walls (every 3 rows, left and right walls)
@@ -1853,6 +1838,15 @@
                                 owner: null, // no owner yet — assigned when player gets close
                                 isGrotta: true // mark as grotto item
                             });
+                        }
+                    }
+                    // Spawn spiders in mini-clearing — first one is Mother
+                    if (typeof spiders !== 'undefined' && mb) {
+                        var numSp = Math.min(MAX_SPIDERS - spiders.length, 1 + Math.floor(zone * 0.2));
+                        for (var spi = 0; spi < numSp; spi++) {
+                            var spx = cx + (seededRand(zone * 1100 + spi * 31) - 0.5) * (mb.right - mb.left) * TILE * 0.5;
+                            var spy = miniStart2 * TILE + TILE;
+                            spawnSpider(spx, spy, spi === 0);
                         }
                     }
                 }
