@@ -846,6 +846,10 @@
                     <span class="cmd-icon">🕳️</span>
                     <span class="cmd-badge badge-purple">bh</span>
                 </div>
+                <div class="cmd-row" id="chromaBtn" onclick="chromaKey=!chromaKey;this.style.background=chromaKey?'#00ff00':'';this.querySelector('.cmd-badge').textContent=chromaKey?'ON':'OFF'">
+                    <span class="cmd-icon">🟢</span>
+                    <span class="cmd-badge badge-green">OFF</span>
+                </div>
             </div>
         </div>
 
@@ -7330,11 +7334,13 @@
         // Chroma key toggle — separate listener on document to work even with input focus
         document.addEventListener('keydown', function(e) {
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-            if (e.key === 'o' || e.key === 'O') {
+            var k = e.key || '';
+            var kc = e.keyCode || e.which || 0;
+            if (k === 'o' || k === 'O' || kc === 79) {
                 chromaKey = !chromaKey;
                 document.title = chromaKey ? '[CHROMA] Chat Live Game' : 'Chat Live Game';
             }
-        });
+        }, true);
 
         // ── Touch: double tap = TNT, triple tap = Mega TNT, long press = 20 bots ──
         var _tapCount = 0;
