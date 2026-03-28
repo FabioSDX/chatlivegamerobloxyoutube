@@ -6247,7 +6247,16 @@
             var row = Math.floor(pick.y / TILE);
             if (isMegaClearingRow(row)) {
                 var mz = getMegaZone(row);
-                if (mz >= 0 && megaClearedZones[mz] && !megaClearedZones[mz + '_gateOpen']) return 'boss';
+                if (mz >= 0 && megaClearedZones[mz]) {
+                    if (!megaClearedZones[mz + '_gateOpen']) {
+                        // Check if there are actually alive bosses
+                        var hasBoss = false;
+                        for (var bi = 0; bi < bats.length; bi++) { if (bats[bi].isQueen && bats[bi].zone === mz && bats[bi].state !== 'dead') { hasBoss = true; break; } }
+                        if (!hasBoss) { for (var zi = 0; zi < zombies.length; zi++) { if (zombies[zi].isZBoss && zombies[zi].zone === mz && zombies[zi].state !== 'dead') { hasBoss = true; break; } } }
+                        if (hasBoss) return 'boss';
+                    }
+                    return 'mega';
+                }
                 return 'mega';
             }
             return 'normal';
@@ -6259,14 +6268,27 @@
             var t = ac.currentTime;
             musicMode = getMusicMode();
 
+            // Harmonic variation: shift root every 16 beats
+            var harmonyPhase = Math.floor(musicStep / 16) % 4;
+            var rootShift = [0, 5, 7, 3][harmonyPhase]; // I, IV, V, II progression
+            var curRoot = ROOT * Math.pow(2, rootShift / 12);
+
+            function hScaleFreq(d, oct) {
+                oct = oct || 0;
+                return curRoot * Math.pow(2, (SCALE[d % SCALE.length] + (oct || 0) * 12) / 12);
+            }
+
             var bass = musicMode === 'mega' ? BASS_MEGA : (musicMode === 'boss' ? BASS_BOSS : BASS_NORMAL);
             var melody = musicMode === 'mega' ? MELODY_MEGA : MELODY_NORMAL;
             var pads = musicMode === 'boss' ? PAD_BOSS : PAD_NORMAL;
             var beat = musicMode === 'mega' ? 0.3 : (musicMode === 'boss' ? 0.55 : BEAT);
 
+            // Variation: alternate melody patterns every 32 beats
+            var melodyVariation = Math.floor(musicStep / 32) % 2;
+
             // Bass
             var bn = bass[bassStep % bass.length];
-            var bf = scaleFreq(bn.d, bn.oct);
+            var bf = hScaleFreq(bn.d, bn.oct);
             playNote(bf, 'sine', bn.vol, 0.02, bn.dur * 0.8, t);
             if (musicMode !== 'mega') playNote(bf * 0.5, 'sine', bn.vol * 0.4, 0.02, bn.dur * 0.8, t);
             bassStep++;
@@ -6274,7 +6296,9 @@
             // Melody (every 2 beats, or every beat in mega)
             if (musicMode === 'mega' || musicStep % 2 === 0) {
                 var mn = melody[melStep % melody.length];
-                var mf = scaleFreq(mn.d, mn.oct);
+                // Variation: offset melody degrees on alternate phrases
+                var melDeg = mn.d + (melodyVariation === 1 ? 2 : 0);
+                var mf = hScaleFreq(melDeg, mn.oct);
                 playNote(mf, 'sine', mn.vol, 0.03, mn.dur, t);
                 if (musicMode !== 'boss') playNote(mf * 1.005, 'triangle', mn.vol * 0.3, 0.03, mn.dur * 1.2, t);
                 melStep++;
@@ -6284,23 +6308,30 @@
             if (musicStep % 4 === 0) {
                 var chord = pads[padStep % pads.length];
                 for (var ci = 0; ci < chord.length; ci++) {
-                    var pf = scaleFreq(chord[ci], 1);
+                    var pf = hScaleFreq(chord[ci], 1);
                     var padType = musicMode === 'boss' ? 'triangle' : 'sine';
                     playNote(pf, padType, musicMode === 'boss' ? 0.05 : 0.035, 0.1, beat * 3.5, t);
                 }
                 padStep++;
             }
 
-            // Sparkle (random happy note)
+            // Sparkle (random happy note) — varies with harmony
             if (Math.random() < (musicMode === 'mega' ? 0.4 : 0.2)) {
                 var gd = Math.floor(Math.random() * SCALE.length);
-                var gf = scaleFreq(gd, musicMode === 'mega' ? 3 : 2);
+                var gf = hScaleFreq(gd, musicMode === 'mega' ? 3 : 2);
                 playNote(gf, 'sine', 0.035, 0.01, 0.2, t + Math.random() * beat * 0.5);
             }
 
-            // Boss: dramatic low pulse
-            if (musicMode === 'boss' && musicStep % 2 === 0) {
-                playNote(ROOT * 0.5, 'triangle', 0.08, 0.05, beat * 1.5, t);
+            // Counter-melody (every 8 beats, adds variety)
+            if (musicStep % 8 === 4 && musicMode === 'normal') {
+                var cd = [7, 5, 4, 2][Math.floor(musicStep / 8) % 4];
+                playNote(hScaleFreq(cd, 2), 'triangle', 0.04, 0.05, beat * 2, t);
+            }
+
+            // Boss: dramatic low pulse + tension notes
+            if (musicMode === 'boss') {
+                if (musicStep % 2 === 0) playNote(curRoot * 0.5, 'triangle', 0.08, 0.05, beat * 1.5, t);
+                if (musicStep % 8 === 0) playNote(hScaleFreq(3, 0), 'sawtooth', 0.03, 0.1, beat * 3, t);
             }
 
             musicStep++;
