@@ -2879,41 +2879,51 @@
         var fallingBlocks = [];
 
         function _hasSupport(r, c) {
-            // A block has support if any neighbor is solid (not counting itself)
+            // Block needs support below OR connected to bedrock wall
+            if (c <= 0 || c >= COLS - 1) return true; // bedrock walls always supported
             var below = getCell(r + 1, c);
-            if (below && below.t !== E) return true;
+            if (below && below.t !== E) return true; // has floor
+            // Check if connected laterally to a supported block
             var left = getCell(r, c - 1);
-            if (left && left.t !== E) return true;
             var right = getCell(r, c + 1);
-            if (right && right.t !== E) return true;
-            var above = getCell(r - 1, c);
-            if (above && above.t !== E) return true;
+            if (left && left.t === BEDROCK) return true;
+            if (right && right.t === BEDROCK) return true;
+            // No direct support below — check if lateral neighbors have support below them
+            if (left && left.t !== E) {
+                var leftBelow = getCell(r + 1, c - 1);
+                if (leftBelow && leftBelow.t !== E) return true;
+            }
+            if (right && right.t !== E) {
+                var rightBelow = getCell(r + 1, c + 1);
+                if (rightBelow && rightBelow.t !== E) return true;
+            }
             return false;
         }
 
         function checkFallingBlocks(col, row) {
-            // Check the 4 neighbors of the destroyed block
-            var neighbors = [[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]];
-            for (var ni = 0; ni < neighbors.length; ni++) {
-                var nr = neighbors[ni][0], nc = neighbors[ni][1];
-                var cell = getCell(nr, nc);
-                if (!cell || cell.t === E || cell.t === BEDROCK) continue;
-                if (!_hasSupport(nr, nc)) {
-                    // This block is unsupported — make it fall
-                    var bt = cell.t;
-                    fallingBlocks.push({
-                        x: nc * TILE + TILE / 2,
-                        y: nr * TILE + TILE / 2,
-                        vx: (Math.random() - 0.5) * 2,
-                        vy: -1,
-                        t: bt,
-                        size: TILE,
-                        ang: 0,
-                        spin: (Math.random() - 0.5) * 0.1,
-                        hp: BDEF[bt].hp,
-                        bounces: 0
-                    });
-                    cell.t = E; cell.hp = 0; cell.cr = 0;
+            // Check 5x5 area around destroyed block for unsupported blocks
+            for (var dr = -2; dr <= 2; dr++) {
+                for (var dc = -2; dc <= 2; dc++) {
+                    var nr = row + dr, nc = col + dc;
+                    if (nr === row && nc === col) continue; // skip destroyed block
+                    var cell = getCell(nr, nc);
+                    if (!cell || cell.t === E || cell.t === BEDROCK) continue;
+                    if (!_hasSupport(nr, nc)) {
+                        var bt = cell.t;
+                        fallingBlocks.push({
+                            x: nc * TILE + TILE / 2,
+                            y: nr * TILE + TILE / 2,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: -1,
+                            t: bt,
+                            size: TILE,
+                            ang: 0,
+                            spin: (Math.random() - 0.5) * 0.1,
+                            hp: BDEF[bt].hp,
+                            bounces: 0
+                        });
+                        cell.t = E; cell.hp = 0; cell.cr = 0;
+                    }
                 }
             }
         }
