@@ -3692,6 +3692,10 @@
             var _oreShimmer = { 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 16:1, 17:1 };
             var _shimmerTime = Date.now() * 0.003;
 
+            // 3D block dimensions
+            var _3D_TOP = 6;   // top face height
+            var _3D_SIDE = 5;  // side face width
+
             for (var r = rStart; r <= rEnd; r++) {
                 for (var c = 0; c < COLS; c++) {
                     var cell = getCell(r, c);
@@ -3699,12 +3703,46 @@
                     var x = c * TILE;
                     var y = r * TILE;
                     var tex = BTEX[cell.t];
+
+                    // Check neighbors for 3D edges
+                    var aboveEmpty = true, rightEmpty = true;
+                    var aboveCell = getCell(r - 1, c);
+                    var rightCell = getCell(r, c + 1);
+                    if (aboveCell && aboveCell.t !== E) aboveEmpty = false;
+                    if (rightCell && rightCell.t !== E) rightEmpty = false;
+
+                    // Front face (main texture)
                     if (tex && tex.complete && tex.naturalWidth > 0) {
                         ctx.drawImage(tex, x - 0.5, y - 0.5, TILE + 1, TILE + 1);
                     } else {
                         ctx.fillStyle = BDEF[cell.t].color;
                         ctx.fillRect(x - 0.5, y - 0.5, TILE + 1, TILE + 1);
                     }
+
+                    // Top face (lighter) — only if block above is empty
+                    if (aboveEmpty) {
+                        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + _3D_SIDE, y - _3D_TOP);
+                        ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
+                        ctx.lineTo(x + TILE, y);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+
+                    // Right face (darker) — only if block to right is empty
+                    if (rightEmpty) {
+                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                        ctx.beginPath();
+                        ctx.moveTo(x + TILE, y);
+                        ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
+                        ctx.lineTo(x + TILE + _3D_SIDE, y + TILE - _3D_TOP);
+                        ctx.lineTo(x + TILE, y + TILE);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+
                     // Ore shimmer — brightens only the colored mineral pixels
                     if (SHIMMER_ENABLED && _oreShimmer[cell.t]) {
                         var phase = _shimmerTime + r * 0.7 + c * 0.5;
