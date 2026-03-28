@@ -3660,7 +3660,6 @@
             var targetCamY = followPick.y - canvas.height * 0.60;
             if (targetCamY < 0) targetCamY = 0;
             if (targetCamY > camY) { camY += (targetCamY - camY) * 0.08; }
-            else if (targetCamY < camY - canvas.height * 0.3) { camY += (targetCamY - camY) * 0.04; }
             var visBot = Math.ceil((camY + canvas.height) / TILE) + 4;
             ensureRows(0, visBot);
             var newTopRow = Math.max(0, Math.floor(camY / TILE) - 6);
