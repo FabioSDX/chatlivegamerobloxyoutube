@@ -3284,34 +3284,31 @@
             ctx.save();
             var s1 = _lerpColor(_prevSky.sky1, _curSky.sky1, _skyBlend);
             var s2 = _lerpColor(_prevSky.sky2, _curSky.sky2, _skyBlend);
-            ctx.globalAlpha = 0.45;
+            // Full sky gradient
+            ctx.globalAlpha = 1;
             var sg = ctx.createLinearGradient(0, 0, 0, H); sg.addColorStop(0, s1); sg.addColorStop(1, s2);
-            ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+            ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
             for (var i = 0; i < _bgElements.length; i++) {
                 var e = _bgElements[i];
                 var fi = Math.min(1, (800 - e.life) / 60), fo = Math.min(1, e.life / 60), al = Math.min(fi, fo);
-                if (e.type === 'cloud') { ctx.globalAlpha = 0.2 * al; ctx.fillStyle = '#fff'; var cw = e.w; ctx.beginPath(); ctx.arc(e.x, e.y, cw * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x + cw * 0.22, e.y - cw * 0.12, cw * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x - cw * 0.18, e.y + cw * 0.05, cw * 0.22, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x + cw * 0.12, e.y + cw * 0.1, cw * 0.2, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x - cw * 0.08, e.y - cw * 0.08, cw * 0.18, 0, Math.PI * 2); ctx.fill(); }
-                else if (e.type === 'bird') { ctx.globalAlpha = 0.35 * al; ctx.strokeStyle = '#444'; ctx.lineWidth = 1.5; var wy = Math.sin(e.phase) * 5; ctx.beginPath(); ctx.moveTo(e.x - 10, e.y + wy); ctx.quadraticCurveTo(e.x - 4, e.y - 6 + wy, e.x, e.y); ctx.quadraticCurveTo(e.x + 4, e.y - 6 + wy, e.x + 10, e.y + wy); ctx.stroke(); }
-                else if (e.type === 'balloon') { ctx.globalAlpha = 0.35 * al; ctx.fillStyle = e.color; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 0.75, e.r, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(e.x, e.y + e.r); ctx.lineTo(e.x + Math.sin(t + i) * 4, e.y + e.r + 25); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(e.x - e.r * 0.2, e.y - e.r * 0.3, e.r * 0.18, 0, Math.PI * 2); ctx.fill(); }
+                if (e.type === 'cloud') { ctx.globalAlpha = 0.4 * al; ctx.fillStyle = '#fff'; var cw = e.w; ctx.beginPath(); ctx.arc(e.x, e.y, cw * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x + cw * 0.22, e.y - cw * 0.12, cw * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x - cw * 0.18, e.y + cw * 0.05, cw * 0.22, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x + cw * 0.12, e.y + cw * 0.1, cw * 0.2, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(e.x - cw * 0.08, e.y - cw * 0.08, cw * 0.18, 0, Math.PI * 2); ctx.fill(); }
+                else if (e.type === 'bird') { ctx.globalAlpha = 0.5 * al; ctx.strokeStyle = '#555'; ctx.lineWidth = 1.5; var wy = Math.sin(e.phase) * 5; ctx.beginPath(); ctx.moveTo(e.x - 10, e.y + wy); ctx.quadraticCurveTo(e.x - 4, e.y - 6 + wy, e.x, e.y); ctx.quadraticCurveTo(e.x + 4, e.y - 6 + wy, e.x + 10, e.y + wy); ctx.stroke(); }
+                else if (e.type === 'balloon') { ctx.globalAlpha = 0.5 * al; ctx.fillStyle = e.color; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 0.75, e.r, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(e.x, e.y + e.r); ctx.lineTo(e.x + Math.sin(t + i) * 4, e.y + e.r + 25); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(e.x - e.r * 0.2, e.y - e.r * 0.3, e.r * 0.18, 0, Math.PI * 2); ctx.fill(); }
                 else if (e.type === 'star') { var tw = 0.2 + Math.sin(e.twinkle) * 0.3; ctx.globalAlpha = tw * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); ctx.fill(); if (e.size > 1.5 && tw > 0.35) { ctx.strokeStyle = 'rgba(255,255,255,' + (tw * 0.5) + ')'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.moveTo(e.x - e.size * 2, e.y); ctx.lineTo(e.x + e.size * 2, e.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.x, e.y - e.size * 2); ctx.lineTo(e.x, e.y + e.size * 2); ctx.stroke(); } }
-                else if (e.type === 'comet') { ctx.globalAlpha = 0.4 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, 2, 0, Math.PI * 2); ctx.fill(); var cg = ctx.createLinearGradient(e.x, e.y, e.x - 30, e.y - 30 * e.angle); cg.addColorStop(0, 'rgba(255,255,200,0.4)'); cg.addColorStop(1, 'rgba(255,255,200,0)'); ctx.strokeStyle = cg; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x - 30, e.y - 30 * e.angle); ctx.stroke(); }
-                else if (e.type === 'planet') { ctx.globalAlpha = 0.2 * al; var pg = ctx.createRadialGradient(e.x - e.r * 0.2, e.y - e.r * 0.2, 0, e.x, e.y, e.r); pg.addColorStop(0, e.color); pg.addColorStop(1, 'rgba(0,0,0,0.3)'); ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 1.5, e.r * 0.3, 0.2, 0, Math.PI * 2); ctx.stroke(); }
-                else if (e.type === 'snow') { ctx.globalAlpha = 0.5 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); ctx.fill(); }
-                else if (e.type === 'rainbow') { ctx.globalAlpha = 0.1 * al; var rc = ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#4400ff','#8800ff']; for (var ri = 0; ri < rc.length; ri++) { ctx.strokeStyle = rc[ri]; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(W * 0.5, H * 0.7, W * 0.45 - ri * 12, Math.PI, 0); ctx.stroke(); } }
-                else if (e.type === 'aurora') { ctx.globalAlpha = 0.08 * al; var ay = H * 0.06 + e.idx * 22 + Math.sin(t + e.idx) * 12; var ag = ctx.createLinearGradient(0, ay, W, ay); ag.addColorStop(0, '#00ff88'); ag.addColorStop(0.3, '#00ffcc'); ag.addColorStop(0.6, '#8844ff'); ag.addColorStop(1, '#00ff88'); ctx.fillStyle = ag; ctx.fillRect(0, ay, W, 10 + Math.sin(t * 2 + e.idx) * 5); }
+                else if (e.type === 'comet') { ctx.globalAlpha = 0.6 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, 2, 0, Math.PI * 2); ctx.fill(); var cg = ctx.createLinearGradient(e.x, e.y, e.x - 30, e.y - 30 * e.angle); cg.addColorStop(0, 'rgba(255,255,200,0.4)'); cg.addColorStop(1, 'rgba(255,255,200,0)'); ctx.strokeStyle = cg; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x - 30, e.y - 30 * e.angle); ctx.stroke(); }
+                else if (e.type === 'planet') { ctx.globalAlpha = 0.35 * al; var pg = ctx.createRadialGradient(e.x - e.r * 0.2, e.y - e.r * 0.2, 0, e.x, e.y, e.r); pg.addColorStop(0, e.color); pg.addColorStop(1, 'rgba(0,0,0,0.3)'); ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 1.5, e.r * 0.3, 0.2, 0, Math.PI * 2); ctx.stroke(); }
+                else if (e.type === 'snow') { ctx.globalAlpha = 0.7 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); ctx.fill(); }
+                else if (e.type === 'rainbow') { ctx.globalAlpha = 0.18 * al; var rc = ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#4400ff','#8800ff']; for (var ri = 0; ri < rc.length; ri++) { ctx.strokeStyle = rc[ri]; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(W * 0.5, H * 0.7, W * 0.45 - ri * 12, Math.PI, 0); ctx.stroke(); } }
+                else if (e.type === 'aurora') { ctx.globalAlpha = 0.15 * al; var ay = H * 0.06 + e.idx * 22 + Math.sin(t + e.idx) * 12; var ag = ctx.createLinearGradient(0, ay, W, ay); ag.addColorStop(0, '#00ff88'); ag.addColorStop(0.3, '#00ffcc'); ag.addColorStop(0.6, '#8844ff'); ag.addColorStop(1, '#00ff88'); ctx.fillStyle = ag; ctx.fillRect(0, ay, W, 10 + Math.sin(t * 2 + e.idx) * 5); }
             }
             ctx.globalAlpha = 1; ctx.restore();
         }
 
         function drawBackground() {
             bgTick++;
-            var W = canvas.width, H = canvas.height;
-
-            // Simple clean gradient — weather overlay adds all decorations
-            var w = getWeather();
-            var grad = ctx.createLinearGradient(0, 0, 0, H);
-            grad.addColorStop(0, w.sky1); grad.addColorStop(1, w.sky2);
-            ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+            // Sky is drawn by drawWeatherOverlay — just clear
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
         // ── Water Pools in Clearings ────────────────────────────────────────────
