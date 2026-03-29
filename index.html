@@ -881,9 +881,9 @@
         canvas.width = COLS * TILE;
         canvas.height = VIS * TILE;
 
-        var MAX_PARTS = isMobile ? 20 : 300;
-        var MAX_DEBRIS = isMobile ? 15 : 100;
-        var MAX_TEXTS = isMobile ? 6 : 30;
+        var MAX_PARTS = isMobile ? 15 : 150;
+        var MAX_DEBRIS = isMobile ? 10 : 60;
+        var MAX_TEXTS = isMobile ? 4 : 20;
         var MAX_ITEMS = 30;
         var SHADOW_ENABLED = !isMobile;
         var SHIMMER_ENABLED = !isMobile;
@@ -2387,7 +2387,7 @@
             var _inWater = isInWater(p.x, p.y);
             if (_inWater && !p._wasInWater) {
                 // Spawn splash particles
-                for (var si = 0; si < 6; si++) {
+                for (var si = 0; si < 2; si++) {
                     parts.push({
                         x: p.x + (Math.random() - 0.5) * 20,
                         y: p.y,
@@ -2646,7 +2646,7 @@
 
         function spawnParts(x, y, color, n) {
             if (parts.length > MAX_PARTS) return;
-            var count = Math.min(n, 2); // cap particles for performance
+            var count = Math.min(n, 1); // cap particles for performance
             for (var i = 0; i < count; i++) {
                 var a = Math.random() * Math.PI * 2, s = 1 + Math.random() * 4;
                 parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, dec: 0.025 + Math.random() * 0.03, r: 2 + Math.random() * 4, c: color });
@@ -2948,7 +2948,7 @@
                             spawnText(b.x, b.y - 40, '💀 QUEEN DOWN! +' + (b.pts * qBonus), '#ff0044');
                             shakeAmt = 15;
                             // Big explosion for queen death
-                            for (var qk = 0; qk < 20; qk++) {
+                            for (var qk = 0; qk < 8; qk++) {
                                 parts.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12, life: 1, dec: 0.03, c: qk % 2 === 0 ? '#ff0044' : '#ffcc00', r: 5 + Math.random() * 6 });
                             }
                         } else {
@@ -2975,7 +2975,7 @@
                         if (z.isZBoss) {
                             spawnText(z.x, z.y - 40, '💀 BOSS DOWN! +' + (z.pts * zqBonus), '#44ff00');
                             shakeAmt = 15;
-                            for (var zk = 0; zk < 20; zk++) {
+                            for (var zk = 0; zk < 8; zk++) {
                                 parts.push({ x: z.x, y: z.y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 0.5) * 12, life: 1, dec: 0.03, c: zk % 2 === 0 ? '#44ff00' : '#ffcc00', r: 5 + Math.random() * 6 });
                             }
                         } else {
@@ -3007,20 +3007,13 @@
         function drawTormentaAura(p) {
             if (!tormentaActive || !p || isMobile) return;
             ctx.save();
-            var pulse = 0.8 + Math.sin(tormentaTimer * 0.15) * 0.2;
-            var r = TORMENTA_RADIUS * pulse;
-            var grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-            grad.addColorStop(0, 'rgba(255, 68, 0, 0.15)');
-            grad.addColorStop(0.5, 'rgba(255, 136, 0, 0.08)');
-            grad.addColorStop(0.8, 'rgba(255, 204, 0, 0.03)');
-            grad.addColorStop(1, 'rgba(255, 68, 0, 0)');
-            ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 25 + Math.sin(tormentaTimer * 0.3) * 10;
-            ctx.shadowColor = '#ff4400';
-            ctx.fillStyle = 'rgba(255, 68, 0, 0.3)';
+            var pulse = 0.6 + Math.sin(tormentaTimer * 0.15) * 0.2;
+            ctx.globalAlpha = 0.15 * pulse;
+            ctx.fillStyle = '#ff4400';
+            ctx.beginPath(); ctx.arc(p.x, p.y, TORMENTA_RADIUS * pulse, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#ff6600';
             ctx.beginPath(); ctx.arc(p.x, p.y, 35, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 0;
             ctx.restore();
         }
 
@@ -3149,7 +3142,7 @@
                 fb.size = TILE * (1 - fb.bounces * 0.08);
 
                 // Trail particles while falling
-                if (Math.random() < 0.3 && parts.length < MAX_PARTS) {
+                if (Math.random() < 0.15 && parts.length < MAX_PARTS) {
                     var tc = BDEF[fb.t] ? BDEF[fb.t].glow : '#aaa';
                     parts.push({ x: fb.x + (Math.random()-0.5)*fb.size*0.4, y: fb.y + (Math.random()-0.5)*fb.size*0.4, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, life: 0.6, dec: 0.04, r: 2+Math.random()*3, c: tc });
                 }
@@ -3168,7 +3161,7 @@
                         var glow = def ? def.glow : '#888';
 
                         // Burst of particles (ring explosion)
-                        var pCount = isMobile ? 4 : 8;
+                        var pCount = isMobile ? 2 : 4;
                         for (var p = 0; p < pCount; p++) {
                             var ang = (p / pCount) * Math.PI * 2;
                             var spd = 2 + Math.random() * 3;
@@ -3182,8 +3175,8 @@
 
                         // Shockwave ring particles
                         if (!isMobile) {
-                            for (var sw = 0; sw < 12; sw++) {
-                                var sAng = (sw / 12) * Math.PI * 2;
+                            for (var sw = 0; sw < 6; sw++) {
+                                var sAng = (sw / 6) * Math.PI * 2;
                                 var sSpd = 4 + Math.random() * 2;
                                 if (parts.length < MAX_PARTS + 30) {
                                     parts.push({ x: fb.x, y: fb.y, vx: Math.cos(sAng)*sSpd, vy: Math.sin(sAng)*sSpd, life: 0.8, dec: 0.04, r: 1.5+Math.random()*2, c: '#fff' });
@@ -3218,9 +3211,7 @@
                     fb.spin += (Math.random() - 0.5) * 0.15;
                     // Small dust puff on bounce
                     if (parts.length < MAX_PARTS) {
-                        for (var d = 0; d < 3; d++) {
-                            parts.push({ x: fb.x + (Math.random()-0.5)*fb.size*0.5, y: fb.y + fb.size*0.3, vx: (Math.random()-0.5)*2, vy: -Math.random()*2, life: 0.5, dec: 0.05, r: 2+Math.random()*3, c: '#c8b89a' });
-                        }
+                        parts.push({ x: fb.x, y: fb.y + fb.size*0.3, vx: (Math.random()-0.5)*2, vy: -Math.random()*2, life: 0.5, dec: 0.05, r: 2+Math.random()*3, c: '#c8b89a' });
                     }
                 }
 
@@ -3420,8 +3411,8 @@
                         }
                         spawnText(ball.x, ball.y - 10, '+' + BONUS_BALL_PTS, '#ffdd44');
                         spawnText(boxX + boxW / 2, boxY - 16, '→ ' + (ball.ownerName || '?'), ball.color);
-                        for (var cp = 0; cp < 6; cp++) {
-                            var ca = (cp / 6) * Math.PI * 2;
+                        for (var cp = 0; cp < 3; cp++) {
+                            var ca = (cp / 3) * Math.PI * 2;
                             if (parts.length < MAX_PARTS + 10) parts.push({ x: ball.x, y: ball.y, vx: Math.cos(ca)*3, vy: Math.sin(ca)*3, life: 1, dec: 0.03, r: 4, c: ball.color });
                         }
                         sfxPop();
@@ -3454,9 +3445,7 @@
                 var gAlpha = 0.15 + Math.sin(box.pulse) * 0.1;
                 ctx.fillStyle = 'rgba(255,221,68,' + gAlpha + ')';
                 ctx.fillRect(bx - 6, by - 6, bw + 12, bh + 12);
-                var grad = ctx.createLinearGradient(bx, by, bx, by + bh);
-                grad.addColorStop(0, '#ffee88'); grad.addColorStop(0.5, '#ffcc22'); grad.addColorStop(1, '#cc8800');
-                ctx.fillStyle = grad; ctx.fillRect(bx, by, bw, bh);
+                ctx.fillStyle = '#ffcc22'; ctx.fillRect(bx, by, bw, bh);
                 ctx.strokeStyle = '#aa7700'; ctx.lineWidth = 2;
                 ctx.strokeRect(bx + 1, by + 1, bw - 2, bh - 2);
                 ctx.fillStyle = '#fff'; ctx.font = (TILE * 0.8) + 'px sans-serif';
@@ -3869,7 +3858,7 @@
                         'hsl(' + hue + ',100%,60%)',
                         'hsl(' + ((hue + 60) % 360) + ',100%,60%)'
                     ];
-                    for (var pi = 0; pi < 2; pi++) {
+                    for (var pi = 0; pi < 1; pi++) {
                         var a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 4;
                         var part = { x: p.x, y: p.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, dec: 0.03, r: 2 + Math.random() * 3, c: rainbowColors[pi] };
                         if (parts.length < MAX_PARTS) parts.push(part);
@@ -4577,30 +4566,21 @@
 
                     // Custom Bonus Box rendering
                     if (cell.t === BONUS_BOX) {
-                        var bbt = Date.now() * 0.003;
-                        var bbGrad = ctx.createLinearGradient(x, y, x, y + TILE);
-                        bbGrad.addColorStop(0, '#ffee66');
-                        bbGrad.addColorStop(0.5, '#ffcc00');
-                        bbGrad.addColorStop(1, '#cc8800');
-                        ctx.fillStyle = bbGrad;
+                        ctx.fillStyle = '#ffcc00';
                         ctx.fillRect(x, y, TILE, TILE);
                         ctx.strokeStyle = '#aa6600';
                         ctx.lineWidth = 1.5;
                         ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
-                        // Ribbon cross
                         ctx.strokeStyle = '#ff4444';
                         ctx.lineWidth = 2;
                         ctx.beginPath();
                         ctx.moveTo(x + TILE / 2, y); ctx.lineTo(x + TILE / 2, y + TILE);
                         ctx.moveTo(x, y + TILE / 2); ctx.lineTo(x + TILE, y + TILE / 2);
                         ctx.stroke();
-                        // Pulsing star
                         ctx.fillStyle = '#fff';
-                        ctx.globalAlpha = 0.6 + Math.sin(bbt) * 0.4;
                         ctx.font = (TILE * 0.5) + 'px sans-serif';
                         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                         ctx.fillText('⭐', x + TILE / 2, y + TILE / 2);
-                        ctx.globalAlpha = 1;
                     }
 
                     if (SHIMMER_ENABLED && _oreShimmer[cell.t]) {
