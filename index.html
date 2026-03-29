@@ -3312,7 +3312,7 @@
                     x: x, y: y,
                     vx: Math.cos(ang) * spd,
                     vy: -4 - Math.random() * 5,
-                    r: 12, color: BONUS_BALL_COLORS[i % BONUS_BALL_COLORS.length],
+                    r: 24, color: BONUS_BALL_COLORS[i % BONUS_BALL_COLORS.length],
                     owner: ow, ownerAvatar: owAvatar, ownerName: owName,
                     collected: false, sparkle: Math.random() * Math.PI * 2,
                     bounces: 0, energy: 0.7 + Math.random() * 0.3
@@ -3412,6 +3412,7 @@
                             if (player) player.score = (player.score || 0) + BONUS_BALL_PTS;
                             if (!persistentScores[owner.userName]) persistentScores[owner.userName] = { score: 0, avatar: owner.userAvatarUrl || '' };
                             persistentScores[owner.userName].score += BONUS_BALL_PTS;
+                            persistentScores[owner.userName].balls = (persistentScores[owner.userName].balls || 0) + 1;
                             addCycleScore(owner.userName, BONUS_BALL_PTS, 'item');
                         }
                         spawnText(ball.x, ball.y - 10, '+' + BONUS_BALL_PTS, '#ffdd44');
@@ -3458,9 +3459,6 @@
                 ctx.fillStyle = '#fff'; ctx.font = (TILE * 0.8) + 'px sans-serif';
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText('⭐', bx + bw / 2, by + bh / 2);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                ctx.fillText(box.collected, bx + bw / 2, by + bh + 4);
                 ctx.restore();
             }
             for (var i = 0; i < bonusBalls.length; i++) {
@@ -8981,7 +8979,9 @@
                 var pickColor = u.pickaxe ? u.pickaxe.color : '#c8a464';
                 var rClass = rankClass[i] || '';
                 var rankLabel = i < 3 ? rankEmoji[i] : '#' + (i + 1);
-                html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${avSrc}" onerror="this.onerror=null;this.style.display='none'"><span class="lb-name">${u.userName}</span><img class="lb-pickaxe" src="${pickImg}" title="${pickName}"><span class="lb-score" style="color:${pickColor}">${Math.floor(u.score || 0)}</span></div>`;
+                var ballCount = persistentScores[u.userName] ? (persistentScores[u.userName].balls || 0) : 0;
+                var ballBadge = ballCount > 0 ? '<span style="color:#ffaa22;font-size:13px;margin-left:4px;">🔮' + ballCount + '</span>' : '';
+                html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${avSrc}" onerror="this.onerror=null;this.style.display='none'"><span class="lb-name">${u.userName}</span>${ballBadge}<img class="lb-pickaxe" src="${pickImg}" title="${pickName}"><span class="lb-score" style="color:${pickColor}">${Math.floor(u.score || 0)}</span></div>`;
             });
             list.innerHTML = html;
         }
