@@ -3455,29 +3455,12 @@
                 ctx.fillStyle = grad; ctx.fillRect(bx, by, bw, bh);
                 ctx.strokeStyle = '#aa7700'; ctx.lineWidth = 2;
                 ctx.strokeRect(bx + 1, by + 1, bw - 2, bh - 2);
-                var boxAvImg = box.ownerAvatar ? avatarCache[box.ownerAvatar] : null;
-                if (boxAvImg && boxAvImg.complete && boxAvImg.naturalWidth > 0) {
-                    var avS = Math.min(bh - 8, TILE * 1.2);
-                    ctx.save(); ctx.beginPath();
-                    ctx.arc(bx + bw / 2, by + bh / 2, avS / 2, 0, Math.PI * 2); ctx.clip();
-                    ctx.drawImage(boxAvImg, bx + bw / 2 - avS / 2, by + bh / 2 - avS / 2, avS, avS);
-                    ctx.restore();
-                    ctx.beginPath(); ctx.arc(bx + bw / 2, by + bh / 2, avS / 2, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 2; ctx.stroke();
-                } else {
-                    ctx.fillStyle = '#fff'; ctx.font = (TILE * 0.8) + 'px sans-serif';
-                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    ctx.fillText('⭐', bx + bw / 2, by + bh / 2);
-                }
-                ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-                ctx.fillStyle = '#ffdd44';
-                ctx.fillText(box.ownerName || '', bx + bw / 2, by - 4);
-                var pct = box.life / box.maxLife;
-                ctx.fillStyle = pct > 0.3 ? '#44ff44' : '#ff4444';
-                ctx.fillRect(bx, by + bh + 2, bw * pct, 4);
+                ctx.fillStyle = '#fff'; ctx.font = (TILE * 0.8) + 'px sans-serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('⭐', bx + bw / 2, by + bh / 2);
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
                 ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-                ctx.fillText(box.collected + '/' + BONUS_BALLS_PER_BOX, bx + bw / 2, by + bh + 8);
+                ctx.fillText(box.collected, bx + bw / 2, by + bh + 4);
                 ctx.restore();
             }
             for (var i = 0; i < bonusBalls.length; i++) {
