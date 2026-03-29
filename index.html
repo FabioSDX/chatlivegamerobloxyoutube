@@ -1002,8 +1002,8 @@
 
         function updateTNTBlocks() {
             var TNT_GRAVITY = 0.35;
-            var wallLeft = TILE + 1;
-            var wallRight = (COLS - 1) * TILE - 1;
+            var wallLeft = 1;
+            var wallRight = COLS * TILE - 1;
             for (var i = tntBlocks.length - 1; i >= 0; i--) {
                 var b = tntBlocks[i];
                 var hs = b.nuke ? TILE * 0.3 : (b.mega ? TILE * 0.9 : TILE * 0.5);
@@ -1332,7 +1332,7 @@
             var sy = ty !== undefined ? ty : pick.y;
             var bx = sx + (Math.random() - 0.5) * TILE * 2;
             var hs = TILE * 0.5;
-            bx = Math.max(TILE + hs + 2, Math.min((COLS - 1) * TILE - hs - 2, bx));
+            bx = Math.max(hs + 2, Math.min(COLS * TILE - hs - 2, bx));
             var by = findSafeTNTSpawn(bx, sy, hs);
             _tntSpawnCount++;
             var b = {
@@ -1355,7 +1355,7 @@
             var sy = ty !== undefined ? ty : pick.y;
             var bx = sx + (Math.random() - 0.5) * TILE * 2;
             var hs = TILE * 0.9;
-            bx = Math.max(TILE + hs + 2, Math.min((COLS - 1) * TILE - hs - 2, bx));
+            bx = Math.max(hs + 2, Math.min(COLS * TILE - hs - 2, bx));
             var by = findSafeTNTSpawn(bx, sy, hs);
             _tntSpawnCount++;
             var b = {
@@ -1656,10 +1656,6 @@
             var isNearClearing = (r >= zoneStart - 1 && r <= zoneStart + CLEARING_HEIGHT);
 
             for (var c = 0; c < COLS; c++) {
-                if (c === 0 || c === COLS - 1) {
-                    row[c] = { t: BEDROCK, hp: 999, cr: 0 };
-                    continue;
-                }
                 var t;
                 if (depth < 2) { t = E; }
                 else if (isMegaClearingCell(r, c)) { t = E; }
@@ -2475,8 +2471,8 @@
             if (p.y - r < ceiling) { p.y = ceiling + r; p.vy = Math.abs(p.vy) * (hasPingPong ? 1.0 : BOUNCE); }
 
             // ── Robust boundary system — prevent escaping the map ──
-            var wallL = TILE + r + 1;       // inside left bedrock
-            var wallR = (COLS - 1) * TILE - r - 1; // inside right bedrock
+            var wallL = r + 1;              // invisible left wall
+            var wallR = COLS * TILE - r - 1; // invisible right wall
             var floor = camY + canvas.height + 600; // max fall distance below camera
 
             // Left wall
@@ -3040,8 +3036,8 @@
         var fallingBlocks = [];
 
         function _isAnchored(r, c) {
-            // Quick check: bedrock walls always anchored
-            if (c <= 0 || c >= COLS - 1) return true;
+            // Edge columns are anchored (invisible wall)
+            if (c < 0 || c >= COLS) return true;
             var cell = getCell(r, c);
             if (!cell || cell.t === E) return false;
             if (cell.t === BEDROCK) return true;
@@ -3092,7 +3088,7 @@
 
                     var cc = getCell(cur.r, cur.c);
                     if (!cc || cc.t === E) continue;
-                    if (cc.t === BEDROCK || cur.c <= 0 || cur.c >= COLS - 1) { anchored = true; continue; }
+                    if (cc.t === BEDROCK || cur.c < 0 || cur.c >= COLS) { anchored = true; continue; }
 
                     // Check if this block is anchored (has solid ground below that's outside our candidate set)
                     var belowCell = getCell(cur.r + 1, cur.c);
@@ -4952,11 +4948,11 @@
                         // Glow line
                         ctx.strokeStyle = 'rgba(' + gColor + ', ' + (0.4 * gPulse) + ')';
                         ctx.lineWidth = 8 + Math.sin(Date.now() * 0.006) * 3;
-                        ctx.beginPath(); ctx.moveTo(TILE, gateY); ctx.lineTo((COLS - 1) * TILE, gateY); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(0, gateY); ctx.lineTo(COLS * TILE, gateY); ctx.stroke();
                         // Bright core
                         ctx.strokeStyle = 'rgba(' + gColor + ', ' + (0.7 * gPulse) + ')';
                         ctx.lineWidth = 2;
-                        ctx.beginPath(); ctx.moveTo(TILE, gateY); ctx.lineTo((COLS - 1) * TILE, gateY); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(0, gateY); ctx.lineTo(COLS * TILE, gateY); ctx.stroke();
                         ctx.restore();
                     }
                 }
@@ -5399,8 +5395,8 @@
                 }
 
                 // Clamp to map
-                if (s.x < TILE * 1.5) { s.x = TILE * 1.5; s.dir = 1; }
-                if (s.x > (COLS - 1.5) * TILE) { s.x = (COLS - 1.5) * TILE; s.dir = -1; }
+                if (s.x < TILE * 0.5) { s.x = TILE * 0.5; s.dir = 1; }
+                if (s.x > (COLS - 0.5) * TILE) { s.x = (COLS - 0.5) * TILE; s.dir = -1; }
 
                 // Mother spawns babies
                 if (s.isMother && s.state !== 'dead' && s.grounded) {
@@ -5609,8 +5605,8 @@
                 // Mega-clearing: wall-to-wall bounds
                 var mz = getMegaZone(batRow);
                 var megaStart = getMegaStart(mz >= 0 ? mz : 0);
-                minX = TILE;
-                maxX = (COLS - 1) * TILE;
+                minX = 0;
+                maxX = COLS * TILE;
                 minY = megaStart * TILE + TILE * 8;
                 maxY = (megaStart + MEGA_CLEARING_HEIGHT - 8) * TILE;
             } else {
@@ -6330,7 +6326,7 @@
                     z.x += z.vx;
                     z.y += z.vy;
                     // Wall bounce
-                    var bwL = TILE * 2, bwR = (COLS - 2) * TILE;
+                    var bwL = TILE * 0.5, bwR = (COLS - 0.5) * TILE;
                     if (z.x <= bwL) { z.x = bwL; z.dir = 1; z.vx = Math.abs(z.vx); }
                     if (z.x >= bwR) { z.x = bwR; z.dir = -1; z.vx = -Math.abs(z.vx); }
                     // Ground collision
@@ -6402,8 +6398,8 @@
                 }
 
                 // Wall clamp
-                var wallLeft = TILE + 1;
-                var wallRight = (COLS - 1) * TILE - 1;
+                var wallLeft = 1;
+                var wallRight = COLS * TILE - 1;
                 if (z.x < wallLeft + ZOMBIE_SIZE * 0.4) { z.x = wallLeft + ZOMBIE_SIZE * 0.4; z.dir = 1; }
                 if (z.x > wallRight - ZOMBIE_SIZE * 0.4) { z.x = wallRight - ZOMBIE_SIZE * 0.4; z.dir = -1; }
 
