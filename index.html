@@ -8939,7 +8939,6 @@
         }
 
         function updateLeaderboard() {
-            // Update pickaxe tier for all userPicks
             for (var i = 0; i < userPicks.length; i++) {
                 userPicks[i].pickaxe = getPickaxeForTime(userPicks[i].joinTime);
             }
@@ -8947,14 +8946,10 @@
             var list = document.getElementById('leaderboardList');
             if (!list) return;
 
-            var now = Date.now();
-            // Only show active players (with activity in last 3 min) + owner always visible
-            var activePlayers = Object.keys(persistentScores).filter(function (name) {
-                if (ownerName && name === ownerName) return true; // owner always in leaderboard
-                return lastActivity[name] && (now - lastActivity[name] <= INACTIVE_MS);
-            }).map(function (name) {
-                // Find pickaxe tier for this player
-                var pTier = currentPickaxe; // default for owner
+            // Use cycle scores (reset every 400m round)
+            var players = Object.keys(_cycleScores).map(function(name) {
+                var cs = _cycleScores[name];
+                var pTier = currentPickaxe;
                 if (ownerName && name === ownerName) {
                     pTier = currentPickaxe;
                 } else {
@@ -8962,20 +8957,14 @@
                         if (userPicks[j].userName === name) { pTier = userPicks[j].pickaxe || PICKAXES[0]; break; }
                     }
                 }
-                return {
-                    userName: name,
-                    score: persistentScores[name].score,
-                    userAvatarUrl: persistentScores[name].avatar,
-                    pickaxe: pTier
-                };
-            });
+                var av = cs.avatar || (persistentScores[name] ? persistentScores[name].avatar : '');
+                return { userName: name, score: cs.score || 0, kills: cs.kills || 0, items: cs.items || 0, balls: cs.balls || 0, userAvatarUrl: av, pickaxe: pTier };
+            }).filter(function(p) { return p.score > 0; });
 
-            var sorted = activePlayers
-                .sort((a, b) => (b.score || 0) - (a.score || 0))
-                .slice(0, 10);
+            var sorted = players.sort((a, b) => b.score - a.score).slice(0, 10);
 
             if (sorted.length === 0) {
-                list.innerHTML = '<div style="text-align:center; opacity:0.5; font-size:12px;">Waiting for players...</div>';
+                list.innerHTML = '<div style="text-align:center; opacity:0.5; font-size:11px;">Round ' + ((_currentCycle || 0) + 1) + ' — 400m</div>';
                 return;
             }
 
@@ -8984,17 +8973,17 @@
             var html = '';
             sorted.forEach((u, i) => {
                 var av = u.userAvatarUrl || '';
-                // Use blob URL from avatarCache if available (already loaded)
                 var cachedImg = avatarCache[av];
                 var avSrc = (cachedImg && cachedImg.src && cachedImg.naturalWidth > 0) ? cachedImg.src : av;
                 var pickImg = u.pickaxe ? u.pickaxe.img : 'pickaxe/wooden_pickaxe.png';
-                var pickName = u.pickaxe ? u.pickaxe.name : 'Wood';
                 var pickColor = u.pickaxe ? u.pickaxe.color : '#c8a464';
                 var rClass = rankClass[i] || '';
                 var rankLabel = i < 3 ? rankEmoji[i] : '#' + (i + 1);
-                var ballCount = persistentScores[u.userName] ? (persistentScores[u.userName].balls || 0) : 0;
-                var ballBadge = ballCount > 0 ? '<span style="color:#ffaa22;font-size:13px;margin-left:4px;">🔮' + ballCount + '</span>' : '';
-                html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${avSrc}" onerror="this.onerror=null;this.style.display='none'"><span class="lb-name">${u.userName}</span>${ballBadge}<img class="lb-pickaxe" src="${pickImg}" title="${pickName}"><span class="lb-score" style="color:${pickColor}">${Math.floor(u.score || 0)}</span></div>`;
+                var stats = '';
+                if (u.kills > 0) stats += '💥' + u.kills;
+                if (u.balls > 0) stats += '🔮' + u.balls;
+                var statsBadge = stats ? '<span style="color:#aaa;font-size:10px;margin-left:2px;">' + stats + '</span>' : '';
+                html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${avSrc}" onerror="this.onerror=null;this.style.display='none'"><span class="lb-name">${u.userName}</span>${statsBadge}<span class="lb-score" style="color:${pickColor}">${Math.floor(u.score)}</span></div>`;
             });
             list.innerHTML = html;
         }
