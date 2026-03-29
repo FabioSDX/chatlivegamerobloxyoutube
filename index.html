@@ -5746,16 +5746,16 @@
                     if (b.retargetTimer <= 0) {
                         b.targetX = b.boundsMinX + Math.random() * (b.boundsMaxX - b.boundsMinX);
                         b.targetY = b.boundsMinY + Math.random() * (b.boundsMaxY - b.boundsMinY);
-                        b.retargetTimer = 40 + Math.floor(Math.random() * 80);
+                        b.retargetTimer = 25 + Math.floor(Math.random() * 50);
                     }
                     var qdx = b.targetX - b.x, qdy = b.targetY - b.y;
                     var qdist = Math.sqrt(qdx * qdx + qdy * qdy) || 1;
-                    b.vx += (qdx / qdist) * 0.15;
-                    b.vy += (qdy / qdist) * 0.1 + Math.sin(b.flyPhase) * 0.05;
-                    b.vy -= 0.02; // buoyancy
+                    b.vx += (qdx / qdist) * 0.25;
+                    b.vy += (qdy / qdist) * 0.18 + Math.sin(b.flyPhase) * 0.08;
+                    b.vy -= 0.02;
                     var qspd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-                    if (qspd > 2.0) { b.vx = (b.vx / qspd) * 2.0; b.vy = (b.vy / qspd) * 2.0; }
-                    b.vx *= 0.96; b.vy *= 0.96;
+                    if (qspd > 3.5) { b.vx = (b.vx / qspd) * 3.5; b.vy = (b.vy / qspd) * 3.5; }
+                    b.vx *= 0.97; b.vy *= 0.97;
                     b.x += b.vx; b.y += b.vy;
                     // Clamp to bounds
                     if (b.x < b.boundsMinX) { b.x = b.boundsMinX; b.vx = Math.abs(b.vx); }
@@ -6268,7 +6268,7 @@
 
                 // ── Zombie Boss: dynamic movement — patrol + chase + jump ──
                 if (z.isZBoss && !z._bhCaptured) {
-                    z.vy += ZG;
+                    z.vy += ZG * 1.5; // stronger gravity for bosses
                     // Find nearest pick to chase
                     var nearPick = null, nearDist = 600;
                     var allP = [pick].concat(userPicks);
@@ -6305,7 +6305,7 @@
                             if (z.animTimer >= ZOMBIE_ANIMS.run.count) z.animTimer = 0;
                             // Jump toward pick if it's above or randomly
                             if (nearPick.y < z.y - TILE || Math.random() < 0.03) {
-                                z.vy = -10 - Math.random() * 4;
+                                z.vy = -6 - Math.random() * 3;
                                 z.grounded = false;
                                 z.state = 'jump'; z.animTimer = 0;
                             }
@@ -6316,7 +6316,7 @@
                             z.animTimer += ZOMBIE_ANIMS.walk.speed;
                             if (z.animTimer >= ZOMBIE_ANIMS.walk.count) z.animTimer = 0;
                             if (Math.random() < 0.03) {
-                                z.vy = -8 - Math.random() * 4;
+                                z.vy = -5 - Math.random() * 3;
                                 z.grounded = false;
                                 z.state = 'jump'; z.animTimer = 0;
                             }
@@ -6784,14 +6784,12 @@
                 ctx.beginPath(); ctx.arc(-eyeSpacing + pupilOff, eyeY, eyeR * 0.5, 0, Math.PI * 2); ctx.fill();
                 ctx.beginPath(); ctx.arc(eyeSpacing + pupilOff, eyeY, eyeR * 0.5, 0, Math.PI * 2); ctx.fill();
 
-                // Boss glow
+                // Boss indicator (subtle)
                 if (z.isZBoss && z.state !== 'dead') {
-                    var bPulse = 0.3 + Math.sin(t * 2 + i) * 0.2;
+                    ctx.fillStyle = 'rgba(255,60,60,0.08)';
                     ctx.beginPath();
-                    ctx.ellipse(0, -h * 0.1, w / 2 + 8, h * 0.5 + 8, 0, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(' + jc.r + ',' + jc.g + ',' + jc.b + ',' + bPulse + ')';
-                    ctx.lineWidth = 4;
-                    ctx.stroke();
+                    ctx.ellipse(0, -h * 0.1, w / 2 + 4, h * 0.5 + 4, 0, 0, Math.PI * 2);
+                    ctx.fill();
                 }
 
                 // Sleep Zzz
