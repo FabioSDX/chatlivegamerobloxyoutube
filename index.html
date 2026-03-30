@@ -5401,6 +5401,7 @@
             var HS = SPIDER_SIZE * 0.35;
             for (var i = spiders.length - 1; i >= 0; i--) {
                 var s = spiders[i];
+                if (s._spinHitCD > 0) s._spinHitCD--;
                 if (s.y < camY - 400) { spiders.splice(i, 1); continue; }
 
                 // DEAD
@@ -5543,6 +5544,12 @@
                         p.vy = Math.min(p.vy, -3);
                         p.spin += (Math.random() - 0.5) * 0.2;
                         if (pSpeed > 1.5) {
+                            // Spin hit cooldown
+                            if (p._spinLock) {
+                                s._spinHitCD = s._spinHitCD || 0;
+                                if (s._spinHitCD > 0) break;
+                                s._spinHitCD = 20;
+                            }
                             s.hp -= 1;
                             s.state = 'hurt'; s.hurtTimer = 12; s.animTimer = 0;
                             sfxZombieHurt();
@@ -5780,6 +5787,7 @@
         function updateBats() {
             for (var i = bats.length - 1; i >= 0; i--) {
                 var b = bats[i];
+                if (b._spinHitCD > 0) b._spinHitCD--;
 
                 // Remove if too far above camera
                 if (b.y < camY - 500) { bats.splice(i, 1); continue; }
@@ -6033,6 +6041,12 @@
                         p.spin += (Math.random() - 0.5) * 0.15;
                         // Damage
                         if (pSpeed > 1.5) {
+                            // Spin hit cooldown: max 1 hit per 20 frames per enemy during spin
+                            if (p._spinLock) {
+                                b._spinHitCD = b._spinHitCD || 0;
+                                if (b._spinHitCD > 0) break;
+                                b._spinHitCD = 20;
+                            }
                             b.hp -= 1;
                             b.hurtTimer = 10;
                             b.anim = 0;
@@ -6512,6 +6526,12 @@
                         p.spin += (Math.random() - 0.5) * 0.2;
                         // Damage
                         if (pSpeed > 1.5) {
+                            // Spin hit cooldown: max 1 hit per 20 frames per enemy during spin
+                            if (p._spinLock) {
+                                z._spinHitCD = z._spinHitCD || 0;
+                                if (z._spinHitCD > 0) break; // skip damage, still bounce
+                                z._spinHitCD = 20;
+                            }
                             // Crystal Titan shield absorbs damage
                             if (z.hasShield && z.shieldHp > 0) {
                                 z.shieldHp -= 1;
@@ -6548,6 +6568,7 @@
             var ZG = 0.35;
             for (var i = zombies.length - 1; i >= 0; i--) {
                 var z = zombies[i];
+                if (z._spinHitCD > 0) z._spinHitCD--;
 
                 // Remove if too far above camera
                 if (z.y < camY - 400) { zombies.splice(i, 1); continue; }
