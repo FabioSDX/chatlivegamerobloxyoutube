@@ -2517,6 +2517,7 @@
             p.bigTimer = BIG_DURATION;
             spawnText(p.x, p.y - 40, '🔷 BIG MODE!', '#44aaff');
             if (_audioStarted) sfxSkillActivate();
+        }
 
         function activateGravity(userName) {
             userName = (userName || '').replace(/^@@+/, '@');
@@ -2529,7 +2530,6 @@
             shakeAmt = Math.max(shakeAmt, 15);
             spawnText(canvas.width / 2, camY + canvas.height / 2, '🔄 GRAVITY FLIP!', '#ff44ff');
             if (_audioStarted) sfxSkillActivate();
-        }
         }
 
         function applyPhysics(p, r) {
