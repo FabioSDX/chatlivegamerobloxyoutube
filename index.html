@@ -8155,7 +8155,7 @@
                 { re: /\b(sr|sl|sd|su)\b|\bspin\s+(right|left|down|up)\b/gi, fn: function() {
                     // Handled separately below for chained spins with delay
                 }, id: 'spin', skipLoop: true },
-                { re: /\bbig\b/gi, fn: function() { if (isOwner) activateBig(cUser); }, id: 'big' }
+                { re: /\bbig\b/gi, fn: function() { activateBig(cUser); }, id: 'big' }
             ];
 
             var cmdCount = 0;
