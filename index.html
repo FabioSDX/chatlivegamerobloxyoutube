@@ -7266,6 +7266,10 @@
             _audioStarted = true;
             startMusic();
             requestWakeLock();
+            // Fullscreen on mobile
+            if (isMobile && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(function() {});
+            }
         }
         window.addEventListener('keydown', ensureAudio, { once: false });
         window.addEventListener('pointerdown', ensureAudio, { once: false });
