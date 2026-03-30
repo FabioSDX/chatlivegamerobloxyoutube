@@ -3876,6 +3876,7 @@
                                 var queenX = TILE + spacing * (qi + 1);
                                 spawnTieredBoss(queenX, queenY, mz, tier, tierScale);
                             }
+                            console.log('[boss] Zone ' + mz + ': spawned ' + tier.count + ' ' + tier.name + ' (flyer) at row ' + queenRow);
                         } else {
                             // Ground boss — spawn on brick floor
                             var zbRow = mStart + MEGA_CLEARING_HEIGHT - 10;
@@ -3896,6 +3897,7 @@
                                 var zbX = TILE + zbSpacing * (zbi + 1);
                                 spawnTieredBoss(zbX, zbY, mz, tier, tierScale);
                             }
+                            console.log('[boss] Zone ' + mz + ': spawned ' + tier.count + ' ' + tier.name + ' (ground) at row ' + zbRow + ' y=' + zbY);
                         }
                         spawnText(canvas.width / 2, pick.y - 60, tier.icon + ' ' + tier.name.toUpperCase() + '!', 'rgb(' + tier.color.r + ',' + tier.color.g + ',' + tier.color.b + ')');
                         shakeAmt = Math.max(shakeAmt, 20);
@@ -5802,8 +5804,16 @@
                 var b = bats[i];
                 if (b._spinHitCD > 0) b._spinHitCD--;
 
-                // Remove if too far above camera
-                if (b.y < camY - 500) { bats.splice(i, 1); continue; }
+                // Remove if too far above camera (but never remove queen bosses with active gate)
+                if (b.y < camY - 500) {
+                    if (b.isQueen && b.zone !== undefined && megaClearedZones[b.zone] && !megaClearedZones[b.zone + '_gateOpen']) {
+                        var bStart = getMegaStart(b.zone);
+                        b.y = (bStart + 20) * TILE;
+                        b.vy = 0;
+                    } else {
+                        bats.splice(i, 1); continue;
+                    }
+                }
 
                 // ── DEAD ──
                 if (b.state === 'dead') {
@@ -6586,8 +6596,26 @@
                 var z = zombies[i];
                 if (z._spinHitCD > 0) z._spinHitCD--;
 
-                // Remove if too far above camera
-                if (z.y < camY - 400) { zombies.splice(i, 1); continue; }
+                // Remove if too far above camera (but never remove bosses with active gate)
+                if (z.y < camY - 400) {
+                    if (z.isZBoss && z.zone !== undefined && megaClearedZones[z.zone] && !megaClearedZones[z.zone + '_gateOpen']) {
+                        // Boss with closed gate — don't remove, teleport back to arena
+                        var bStart = getMegaStart(z.zone);
+                        z.y = (bStart + MEGA_CLEARING_HEIGHT - 12) * TILE;
+                        z.vy = 0;
+                    } else {
+                        zombies.splice(i, 1); continue;
+                    }
+                }
+                // Also prevent bosses from falling below the arena
+                if (z.isZBoss && z.zone !== undefined) {
+                    var maxY = (getMegaStart(z.zone) + MEGA_CLEARING_HEIGHT) * TILE;
+                    if (z.y > maxY) {
+                        z.y = maxY - ZOMBIE_SIZE * (z.bossScale || ZBOSS_SCALE) * 0.5;
+                        z.vy = 0;
+                        z.grounded = true;
+                    }
+                }
 
                 // ── DEAD: play full animation then remove ──
                 if (z.state === 'dead') {
