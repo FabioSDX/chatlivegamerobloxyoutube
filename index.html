@@ -1181,7 +1181,14 @@
                     if (!cell || cell.t === E || cell.t === BEDROCK) continue;
                     var bPts = BDEF[cell.t].pts || 0;
                     pts += bPts;
-                    if (ITEM_DEFS[cell.t]) {
+                    if (cell.t === BONUS_BOX) {
+                        var tntSrc = null;
+                        if (b.userName) {
+                            if (ownerName && b.userName === ownerName) tntSrc = pick;
+                            else tntSrc = userPicks.find(function (u) { return u.userName === b.userName; });
+                        }
+                        spawnBonusBalls(c * TILE + TILE / 2, r * TILE + TILE / 2, tntSrc || pick);
+                    } else if (ITEM_DEFS[cell.t]) {
                         var tntSource = null;
                         if (b.userName) {
                             if (ownerName && b.userName === ownerName) tntSource = pick;
@@ -3305,7 +3312,10 @@
                         }
 
                         // Spawn collectible item if block type has one
-                        if (ITEM_DEFS[fb.t]) {
+                        if (fb.t === BONUS_BOX) {
+                            spawnBonusBalls(fb.x, fb.y, owner);
+                            shakeAmt = Math.max(shakeAmt, 8);
+                        } else if (ITEM_DEFS[fb.t]) {
                             spawnItem(fb.x, fb.y, fb.t, owner);
                         }
 
@@ -3469,6 +3479,9 @@
                 var rightCell = getCell(wallRow, rightCol);
                 if (leftCell && leftCell.t !== E) { ball.x = (leftCol + 1) * TILE + ball.r; ball.vx = Math.abs(ball.vx) * 0.7; }
                 if (rightCell && rightCell.t !== E) { ball.x = rightCol * TILE - ball.r; ball.vx = -Math.abs(ball.vx) * 0.7; }
+                // World edge walls — prevent balls from escaping
+                if (ball.x - ball.r < TILE) { ball.x = TILE + ball.r; ball.vx = Math.abs(ball.vx) * 0.7; }
+                if (ball.x + ball.r > (COLS - 1) * TILE) { ball.x = (COLS - 1) * TILE - ball.r; ball.vx = -Math.abs(ball.vx) * 0.7; }
 
                 var allP = [pick].concat(userPicks, extraPicks);
                 for (var pi = 0; pi < allP.length; pi++) {
@@ -6396,7 +6409,10 @@
                                 var cell = getCell(fr, fc);
                                 if (cell && cell.t !== E && cell.t !== BEDROCK) {
                                     cell.hp -= (z.bossTier.fireDamage || 2);
-                                    if (cell.hp <= 0) { cell.t = E; cell.hp = 0; cell.cr = 0; }
+                                    if (cell.hp <= 0) {
+                                        if (cell.t === BONUS_BOX) spawnBonusBalls(fc * TILE + TILE / 2, fr * TILE + TILE / 2, pick);
+                                        cell.t = E; cell.hp = 0; cell.cr = 0;
+                                    }
                                     else cell.cr = Math.min(1, 1 - cell.hp / BDEF[cell.t].hp);
                                 }
                             }
@@ -8857,6 +8873,10 @@
                                                 age: 0, followFrames: 0, life: 1,
                                                 _bhTarget: bh
                                             });
+                                        }
+                                        // Bonus box check before destroying
+                                        if (cell.t === BONUS_BOX) {
+                                            spawnBonusBalls(dbx, dby, pick);
                                         }
                                         cell.t = E; cell.hp = 0; cell.cr = 0;
                                     }
