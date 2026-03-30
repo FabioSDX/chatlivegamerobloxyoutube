@@ -1166,6 +1166,25 @@
             }
         }
 
+        // Check if a row is a protected boss floor (indestructible while bosses alive)
+        function isBossFloorProtected(row) {
+            var keys = Object.keys(megaClearedZones);
+            for (var ki = 0; ki < keys.length; ki++) {
+                var k = keys[ki];
+                if (k.indexOf('_zbFloorRow') === -1) continue;
+                var mz = parseInt(k);
+                if (isNaN(mz)) continue;
+                var floorRow = megaClearedZones[k];
+                if (row >= floorRow && row <= floorRow + 1) {
+                    // Check if gate is still closed (bosses alive)
+                    if (megaClearedZones[mz] && !megaClearedZones[mz + '_gateOpen']) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         function detonateTNTBlock(b) {
 
             var radius = b.nuke ? 18 : (b.mega ? MEGA_TNT_RADIUS : TNT_RADIUS);
@@ -1179,6 +1198,8 @@
                     if (dist > radius) continue;
                     var cell = getCell(r, c);
                     if (!cell || cell.t === E || cell.t === BEDROCK) continue;
+                    // Protect boss floor while bosses are alive
+                    if (isBossFloorProtected(r)) continue;
                     var bPts = BDEF[cell.t].pts || 0;
                     pts += bPts;
                     if (cell.t === BONUS_BOX) {
@@ -3614,8 +3635,9 @@
         function hitBlock(col, row, force, source) {
             var cell = getCell(row, col);
             if (!cell || cell.t === E) return false;
-            var def = BDEF[cell.t];
             if (cell.t === BEDROCK) return true;
+            if (isBossFloorProtected(row)) return true;
+            var def = BDEF[cell.t];
             cell.hp -= force;
             cell.cr = Math.min(1, 1 - cell.hp / def.hp);
             spawnParts(col * TILE + TILE / 2, row * TILE + TILE / 2, def.glow, 6);
@@ -8877,6 +8899,7 @@
                             for (var c = cc - tileR; c <= cc + tileR; c++) {
                                 var cell = getCell(r, c);
                                 if (!cell || cell.t === E || cell.t === BEDROCK) continue;
+                                if (isBossFloorProtected(r)) continue;
                                 var bx2 = (c + 0.5) * TILE - bh.x, by2 = (r + 0.5) * TILE - bh.y;
                                 var blockDist = Math.sqrt(bx2 * bx2 + by2 * by2);
                                 if (blockDist < destroyR) {
