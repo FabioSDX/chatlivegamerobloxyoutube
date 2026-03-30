@@ -2411,7 +2411,7 @@
 
         // Gravity flip skill
         var gravityCooldown = 1200;   // 20 seconds at 60fps
-        var GRAVITY_FLIP_DURATION = 300; // 5 seconds at 60fps
+        var GRAVITY_FLIP_DURATION = 600; // 10 seconds at 60fps
         var _gravityFlipped = false;
         var _gravityFlipTimer = 0;
         var BLACKHOLE_RADIUS = 800;   // suction radius in pixels
@@ -2459,7 +2459,7 @@
             tormentaActive = false; tormentaTimer = 0; tormentaPick = null;
             activeSpins = []; spinCooldowns = {}; spinQueues = {};
             activeWebs = []; activeFireTrails = [];
-            _gravityFlipped = false; _gravityFlipTimer = 0;
+            _gravityFlipped = false; _gravityFlipTimer = 0; _gravityRings = [];
             bgChunks = {}; bgTick = 0;
             document.getElementById('depthDisplay').textContent = 'Depth: 0m';
             document.getElementById('scoreDisplay').textContent = '⛏ 0';
@@ -2523,14 +2523,31 @@
             userName = (userName || '').replace(/^@@+/, '@');
             var cdKey = userName + '_gravity';
             if (skillCooldowns[cdKey] && skillCooldowns[cdKey] > 0) return;
-            if (_gravityFlipped) return; // already active
+            if (_gravityFlipped) return;
             skillCooldowns[cdKey] = gravityCooldown;
             _gravityFlipped = true;
             _gravityFlipTimer = GRAVITY_FLIP_DURATION;
+            // Find the player for visual effects
+            var p = null;
+            if (pick && pick.userName === userName) p = pick;
+            if (!p) p = userPicks.find(function(u) { return u.userName === userName; });
+            if (!p) p = pick;
+            var px = p ? p.x : canvas.width / 2;
+            var py = p ? p.y : camY + canvas.height / 2;
             shakeAmt = Math.max(shakeAmt, 15);
-            spawnText(canvas.width / 2, camY + canvas.height / 2, '🔄 GRAVITY FLIP!', '#ff44ff');
-            if (_audioStarted) sfxSkillActivate();
+            spawnText(px, py - 50, '🔄 GRAVITY FLIP!', '#ff44ff');
+            // Ring burst particles
+            for (var gi = 0; gi < 16; gi++) {
+                var ga = (gi / 16) * Math.PI * 2;
+                var gr = 40;
+                parts.push({ x: px + Math.cos(ga) * gr, y: py + Math.sin(ga) * gr, vx: Math.cos(ga) * 3, vy: Math.sin(ga) * 3 - 2, life: 1, dec: 0.02, c: gi % 2 === 0 ? '#ff44ff' : '#ff88ff', r: 4 + Math.random() * 3 });
+            }
+            // Expanding ring effect
+            _gravityRings.push({ x: px, y: py, radius: 10, maxRadius: 200, alpha: 1 });
+            if (_audioStarted) sfxGravityFlip();
         }
+
+        var _gravityRings = [];
 
         function applyPhysics(p, r) {
             if (!p) return false;
@@ -3804,8 +3821,11 @@
                 _gravityFlipTimer--;
                 if (_gravityFlipTimer <= 0) {
                     _gravityFlipped = false;
-                    spawnText(canvas.width / 2, camY + canvas.height / 2, '🔄 GRAVITY NORMAL!', '#44ff44');
+                    var gp = pick || { x: canvas.width / 2, y: camY + canvas.height / 2 };
+                    spawnText(gp.x, gp.y - 50, '🔄 GRAVITY NORMAL!', '#44ff44');
                     shakeAmt = Math.max(shakeAmt, 8);
+                    _gravityRings.push({ x: gp.x, y: gp.y, radius: 10, maxRadius: 150, alpha: 1 });
+                    if (_audioStarted) sfxGravityRestore();
                 }
             }
             // Process Chain Lightning Core
@@ -5377,7 +5397,6 @@
                 var gAlpha = Math.min(0.15, _gravityFlipTimer / 60 * 0.15);
                 ctx.fillStyle = 'rgba(255, 0, 255, ' + gAlpha + ')';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                // Floating arrows
                 ctx.globalAlpha = 0.3 + Math.sin(Date.now() * 0.005) * 0.15;
                 ctx.fillStyle = '#ff44ff';
                 ctx.font = 'bold 24px Arial';
@@ -5387,11 +5406,25 @@
                     var gy = (Date.now() * 0.05 + gi * 80) % canvas.height;
                     ctx.fillText('⬆', gx, canvas.height - gy);
                 }
-                // Timer
                 ctx.globalAlpha = 0.8;
                 ctx.font = 'bold 16px Arial';
                 ctx.fillStyle = '#ff44ff';
                 ctx.fillText('🔄 GRAVITY ' + Math.ceil(_gravityFlipTimer / 60) + 's', canvas.width / 2, 30);
+                ctx.restore();
+            }
+            // Gravity rings
+            for (var gri = _gravityRings.length - 1; gri >= 0; gri--) {
+                var ring = _gravityRings[gri];
+                ring.radius += 6;
+                ring.alpha = 1 - (ring.radius / ring.maxRadius);
+                if (ring.alpha <= 0) { _gravityRings.splice(gri, 1); continue; }
+                ctx.save();
+                ctx.globalAlpha = ring.alpha * 0.6;
+                ctx.strokeStyle = '#ff44ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(ring.x, ring.y - camY, ring.radius, 0, Math.PI * 2);
+                ctx.stroke();
                 ctx.restore();
             }
 
@@ -7812,6 +7845,43 @@
             playNote(440, 'sine', 0.1, 0.01, 0.12, t);
             playNote(660, 'sine', 0.1, 0.01, 0.12, t + 0.07);
             playNote(880, 'sine', 0.1, 0.01, 0.18, t + 0.14);
+        }
+
+        function sfxGravityFlip() {
+            var ac = getAC(); if (!ac) return;
+            var t = ac.currentTime;
+            var osc = ac.createOscillator(), g = ac.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, t);
+            osc.frequency.exponentialRampToValueAtTime(100, t + 0.5);
+            g.gain.setValueAtTime(0.15, t);
+            g.gain.linearRampToValueAtTime(0, t + 0.6);
+            osc.connect(g); g.connect(ac.destination);
+            osc.start(t); osc.stop(t + 0.6);
+            var osc2 = ac.createOscillator(), g2 = ac.createGain();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(200, t + 0.2);
+            osc2.frequency.exponentialRampToValueAtTime(1200, t + 0.7);
+            g2.gain.setValueAtTime(0.0001, t + 0.2);
+            g2.gain.linearRampToValueAtTime(0.1, t + 0.35);
+            g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+            osc2.connect(g2); g2.connect(ac.destination);
+            osc2.start(t + 0.2); osc2.stop(t + 0.8);
+            playNote(65, 'sine', 0.2, 0.01, 0.3, t);
+        }
+
+        function sfxGravityRestore() {
+            var ac = getAC(); if (!ac) return;
+            var t = ac.currentTime;
+            var osc = ac.createOscillator(), g = ac.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(100, t);
+            osc.frequency.exponentialRampToValueAtTime(600, t + 0.4);
+            g.gain.setValueAtTime(0.12, t);
+            g.gain.linearRampToValueAtTime(0, t + 0.5);
+            osc.connect(g); g.connect(ac.destination);
+            osc.start(t); osc.stop(t + 0.5);
+            playNote(130, 'triangle', 0.1, 0.01, 0.2, t + 0.1);
         }
 
         // ── Música de Boss ──────────────────────────────────────────────────────────
