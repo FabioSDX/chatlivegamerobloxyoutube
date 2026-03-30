@@ -1774,8 +1774,6 @@
             for (var c = 0; c < COLS; c++) {
                 var t;
                 if (depth < 2) { t = E; }
-                // Test clearing for slime demo (rows 15-29)
-                else if (r >= 15 && r <= 29 && c > 0 && c < COLS - 1) { t = E; }
                 else if (isMegaClearingCell(r, c)) { t = E; }
                 else if (isClearingCell(r, c)) { t = E; }
                 else if (isMiniClearingCell(r, c)) { t = E; }
@@ -3855,8 +3853,6 @@
             checkPickSpiderCollisions();
             updateBats();
             updateBossAbilities();
-            spawnTestSlimes();
-            updateTestSlimes();
             // ── Mega-clearing: spawn flyers when pick enters the zone ──
             if (pick) {
                 var pickRow = Math.floor(pick.y / TILE);
@@ -5051,7 +5047,6 @@
             // zombies
             drawZombies();
             drawBossEffects();
-            drawTestSlimes();
             // Spider webs
             if (spiderWebs.length > 0) {
                 var wvTop = camY - TILE * 2, wvBot = camY + canvas.height + TILE * 2;
