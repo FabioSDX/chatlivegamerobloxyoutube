@@ -7136,20 +7136,20 @@
         function getMusicMode() {
             if (!pick) return 'normal';
             var row = Math.floor(pick.y / TILE);
-            if (isMegaClearingRow(row)) {
-                var mz = getMegaZone(row);
-                if (mz >= 0 && megaClearedZones[mz]) {
-                    if (!megaClearedZones[mz + '_gateOpen']) {
-                        // Check if there are actually alive bosses
-                        var hasBoss = false;
-                        for (var bi = 0; bi < bats.length; bi++) { if (bats[bi].isQueen && bats[bi].zone === mz && bats[bi].state !== 'dead') { hasBoss = true; break; } }
-                        if (!hasBoss) { for (var zi = 0; zi < zombies.length; zi++) { if (zombies[zi].isZBoss && zombies[zi].zone === mz && zombies[zi].state !== 'dead') { hasBoss = true; break; } } }
-                        if (hasBoss) return 'boss';
-                    }
-                    return 'mega';
-                }
-                return 'mega';
+
+            // Boss music: any alive boss visible on screen
+            var viewTop = camY - TILE * 2;
+            var viewBot = camY + canvas.height + TILE * 2;
+            for (var bi = 0; bi < bats.length; bi++) {
+                var b = bats[bi];
+                if (b.isQueen && b.state !== 'dead' && b.y > viewTop && b.y < viewBot) return 'boss';
             }
+            for (var zi = 0; zi < zombies.length; zi++) {
+                var z = zombies[zi];
+                if (z.isZBoss && z.state !== 'dead' && z.y > viewTop && z.y < viewBot) return 'boss';
+            }
+
+            if (isMegaClearingRow(row)) return 'mega';
             return 'normal';
         }
 
