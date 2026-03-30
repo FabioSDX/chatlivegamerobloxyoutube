@@ -5599,7 +5599,7 @@
                             if (p._spinLock) {
                                 s._spinHitCD = s._spinHitCD || 0;
                                 if (s._spinHitCD > 0) break;
-                                s._spinHitCD = 20;
+                                s._spinHitCD = 60;
                             }
                             s.hp -= 1;
                             s.state = 'hurt'; s.hurtTimer = 12; s.animTimer = 0;
@@ -6104,7 +6104,7 @@
                             if (p._spinLock) {
                                 b._spinHitCD = b._spinHitCD || 0;
                                 if (b._spinHitCD > 0) break;
-                                b._spinHitCD = 20;
+                                b._spinHitCD = 60;
                             }
                             b.hp -= 1;
                             b.hurtTimer = 10;
@@ -6593,7 +6593,7 @@
                             if (p._spinLock) {
                                 z._spinHitCD = z._spinHitCD || 0;
                                 if (z._spinHitCD > 0) break; // skip damage, still bounce
-                                z._spinHitCD = 20;
+                                z._spinHitCD = 60;
                             }
                             // Crystal Titan shield absorbs damage
                             if (z.hasShield && z.shieldHp > 0) {
