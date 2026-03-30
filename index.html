@@ -3913,8 +3913,7 @@
                             for (var fr = zbRow; fr < zbRow + 2; fr++) {
                                 if (!worldMap[fr]) worldMap[fr] = genRow(fr);
                                 for (var fc = 0; fc < COLS; fc++) {
-                                    var brickType = (fr + fc) % 3 === 0 ? MOSSY : COBBLE;
-                                    worldMap[fr][fc] = { t: brickType, hp: 9999, cr: 0 };
+                                    worldMap[fr][fc] = { t: BEDROCK, hp: 999, cr: 0 };
                                 }
                             }
                             megaClearedZones[mz + '_zbFloorRow'] = zbRow;
@@ -3933,20 +3932,25 @@
                     }
                     // Check if all gate bosses for this zone are dead → passage opened
                     if (megaClearedZones[mz] && !megaClearedZones[mz + '_gateOpen']) {
-                        var gateType = megaClearedZones[mz + '_type'];
                         var aliveBosses = 0;
-                        // Check both systems for tiered bosses
                         for (var zci = 0; zci < zombies.length; zci++) {
                             if (zombies[zci].isZBoss && zombies[zci].zone === mz && zombies[zci].state !== 'dead') aliveBosses++;
                         }
                         for (var qci = 0; qci < bats.length; qci++) {
                             if (bats[qci].isQueen && bats[qci].zone === mz && bats[qci].state !== 'dead') aliveBosses++;
                         }
+                        // Failsafe: if no bosses exist for this zone after 10 seconds, force open
                         if (aliveBosses === 0) {
+                            megaClearedZones[mz + '_noBossFrames'] = (megaClearedZones[mz + '_noBossFrames'] || 0) + 1;
+                        } else {
+                            megaClearedZones[mz + '_noBossFrames'] = 0;
+                        }
+                        if (aliveBosses === 0 && (megaClearedZones[mz + '_noBossFrames'] || 0) > 60) {
+                            // No bosses for 1+ second — open gate
                             megaClearedZones[mz + '_gateOpen'] = true;
+                            console.log('[boss] Zone ' + mz + ': gate force-opened (no bosses found)');
                             spawnText(canvas.width / 2, pick.y - 80, '🎉 PASSAGE OPEN!', '#44ff44');
                             shakeAmt = 25;
-                            // Destroy barrier blocks at gate row so pickaxes never stop
                             var gateRow = getMegaStart(mz) + MEGA_CLEARING_HEIGHT - 10;
                             for (var gr = gateRow - 2; gr <= gateRow + 2; gr++) {
                                 if (!worldMap[gr]) continue;
@@ -6397,6 +6401,7 @@
                     shieldHp: tier.hasShield ? Math.floor((tier.shieldHp || 50) * tierScale) : 0,
                     shieldMax: tier.hasShield ? Math.floor((tier.shieldHp || 50) * tierScale) : 0
                 });
+                console.log('[boss] Spawned ground boss: ' + tier.name + ' at (' + Math.floor(wx) + ',' + Math.floor(wy) + ') hp=' + bossHp + ' zone=' + zone);
             }
         }
 
