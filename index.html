@@ -1406,14 +1406,7 @@
         }
 
         function updateStormHUD() {
-            var el = document.getElementById('skillStorm');
-            if (!el) return;
-            if (stormActive) {
-                el.style.display = 'block';
-                el.textContent = '⛈️ STORM: ' + Math.ceil(stormTimer / 60) + 's';
-            } else {
-                el.style.display = 'none';
-            }
+            // disabled — storm HUD removed
         }
 
         // ── Picaretas disponíveis ──────────────────────────────────────────────────────────
