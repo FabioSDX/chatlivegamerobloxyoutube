@@ -898,8 +898,8 @@
         var SHIMMER_ENABLED = !isMobile;
         var BG_DETAIL = isMobile ? 0 : 1; // 0=simple, 1=full crystals
         var BLOCKS_3D = !isMobile;          // 3D block faces (biggest draw call saver)
-        var MAX_BATS_VISIBLE = isMobile ? 15 : 999;
-        var MAX_ZOMBIES_VISIBLE = isMobile ? 8 : 999;
+        var MAX_BUBBLES_VISIBLE = isMobile ? 15 : 999;
+        var MAX_SLIMES_VISIBLE = isMobile ? 8 : 999;
         var MAX_SPIDERS_VISIBLE = isMobile ? 8 : 999;
         // ── Tipos ──
         var E = 0, DIRT = 1, STONE = 2, COAL = 3, IRON = 4, GOLD = 5, REDSTONE = 6, DIAMOND = 7, EMERALD = 8, BEDROCK = 9,
@@ -1259,10 +1259,10 @@
                 _nukeLocation = { x: b.x, y: b.y };
             }
             explosions.push({ x: b.x, y: b.y, frame: 0, timer: 0, mega: b.mega, nuke: b.nuke });
-            // Damage zombies in blast radius
+            // Damage slimes in blast radius
             var blastR = (b.nuke ? 18 : (b.mega ? MEGA_TNT_RADIUS : TNT_RADIUS)) * TILE;
-            for (var zi = zombies.length - 1; zi >= 0; zi--) {
-                var zz = zombies[zi];
+            for (var zi = slimes.length - 1; zi >= 0; zi--) {
+                var zz = slimes[zi];
                 if (zz.state === 'dead') continue;
                 var zdx = zz.x - b.x, zdy = zz.y - b.y;
                 var zd = Math.sqrt(zdx * zdx + zdy * zdy);
@@ -1272,20 +1272,20 @@
                     zz.hurtTimer = 15;
                     zz.animTimer = 0;
                     if (zd > 0) { zz.vx = (zdx / zd) * (b.nuke ? 12 : 5); zz.vy = (zdy / zd) * (b.nuke ? 12 : 5) - 6; }
-                    spawnText(zz.x, zz.y - ZOMBIE_SIZE * 0.5, b.nuke ? '☢️ -' + dmg : '-' + dmg, b.nuke ? '#ff4400' : '#ff8844');
-                    sfxZombieHurt();
+                    spawnText(zz.x, zz.y - SLIME_SIZE * 0.5, b.nuke ? '☢️ -' + dmg : '-' + dmg, b.nuke ? '#ff4400' : '#ff8844');
+                    sfxSlimeHurt();
                     if (zz.hp <= 0) {
                         zz.state = 'dead'; zz.animTimer = 0; zz.deadTimer = 0;
                         score += zz.pts;
-                        spawnText(zz.x, zz.y - ZOMBIE_SIZE * 0.6, '+' + zz.pts, '#ffdd44');
+                        spawnText(zz.x, zz.y - SLIME_SIZE * 0.6, '+' + zz.pts, '#ffdd44');
                         if (b.userName) addCycleScore(b.userName, zz.pts, 'kill');
-                        sfxZombieDeath();
+                        sfxSlimeDeath();
                     }
                 }
             }
-            // Damage bats in blast radius
-            for (var bi = bats.length - 1; bi >= 0; bi--) {
-                var bb = bats[bi];
+            // Damage bubbles in blast radius
+            for (var bi = bubbles.length - 1; bi >= 0; bi--) {
+                var bb = bubbles[bi];
                 if (bb.state === 'dead') continue;
                 var bdx = bb.x - b.x, bdy = bb.y - b.y;
                 var bd = Math.sqrt(bdx * bdx + bdy * bdy);
@@ -1295,8 +1295,8 @@
                     bb.hurtTimer = 10;
                     bb.anim = 0;
                     if (bd > 0) { bb.vx = (bdx / bd) * (b.nuke ? 14 : 4); bb.vy = (bdy / bd) * (b.nuke ? 14 : 4) - (b.nuke ? 8 : 2); }
-                    spawnText(bb.x, bb.y - BAT_SIZE * 0.4, b.nuke ? '☢️ -' + batDmg : '-' + batDmg, b.nuke ? '#ff4400' : '#ff88cc');
-                    if (b.nuke) sfxZombieHurt(); else sfxBatHurt();
+                    spawnText(bb.x, bb.y - BUBBLE_SIZE * 0.4, b.nuke ? '☢️ -' + batDmg : '-' + batDmg, b.nuke ? '#ff4400' : '#ff88cc');
+                    if (b.nuke) sfxSlimeHurt(); else sfxBubbleHurt();
                     if (bb.hp <= 0) {
                         bb.state = 'dead'; bb.anim = 0; bb.deadTimer = 0;
                         score += bb.pts;
@@ -1305,8 +1305,8 @@
                             persistentScores[b.userName].score += bb.pts;
                             addCycleScore(b.userName, bb.pts, 'kill');
                         }
-                        spawnText(bb.x, bb.y - BAT_SIZE * 0.5, '+' + bb.pts, '#ffdd44');
-                        sfxBatDeath();
+                        spawnText(bb.x, bb.y - BUBBLE_SIZE * 0.5, '+' + bb.pts, '#ffdd44');
+                        sfxBubbleDeath();
                     } else {
                         bb.state = 'hurt';
                     }
@@ -1323,7 +1323,7 @@
                     ss.hp -= spDmg;
                     ss.state = 'hurt'; ss.hurtTimer = 12; ss.animTimer = 0;
                     if (sd > 0) { ss.vx = (sdx / sd) * (b.nuke ? 12 : 4); ss.vy = (sdy / sd) * (b.nuke ? 12 : 4) - 4; }
-                    sfxZombieHurt();
+                    sfxSlimeHurt();
                     if (ss.hp <= 0) {
                         ss.state = 'dead'; ss.animTimer = 0; ss.deadTimer = 0;
                         score += ss.pts;
@@ -1332,7 +1332,7 @@
                             persistentScores[b.userName].score += ss.pts;
                             addCycleScore(b.userName, ss.pts, 'kill');
                         }
-                        sfxZombieDeath();
+                        sfxSlimeDeath();
                     }
                 }
             }
@@ -1481,7 +1481,7 @@
 
         var CLEARING_INTERVAL = 25; // every 25m
         var CLEARING_HEIGHT = 8;    // max height of clearing
-        var clearedZones = {};      // track which clearings already spawned zombies
+        var clearedZones = {};      // track which clearings already spawned slimes
         var clearingShapes = {};    // cached organic shapes per zone
 
         // ── Mini-clearings (small grottos between main clearings with chests) ──
@@ -1535,7 +1535,7 @@
         var MEGA_CLEARING_HEIGHT = 200;
         var MEGA_CLEARING_FIRST = 200;    // first mega-clearing starts at row 200 (boss at ~400m)
         var megaClearedZones = {};
-        var MAX_BATS_MEGA = 120;
+        var MAX_BUBBLES_MEGA = 120;
 
         // ── Water Table (underground water level) ──
         var WATER_DRAG = 0.91;
@@ -1543,11 +1543,11 @@
         var QUEEN_HP = 50;
         var QUEEN_COUNT = 3;
 
-        // ── Zombie Boss Gate (alternates with Queen Gate) ──
-        var ZBOSS_SCALE = 3.5;
-        var ZBOSS_HP = 40;
-        var ZBOSS_COUNT = 4;
-        var MAX_ZOMBIES_MEGA = 40;
+        // ── Slime Boss Gate (alternates with Queen Gate) ──
+        var SLIME_BOSS_SCALE = 3.5;
+        var SLIME_BOSS_HP = 40;
+        var SLIME_BOSS_COUNT = 4;
+        var MAX_SLIMES_MEGA = 40;
 
         // ── Boss Tier System (cycles every 5 zones) ──────────────────────────
         var BOSS_TIERS = [
@@ -1577,7 +1577,7 @@
                 color: { r: 255, g: 60, b: 180 },
                 pts: 900,
                 icon: '🦇',
-                // Special: spawns minion bats periodically
+                // Special: spawns minion bubbles periodically
                 spawnsMinions: true,
                 minionInterval: 180, // frames between spawns
                 minionCount: 3
@@ -1840,7 +1840,7 @@
                 }
             }
 
-            // Spawn zombies inside the clearing (last empty row)
+            // Spawn slimes inside the clearing (last empty row)
             var lastEmptyRow = zone * CLEARING_INTERVAL + CLEARING_HEIGHT - 1;
             // Skip if clearing is eliminated (near mega-clearing)
             var clearingEliminated = false;
@@ -1851,10 +1851,10 @@
             }
             if (r === lastEmptyRow && zone >= 1 && !clearedZones[zone] && !clearingEliminated) {
                 clearedZones[zone] = true;
-                if (typeof zombies !== 'undefined' && zombies) {
+                if (typeof slimes !== 'undefined' && slimes) {
                     var shape = getClearingShape(zone);
                     var bounds = shape[CLEARING_HEIGHT - 1];
-                    var numZ = Math.min(MAX_ZOMBIES, 5 + Math.floor(zone));
+                    var numZ = Math.min(MAX_SLIMES, 5 + Math.floor(zone));
                     for (var zi = 0; zi < numZ; zi++) {
                         var minC = (bounds ? bounds.left + 1 : 2);
                         var maxC = (bounds ? bounds.right - 1 : COLS - 3);
@@ -1863,21 +1863,21 @@
                         var zx = zCol * TILE + TILE / 2;
                         // Spawn at bottom of clearing space — zombie feet on the floor below
                         var zy = (lastEmptyRow + 1) * TILE;
-                        spawnZombie(zx, zy);
+                        spawnSlime(zx, zy);
                     }
                 }
-                // Spawn bats flying inside the clearing — first one is the Mother
-                if (typeof bats !== 'undefined' && bats) {
-                    var batShape = getClearingShape(zone);
-                    var numBats = Math.min(MAX_BATS - bats.length, 3 + Math.floor(zone * 0.5));
-                    for (var bi = 0; bi < numBats; bi++) {
+                // Spawn bubbles flying inside the clearing — first one is the Mother
+                if (typeof bubbles !== 'undefined' && bubbles) {
+                    var bubbleShape = getClearingShape(zone);
+                    var numBubbles = Math.min(MAX_BUBBLES - bubbles.length, 3 + Math.floor(zone * 0.5));
+                    for (var bi = 0; bi < numBubbles; bi++) {
                         var midRow = Math.floor(CLEARING_HEIGHT * 0.3 + seededRand(zone * 200 + bi * 13) * CLEARING_HEIGHT * 0.4);
-                        var batBounds = batShape[midRow];
+                        var batBounds = bubbleShape[midRow];
                         if (!batBounds) continue;
                         var batCol = batBounds.left + 1 + Math.floor(seededRand(zone * 300 + bi * 17) * (batBounds.right - batBounds.left - 1));
                         var bx = batCol * TILE + TILE / 2;
                         var by = (zone * CLEARING_INTERVAL + midRow) * TILE + TILE / 2;
-                        spawnBat(bx, by, zone, bi === 0);
+                        spawnBubble(bx, by, zone, bi === 0);
                     }
                 }
             }
@@ -2440,7 +2440,7 @@
         function restart() {
             score = 0; maxDepth = 0; parts = []; texts = []; debris = []; announcements = [];
             var ov = document.getElementById('announceOverlay'); if (ov) ov.innerHTML = '';
-            worldMap = {}; explosions = []; tntBlocks = []; items = []; zombies = []; bats = []; spiders = []; spiderWebs = []; fallingBlocks = []; bonusBalls = []; collectBoxes = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; torchList = []; clearingCrystals = {}; megaClearedZones = {};
+            worldMap = {}; explosions = []; tntBlocks = []; items = []; slimes = []; bubbles = []; spiders = []; spiderWebs = []; fallingBlocks = []; bonusBalls = []; collectBoxes = []; clearedZones = {}; clearingShapes = {}; crystalDecoList = []; torchList = []; clearingCrystals = {}; megaClearedZones = {};
             miniClearedZones = {};
             extraPicks = []; userPicks = []; lastActivity = {};
             camTarget = null; camLeaderTimer = 0; camY = 0;
@@ -3054,8 +3054,8 @@
             }
             if (tormentaTimer % 6 === 0) {
                 var killR = TORMENTA_RADIUS;
-                for (var bi = bats.length - 1; bi >= 0; bi--) {
-                    var b = bats[bi];
+                for (var bi = bubbles.length - 1; bi >= 0; bi--) {
+                    var b = bubbles[bi];
                     if (b.state === 'dead') continue;
                     var dx = p.x - b.x, dy = p.y - b.y;
                     if (dx * dx + dy * dy < killR * killR) {
@@ -3076,25 +3076,25 @@
                         } else {
                             spawnText(b.x, b.y - 20, '+' + b.pts, '#ff8800');
                         }
-                        sfxBatDeath();
+                        sfxBubbleDeath();
                         for (var k = 0; k < 5; k++) {
                             parts.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 1, dec: 0.06, c: '#ff4400', r: 4 + Math.random() * 3 });
                         }
                     }
                 }
-                for (var zi = zombies.length - 1; zi >= 0; zi--) {
-                    var z = zombies[zi];
+                for (var zi = slimes.length - 1; zi >= 0; zi--) {
+                    var z = slimes[zi];
                     if (z.state === 'dead') continue;
                     var zdx = p.x - z.x, zdy = p.y - z.y;
                     if (zdx * zdx + zdy * zdy < killR * killR) {
                         z.hp = 0; z.state = 'dead'; z.animTimer = 0; z.deadTimer = 0;
-                        var zqBonus = z.isZBoss ? 3 : 1;
+                        var zqBonus = z.isSlimeBoss ? 3 : 1;
                         score += z.pts * zqBonus;
                         if (p.userName) {
                             if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
                             persistentScores[p.userName].score += z.pts * zqBonus;
                         }
-                        if (z.isZBoss) {
+                        if (z.isSlimeBoss) {
                             spawnText(z.x, z.y - 40, '💀 BOSS DOWN! +' + (z.pts * zqBonus), '#44ff00');
                             shakeAmt = 15;
                             for (var zk = 0; zk < 8; zk++) {
@@ -3104,7 +3104,7 @@
                         } else {
                             spawnText(z.x, z.y - 20, '+' + z.pts, '#ff8800');
                         }
-                        sfxZombieDeath();
+                        sfxSlimeDeath();
                         for (var k2 = 0; k2 < 5; k2++) {
                             parts.push({ x: z.x, y: z.y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 1, dec: 0.06, c: '#ff4400', r: 4 + Math.random() * 3 });
                         }
@@ -3122,7 +3122,7 @@
                             if (!persistentScores[p.userName]) persistentScores[p.userName] = { score: 0, avatar: p.userAvatarUrl || '' };
                             persistentScores[p.userName].score += sp.pts;
                         }
-                        sfxZombieDeath();
+                        sfxSlimeDeath();
                     }
                 }
             }
@@ -3658,7 +3658,7 @@
                 // Chance to spawn zombie — increases with depth
                 var zDepth = row;
                 var zChance = zDepth > 10 ? Math.min(0.04, 0.005 + zDepth * 0.0005) : 0;
-                if (Math.random() < zChance) spawnZombie(col * TILE + TILE / 2, row * TILE);
+                if (Math.random() < zChance) spawnSlime(col * TILE + TILE / 2, row * TILE);
             }
             return true;
         }
@@ -3770,14 +3770,14 @@
                 if (atk.timer > 0) atk.timer--;
                 if (atk.timer <= 0) {
                     var targets = [];
-                    for (var b_i = 0; b_i < bats.length; b_i++) {
-                        var b = bats[b_i];
+                    for (var b_i = 0; b_i < bubbles.length; b_i++) {
+                        var b = bubbles[b_i];
                         if (b.state === 'dead' || b.y < camY - 200 || b.y > camY + canvas.height + 200) continue;
                         var dist = Math.sqrt((b.x - atk.x) * (b.x - atk.x) + (b.y - atk.y) * (b.y - atk.y));
                         if (dist <= 1600) targets.push({ bat: b, dist: dist });
                     }
-                    for (var z_i = 0; z_i < zombies.length; z_i++) {
-                        var z = zombies[z_i];
+                    for (var z_i = 0; z_i < slimes.length; z_i++) {
+                        var z = slimes[z_i];
                         if (z.state === 'dead' || z.y < camY - 200 || z.y > camY + canvas.height + 200) continue;
                         var zDist = Math.sqrt((z.x - atk.x) * (z.x - atk.x) + (z.y - atk.y) * (z.y - atk.y));
                         if (zDist <= 1600) targets.push({ bat: z, dist: zDist });
@@ -3847,11 +3847,11 @@
                 if (_nukeTimer <= 0) _nukeActive = false;
             }
 
-            updateZombies();
-            checkPickZombieCollisions();
+            updateSlimes();
+            checkPickSlimeCollisions();
             updateSpiders();
             checkPickSpiderCollisions();
-            updateBats();
+            updateBubbles();
             updateBossAbilities();
             // ── Mega-clearing: spawn flyers when pick enters the zone ──
             if (pick) {
@@ -3877,12 +3877,12 @@
                         megaClearedZones[mz + '_tier'] = tier;
 
                         // Spawn ambient flyers in all arenas
-                        var megaNum = Math.min(MAX_BATS_MEGA, 60 + Math.floor(mz * 8));
+                        var megaNum = Math.min(MAX_BUBBLES_MEGA, 60 + Math.floor(mz * 8));
                         for (var mi = 0; mi < megaNum; mi++) {
                             var mx = (1 + Math.floor(seededRand(mz * 500 + mi * 11) * (COLS - 2))) * TILE + TILE / 2;
                             var myRow = mStart + 10 + Math.floor(seededRand(mz * 600 + mi * 19) * (MEGA_CLEARING_HEIGHT - 40));
                             var my = myRow * TILE + TILE / 2;
-                            spawnBat(mx, my, mz, mi % 5 === 0);
+                            spawnBubble(mx, my, mz, mi % 5 === 0);
                         }
 
                         if (tier.type === 'flyer') {
@@ -3918,7 +3918,7 @@
                             megaClearedZones[mz + '_zbFloorRow'] = zbRow;
                             var zbFloorY = zbRow * TILE;
                             var bossScale = tier.scale * (1 + mz * 0.05);
-                            var zbY = zbFloorY - ZOMBIE_SIZE * bossScale * 0.5;
+                            var zbY = zbFloorY - SLIME_SIZE * bossScale * 0.5;
                             var zbSpacing = ((COLS - 2) * TILE) / (tier.count + 1);
                             for (var zbi = 0; zbi < tier.count; zbi++) {
                                 var zbX = TILE + zbSpacing * (zbi + 1);
@@ -3932,11 +3932,11 @@
                     // Check if all gate bosses for this zone are dead → passage opened
                     if (megaClearedZones[mz] && !megaClearedZones[mz + '_gateOpen']) {
                         var aliveBosses = 0;
-                        for (var zci = 0; zci < zombies.length; zci++) {
-                            if (zombies[zci].isZBoss && zombies[zci].zone === mz && zombies[zci].state !== 'dead') aliveBosses++;
+                        for (var zci = 0; zci < slimes.length; zci++) {
+                            if (slimes[zci].isSlimeBoss && slimes[zci].zone === mz && slimes[zci].state !== 'dead') aliveBosses++;
                         }
-                        for (var qci = 0; qci < bats.length; qci++) {
-                            if (bats[qci].isQueen && bats[qci].zone === mz && bats[qci].state !== 'dead') aliveBosses++;
+                        for (var qci = 0; qci < bubbles.length; qci++) {
+                            if (bubbles[qci].isQueen && bubbles[qci].zone === mz && bubbles[qci].state !== 'dead') aliveBosses++;
                         }
                         // Failsafe: if no bosses exist for this zone after 10 seconds, force open
                         if (aliveBosses === 0) {
@@ -3946,7 +3946,7 @@
                         }
                         // Log boss count periodically
                         if ((megaClearedZones[mz + '_noBossFrames'] || 0) % 60 === 1) {
-                            console.log('[boss] Zone ' + mz + ': aliveBosses=' + aliveBosses + ' noBossFrames=' + megaClearedZones[mz + '_noBossFrames'] + ' zombies.total=' + zombies.length + ' bats.total=' + bats.length);
+                            console.log('[boss] Zone ' + mz + ': aliveBosses=' + aliveBosses + ' noBossFrames=' + megaClearedZones[mz + '_noBossFrames'] + ' slimes.total=' + slimes.length + ' bubbles.total=' + bubbles.length);
                         }
                         if (aliveBosses === 0 && (megaClearedZones[mz + '_noBossFrames'] || 0) > 600) {
                             // No bosses for 1+ second — open gate
@@ -3968,7 +3968,7 @@
                     // Continuous reinforcement every 120 frames (~2s) — only while gate is closed
                     if (mz >= 0 && megaClearedZones[mz] && !megaClearedZones[mz + '_gateOpen']) {
                         megaClearedZones[mz + '_tick'] = (megaClearedZones[mz + '_tick'] || 0) + 1;
-                        if (megaClearedZones[mz + '_tick'] % 120 === 0 && bats.length < MAX_BATS_MEGA * 0.7) {
+                        if (megaClearedZones[mz + '_tick'] % 120 === 0 && bubbles.length < MAX_BUBBLES_MEGA * 0.7) {
                             var rx = (1 + Math.floor(Math.random() * (COLS - 2))) * TILE + TILE / 2;
                             // Spawn around player, not just below
                             var ry = pick.y + (Math.random() - 0.3) * 600;
@@ -3979,13 +3979,13 @@
                             if (ryRow > mStartRow + MEGA_CLEARING_HEIGHT - 20) ryRow = mStartRow + MEGA_CLEARING_HEIGHT - 20;
                             ry = ryRow * TILE + TILE / 2;
                             if (isMegaClearingRow(ryRow)) {
-                                spawnBat(rx, ry, mz, Math.random() < 0.15);
+                                spawnBubble(rx, ry, mz, Math.random() < 0.15);
                             }
                         }
                     }
                 }
             }
-            checkPickBatCollisions();
+            checkPickBubbleCollisions();
             shakeAmt *= shakeDec;
             if (shakeAmt < 0.3) shakeAmt = 0;
         }
@@ -5044,8 +5044,8 @@
             }
             ctx.globalAlpha = 1;
 
-            // zombies
-            drawZombies();
+            // slimes
+            drawSlimes();
             drawBossEffects();
             // Spider webs
             if (spiderWebs.length > 0) {
@@ -5106,8 +5106,8 @@
                 }
             }
 
-            // bats
-            drawBats();
+            // bubbles
+            drawBubbles();
 
             // textos flutuantes
             for (var j = 0; j < texts.length; j++) {
@@ -5349,14 +5349,14 @@
             requestAnimationFrame(loop);
         }
 
-        // ── ZOMBIES ────────────────────────────────────────────────────────────────
-        var zombies = [];
-        var MAX_ZOMBIES = 8;
-        var ZOMBIE_SIZE = TILE;
+        // ── SLIMES ────────────────────────────────────────────────────────────────
+        var slimes = [];
+        var MAX_SLIMES = 8;
+        var SLIME_SIZE = TILE;
 
         // Preload zombie sprites
-        var ZOMBIE_TYPES = ['Zombie1', 'Zombie2', 'Zombie3', 'Zombie4'];
-        var ZOMBIE_ANIMS = {
+        var SLIME_TYPES = ['Zombie1', 'Zombie2', 'Zombie3', 'Zombie4'];
+        var SLIME_ANIMS = {
             idle: { prefix: 'Idle', count: 4, speed: 0.08 },
             walk: { prefix: 'Walk', count: 6, speed: 0.12 },
             run: { prefix: 'Run', count: 10, speed: 0.18 },
@@ -5366,10 +5366,10 @@
             jump: { prefix: 'Jump', count: 7, speed: 0.12 }
         };
         var zombieSprites = {};
-        ZOMBIE_TYPES.forEach(function (zt) {
+        SLIME_TYPES.forEach(function (zt) {
             zombieSprites[zt] = {};
-            Object.keys(ZOMBIE_ANIMS).forEach(function (anim) {
-                var a = ZOMBIE_ANIMS[anim];
+            Object.keys(SLIME_ANIMS).forEach(function (anim) {
+                var a = SLIME_ANIMS[anim];
                 zombieSprites[zt][anim] = [];
                 for (var i = 1; i <= a.count; i++) {
                     var img = new Image();
@@ -5603,7 +5603,7 @@
                             }
                             s.hp -= 1;
                             s.state = 'hurt'; s.hurtTimer = 12; s.animTimer = 0;
-                            sfxZombieHurt();
+                            sfxSlimeHurt();
                             registerComboHit(p, s.x, s.y);
                             if (s.hp <= 0) {
                                 s.state = 'dead'; s.animTimer = 0; s.deadTimer = 0;
@@ -5613,7 +5613,7 @@
                                     persistentScores[p.userName].score += s.pts;
                                     addCycleScore(p.userName, s.pts, 'kill');
                                 }
-                                sfxZombieDeath();
+                                sfxSlimeDeath();
                             }
                         }
                         break;
@@ -5662,7 +5662,7 @@
                 if (s.state === 'hurt' && s.hurtTimer % 4 < 2) ctx.globalAlpha = 0.6;
                 if (s.state === 'dead') ctx.globalAlpha = Math.max(0, 1 - s.deadTimer / 100);
 
-                // Dark jelly body
+                // Dark slime body
                 ctx.beginPath();
                 ctx.ellipse(0, -h * 0.1, w / 2, h * 0.5, 0, Math.PI, 0);
                 ctx.ellipse(0, -h * 0.1, w / 2 * 1.1, h * 0.3, 0, 0, Math.PI);
@@ -5688,7 +5688,7 @@
                 ctx.fillStyle = 'rgba(255,255,255,0.25)';
                 ctx.fill();
 
-                // Eyes (red tint for dark jelly)
+                // Eyes (red tint for dark slime)
                 var eyeY = -h * 0.15;
                 var eyeSpacing = w * 0.14;
                 var eyeR = s.isMother ? 4 : 2.5;
@@ -5715,14 +5715,14 @@
         }
 
         // ── BAT / VESP SYSTEM (alternating per clearing) ──────────────────────
-        var bats = [];
-        var MAX_BATS = 18;
-        var BAT_SIZE = TILE * 1.05;
+        var bubbles = [];
+        var MAX_BUBBLES = 18;
+        var BUBBLE_SIZE = TILE * 1.05;
         var MOTHER_SCALE = 3.0; // 300% size
         var MOTHER_SPAWN_MS = 4000; // spawn baby every 4s
 
         var FLYER_TYPES = ['bat', 'vesp', 'marimbondo'];
-        var BAT_ANIMS = {
+        var BUBBLE_ANIMS = {
             fly: { prefix: 'Fly', count: 18, speed: 0.25 },
             idle: { prefix: 'Idle', count: 18, speed: 0.12 },
             attack: { prefix: 'Attack', count: 18, speed: 0.20 },
@@ -5734,8 +5734,8 @@
         (function () {
             FLYER_TYPES.forEach(function (ft) {
                 flyerSprites[ft] = {};
-                Object.keys(BAT_ANIMS).forEach(function (anim) {
-                    var a = BAT_ANIMS[anim];
+                Object.keys(BUBBLE_ANIMS).forEach(function (anim) {
+                    var a = BUBBLE_ANIMS[anim];
                     flyerSprites[ft][anim] = [];
                     for (var i = 0; i < a.count; i++) {
                         var img = new Image();
@@ -5748,12 +5748,12 @@
             });
         })();
 
-        function spawnBat(wx, wy, zone, isMother) {
+        function spawnBubble(wx, wy, zone, isMother) {
             // Use higher cap during mega-clearings
             var batRow = Math.floor(wy / TILE);
             var inMega = isMegaClearingRow(batRow);
-            var cap = inMega ? MAX_BATS_MEGA : MAX_BATS;
-            if (bats.length >= cap) return;
+            var cap = inMega ? MAX_BUBBLES_MEGA : MAX_BUBBLES;
+            if (bubbles.length >= cap) return;
             // Alternate: cycle bat → vesp → marimbondo per zone
             var flyType = FLYER_TYPES[zone % FLYER_TYPES.length];
 
@@ -5783,7 +5783,7 @@
             var motherFlag = !!isMother;
             var hpVal = motherFlag ? 10 : 2;
             var ptsVal = motherFlag ? (100 + Math.floor(zone * 15)) : (30 + Math.floor(zone * 5));
-            bats.push({
+            bubbles.push({
                 x: wx, y: wy,
                 vx: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 1.5),
                 vy: (Math.random() - 0.5) * 0.4,
@@ -5810,7 +5810,7 @@
         function spawnQueen(wx, wy, zone, index) {
             var flyType = FLYER_TYPES[zone % FLYER_TYPES.length];
             var megaStart = getMegaStart(zone);
-            bats.push({
+            bubbles.push({
                 x: wx, y: wy,
                 vx: 0, vy: 0,
                 state: 'fly',
@@ -5835,9 +5835,9 @@
             });
         }
 
-        function updateBats() {
-            for (var i = bats.length - 1; i >= 0; i--) {
-                var b = bats[i];
+        function updateBubbles() {
+            for (var i = bubbles.length - 1; i >= 0; i--) {
+                var b = bubbles[i];
                 if (b._spinHitCD > 0) b._spinHitCD--;
 
                 // Remove if too far above camera (but never remove queen bosses with active gate)
@@ -5847,34 +5847,34 @@
                         b.y = (bStart + 20) * TILE;
                         b.vy = 0;
                     } else {
-                        bats.splice(i, 1); continue;
+                        bubbles.splice(i, 1); continue;
                     }
                 }
 
                 // ── DEAD ──
                 if (b.state === 'dead') {
                     b.deadTimer++;
-                    b.anim += BAT_ANIMS.dying.speed;
-                    if (b.anim >= BAT_ANIMS.dying.count) b.anim = BAT_ANIMS.dying.count - 0.01;
+                    b.anim += BUBBLE_ANIMS.dying.speed;
+                    if (b.anim >= BUBBLE_ANIMS.dying.count) b.anim = BUBBLE_ANIMS.dying.count - 0.01;
                     // Fall with gravity
                     b.vy += 0.2;
                     b.y += b.vy;
                     b.x += b.vx * 0.95;
-                    if (b.deadTimer > 90) { bats.splice(i, 1); }
+                    if (b.deadTimer > 90) { bubbles.splice(i, 1); }
                     continue;
                 }
 
                 // ── HURT ──
                 if (b.state === 'hurt') {
                     b.hurtTimer--;
-                    b.anim += BAT_ANIMS.fall.speed;
-                    if (b.anim >= BAT_ANIMS.fall.count) b.anim = 0;
+                    b.anim += BUBBLE_ANIMS.fall.speed;
+                    if (b.anim >= BUBBLE_ANIMS.fall.count) b.anim = 0;
                     b.vy += 0.05;
                     b.y += b.vy;
                     b.x += b.vx * 0.9;
                     // Block collision while hurt (skip if being sucked by black hole)
                     if (!b._bhCaptured) {
-                    var hHalf = BAT_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                    var hHalf = BUBBLE_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
                     var hCol = Math.floor(b.x / TILE), hRow = Math.floor(b.y / TILE);
                     for (var hr = hRow - 1; hr <= hRow + 1; hr++) {
                         for (var hc = hCol - 1; hc <= hCol + 1; hc++) {
@@ -5925,14 +5925,14 @@
                     if (b.y < b.boundsMinY) { b.y = b.boundsMinY; b.vy = Math.abs(b.vy); }
                     if (b.y > b.boundsMaxY) { b.y = b.boundsMaxY; b.vy = -Math.abs(b.vy); }
                     if (Math.abs(b.vx) > 0.3) b.dir = b.vx > 0 ? 1 : -1;
-                    b.anim += BAT_ANIMS.fly.speed;
-                    if (b.anim >= BAT_ANIMS.fly.count) b.anim = 0;
+                    b.anim += BUBBLE_ANIMS.fly.speed;
+                    if (b.anim >= BUBBLE_ANIMS.fly.count) b.anim = 0;
                     // Queens spawn babies
                     var qNow = Date.now();
                     if (qNow - b.lastSpawnTime >= MOTHER_SPAWN_MS) {
                         b.lastSpawnTime = qNow;
-                        if (bats.length < MAX_BATS_MEGA) {
-                            spawnBat(b.x + (Math.random() - 0.5) * 60, b.y - 40, b.zone, false);
+                        if (bubbles.length < MAX_BUBBLES_MEGA) {
+                            spawnBubble(b.x + (Math.random() - 0.5) * 60, b.y - 40, b.zone, false);
                         }
                     }
                     continue;
@@ -5978,7 +5978,7 @@
 
                 // ── Block collision: push out of solid tiles (skip if black hole captured) ──
                 if (!b._bhCaptured) {
-                var bHalf = BAT_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                var bHalf = BUBBLE_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
                 var bCol = Math.floor(b.x / TILE), bRow = Math.floor(b.y / TILE);
                 // Check a small grid around the bat
                 for (var cr = bRow - 1; cr <= bRow + 1; cr++) {
@@ -6024,27 +6024,27 @@
                 if (Math.abs(b.vx) > 0.3) b.dir = b.vx > 0 ? 1 : -1;
 
                 // Animate
-                b.anim += BAT_ANIMS.fly.speed;
-                if (b.anim >= BAT_ANIMS.fly.count) b.anim = 0;
+                b.anim += BUBBLE_ANIMS.fly.speed;
+                if (b.anim >= BUBBLE_ANIMS.fly.count) b.anim = 0;
 
                 // Mother spawns babies every 4 seconds
                 if (b.isMother && b.state === 'fly') {
                     var now = Date.now();
                     if (now - b.lastSpawnTime >= MOTHER_SPAWN_MS) {
                         b.lastSpawnTime = now;
-                        if (bats.length < MAX_BATS) {
-                            spawnBat(b.x + (Math.random() - 0.5) * 40, b.y + 20, b.zone, false);
-                            spawnText(b.x, b.y + BAT_SIZE * 0.5, '🥚 Pop!', '#ff88ff');
+                        if (bubbles.length < MAX_BUBBLES) {
+                            spawnBubble(b.x + (Math.random() - 0.5) * 40, b.y + 20, b.zone, false);
+                            spawnText(b.x, b.y + BUBBLE_SIZE * 0.5, '🥚 Pop!', '#ff88ff');
                         }
                     }
                 }
 
                 // Bubble-bubble collision (push apart)
-                var bR = BAT_SIZE * 0.45 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
-                for (var j = i + 1; j < bats.length; j++) {
-                    var o = bats[j];
+                var bR = BUBBLE_SIZE * 0.45 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                for (var j = i + 1; j < bubbles.length; j++) {
+                    var o = bubbles[j];
                     if (o.state === 'dead' || o._bhCaptured) continue;
-                    var oR = BAT_SIZE * 0.45 * (o.isQueen ? QUEEN_SCALE : (o.isMother ? MOTHER_SCALE : 1));
+                    var oR = BUBBLE_SIZE * 0.45 * (o.isQueen ? QUEEN_SCALE : (o.isMother ? MOTHER_SCALE : 1));
                     var bbdx = b.x - o.x, bbdy = b.y - o.y;
                     var bbdist = Math.sqrt(bbdx * bbdx + bbdy * bbdy);
                     var bbmin = bR + oR;
@@ -6060,7 +6060,7 @@
             }
         }
 
-        function checkPickBatCollisions() {
+        function checkPickBubbleCollisions() {
             var PICK_R = 28;
             var allPicks = [pick].concat(userPicks, extraPicks);
             for (var pi = 0; pi < allPicks.length; pi++) {
@@ -6068,11 +6068,11 @@
                 if (!p || p.stuck) continue;
                 var pSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
                 if (pSpeed < 0.8) continue;
-                for (var bi = bats.length - 1; bi >= 0; bi--) {
-                    var b = bats[bi];
+                for (var bi = bubbles.length - 1; bi >= 0; bi--) {
+                    var b = bubbles[bi];
                     if (b.state === 'dead') continue;
                     if (b._bhCaptured) continue;
-                    var BR = BAT_SIZE * 0.45 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                    var BR = BUBBLE_SIZE * 0.45 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
                     var dx = p.x - b.x, dy = p.y - b.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
                     var minDist = PICK_R + BR;
@@ -6109,7 +6109,7 @@
                             b.hp -= 1;
                             b.hurtTimer = 10;
                             b.anim = 0;
-                            sfxBatHurt();
+                            sfxBubbleHurt();
                             registerComboHit(p, b.x, b.y);
                             if (b.hp <= 0) {
                                 b.state = 'dead'; b.anim = 0; b.deadTimer = 0;
@@ -6119,7 +6119,7 @@
                                     persistentScores[p.userName].score += b.pts;
                                     addCycleScore(p.userName, b.pts, 'kill');
                                 }
-                                sfxBatDeath();
+                                sfxBubbleDeath();
                             } else {
                                 b.state = 'hurt';
                             }
@@ -6138,17 +6138,17 @@
             { fill: 'rgba(150,255,150,0.25)', stroke: 'rgba(180,255,180,0.6)', highlight: 'rgba(255,255,255,0.7)' }
         ];
 
-        function drawBats() {
+        function drawBubbles() {
             var viewTop = camY - TILE * 2;
             var viewBot = camY + canvas.height + TILE * 2;
             var t = Date.now() * 0.003;
             var _batDrawn = 0;
-            for (var i = 0; i < bats.length; i++) {
-                var b = bats[i];
+            for (var i = 0; i < bubbles.length; i++) {
+                var b = bubbles[i];
                 if (b.y < viewTop || b.y > viewBot) continue;
-                if (++_batDrawn > MAX_BATS_VISIBLE) break;
+                if (++_batDrawn > MAX_BUBBLES_VISIBLE) break;
 
-                var r = BAT_SIZE * 0.45;
+                var r = BUBBLE_SIZE * 0.45;
                 if (b.isQueen) r *= QUEEN_SCALE;
                 else if (b.isMother) r *= MOTHER_SCALE;
 
@@ -6230,7 +6230,7 @@
         }
 
         // Bubble sound effects
-        function sfxBatHurt() {
+        function sfxBubbleHurt() {
             if (!_audioStarted) return;
             var ac = getAC(), t = ac.currentTime;
             var o = ac.createOscillator(), g = ac.createGain();
@@ -6243,7 +6243,7 @@
             o.start(t); o.stop(t + 0.1);
         }
 
-        function sfxBatDeath() {
+        function sfxBubbleDeath() {
             if (!_audioStarted) return;
             var ac = getAC(), t = ac.currentTime;
             // Bubble pop sound
@@ -6265,22 +6265,22 @@
             src.connect(ng); ng.connect(ac.destination); src.start(t);
         }
 
-        function spawnZombie(wx, wy) {
-            if (zombies.length >= MAX_ZOMBIES) return;
-            var zt = ZOMBIE_TYPES[Math.floor(Math.random() * ZOMBIE_TYPES.length)];
+        function spawnSlime(wx, wy) {
+            if (slimes.length >= MAX_SLIMES) return;
+            var zt = SLIME_TYPES[Math.floor(Math.random() * SLIME_TYPES.length)];
             var depth = Math.floor(wy / TILE);
             var hp = 2;
             var spd = 0.4 + Math.random() * 0.4 + Math.min(depth / 100, 0.6);
             // Find safe Y: move up until not inside a solid block
-            var safeY = wy - ZOMBIE_SIZE * 0.5;
+            var safeY = wy - SLIME_SIZE * 0.5;
             for (var sy = 0; sy < 5; sy++) {
-                var checkRow = Math.floor((safeY + ZOMBIE_SIZE * 0.5) / TILE);
+                var checkRow = Math.floor((safeY + SLIME_SIZE * 0.5) / TILE);
                 var checkCol = Math.floor(wx / TILE);
                 var cc = getCell(checkRow, checkCol);
                 if (!cc || cc.t === E) break;
                 safeY -= TILE;
             }
-            zombies.push({
+            slimes.push({
                 x: wx, y: safeY,
                 vx: 0, vy: 0,
                 type: zt,
@@ -6303,13 +6303,13 @@
             });
         }
 
-        function spawnZombieBoss(wx, wy, zone) {
-            var zt = ZOMBIE_TYPES[Math.floor(Math.random() * ZOMBIE_TYPES.length)];
-            zombies.push({
+        function spawnSlimeBoss(wx, wy, zone) {
+            var zt = SLIME_TYPES[Math.floor(Math.random() * SLIME_TYPES.length)];
+            slimes.push({
                 x: wx, y: wy,
                 vx: 0, vy: 0,
                 type: zt,
-                hp: ZBOSS_HP, maxHp: ZBOSS_HP,
+                hp: SLIME_BOSS_HP, maxHp: SLIME_BOSS_HP,
                 speed: 0.3,
                 dir: Math.random() < 0.5 ? -1 : 1,
                 state: 'idle',
@@ -6324,7 +6324,7 @@
                 sleepTimer: 0,
                 sleepZzz: 0,
                 returnToSleep: false,
-                isZBoss: true,
+                isSlimeBoss: true,
                 homeX: wx, homeY: wy,
                 zone: zone,
                 pts: 600 + zone * 60
@@ -6342,7 +6342,7 @@
                 // Flying boss — use bat system
                 var flyType = FLYER_TYPES[zone % FLYER_TYPES.length];
                 var megaStart = getMegaStart(zone);
-                bats.push({
+                bubbles.push({
                     x: wx, y: wy, vx: 0, vy: 0,
                     state: 'fly', anim: Math.random() * 18,
                     dir: Math.random() < 0.5 ? -1 : 1,
@@ -6370,8 +6370,8 @@
                 });
             } else {
                 // Ground boss — use zombie system
-                var zt = ZOMBIE_TYPES[Math.floor(Math.random() * ZOMBIE_TYPES.length)];
-                zombies.push({
+                var zt = SLIME_TYPES[Math.floor(Math.random() * SLIME_TYPES.length)];
+                slimes.push({
                     x: wx, y: wy, vx: 0, vy: 0,
                     type: zt,
                     hp: bossHp, maxHp: bossHp,
@@ -6382,7 +6382,7 @@
                     grounded: true, fallFrames: 0,
                     idleTimer: 0, sleepTimer: 0, sleepZzz: 0,
                     returnToSleep: false,
-                    isZBoss: true,
+                    isSlimeBoss: true,
                     homeX: wx, homeY: wy,
                     zone: zone,
                     pts: bossPts,
@@ -6410,10 +6410,10 @@
 
         // ── Boss Special Abilities (called from update loops) ────────────────
         function updateBossAbilities() {
-            // Ground bosses (zombies with bossTier)
-            for (var i = 0; i < zombies.length; i++) {
-                var z = zombies[i];
-                if (!z.isZBoss || z.state === 'dead' || !z.bossTier) continue;
+            // Ground bosses (slimes with bossTier)
+            for (var i = 0; i < slimes.length; i++) {
+                var z = slimes[i];
+                if (!z.isSlimeBoss || z.state === 'dead' || !z.bossTier) continue;
 
                 // Slime King: split on death handled in death check
                 // Spider Empress: shoot webs
@@ -6470,9 +6470,9 @@
                 // Crystal Titan: shield absorbs damage (handled in damage code)
             }
 
-            // Flying bosses (bats with bossTier)
-            for (var j = 0; j < bats.length; j++) {
-                var b = bats[j];
+            // Flying bosses (bubbles with bossTier)
+            for (var j = 0; j < bubbles.length; j++) {
+                var b = bubbles[j];
                 if (!b.isQueen || b.state === 'dead' || !b.bossTier) continue;
 
                 // Queen Bat: spawn minions
@@ -6481,7 +6481,7 @@
                     if (b.minionTimer >= b.minionInterval) {
                         b.minionTimer = 0;
                         for (var mc = 0; mc < b.minionCount; mc++) {
-                            spawnBat(b.x + (Math.random() - 0.5) * 80, b.y + (Math.random() - 0.5) * 80, b.zone, false);
+                            spawnBubble(b.x + (Math.random() - 0.5) * 80, b.y + (Math.random() - 0.5) * 80, b.zone, false);
                         }
                         spawnText(b.x, b.y - 30, '🦇 MINIONS!', 'rgb(255,60,180)');
                     }
@@ -6519,8 +6519,8 @@
             if (z.splits && z.splitCount > 0 && z.bossScale > 1.5) {
                 var tier = z.bossTier;
                 for (var si = 0; si < z.splitCount; si++) {
-                    var splitZ = ZOMBIE_TYPES[Math.floor(Math.random() * ZOMBIE_TYPES.length)];
-                    zombies.push({
+                    var splitZ = SLIME_TYPES[Math.floor(Math.random() * SLIME_TYPES.length)];
+                    slimes.push({
                         x: z.x + (Math.random() - 0.5) * 40,
                         y: z.y - 20,
                         vx: (Math.random() - 0.5) * 6,
@@ -6534,7 +6534,7 @@
                         grounded: false, fallFrames: 0,
                         idleTimer: 0, sleepTimer: 0, sleepZzz: 0,
                         returnToSleep: false,
-                        isZBoss: true,
+                        isSlimeBoss: true,
                         homeX: z.x, homeY: z.y,
                         zone: z.zone,
                         pts: Math.floor(z.pts * 0.3),
@@ -6549,7 +6549,7 @@
             }
         }
 
-        function checkPickZombieCollisions() {
+        function checkPickSlimeCollisions() {
             var PICK_R = 28;
             var allPicks = [pick].concat(userPicks, extraPicks);
             for (var pi = 0; pi < allPicks.length; pi++) {
@@ -6557,11 +6557,11 @@
                 if (!p || p.stuck) continue;
                 var pSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
                 if (pSpeed < 0.8) continue;
-                for (var zi = zombies.length - 1; zi >= 0; zi--) {
-                    var z = zombies[zi];
+                for (var zi = slimes.length - 1; zi >= 0; zi--) {
+                    var z = slimes[zi];
                     if (z.state === 'dead') continue;
                     if (z._bhCaptured) continue;
-                    var ZR = ZOMBIE_SIZE * 0.4 * (z.isZBoss ? (z.bossScale || ZBOSS_SCALE) : 1);
+                    var ZR = SLIME_SIZE * 0.4 * (z.isSlimeBoss ? (z.bossScale || SLIME_BOSS_SCALE) : 1);
                     var dx = p.x - z.x, dy = p.y - z.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
                     var minDist = PICK_R + ZR;
@@ -6575,10 +6575,10 @@
                         z.x -= nx * overlap * 0.5;
                         z.y -= ny * overlap * 0.5;
                         // Prevent boss from being pushed below bedrock floor
-                        if (z.isZBoss && z.zone !== undefined) {
+                        if (z.isSlimeBoss && z.zone !== undefined) {
                             var _floorRow = megaClearedZones[z.zone + '_zbFloorRow'];
                             if (_floorRow !== undefined) {
-                                var _maxBossY = _floorRow * TILE - ZOMBIE_SIZE * (z.bossScale || ZBOSS_SCALE) * 0.5;
+                                var _maxBossY = _floorRow * TILE - SLIME_SIZE * (z.bossScale || SLIME_BOSS_SCALE) * 0.5;
                                 if (z.y > _maxBossY) { z.y = _maxBossY; z.vy = Math.min(z.vy, 0); }
                             }
                         }
@@ -6615,7 +6615,7 @@
                                 z.hp -= 1;
                             }
                             z.state = 'hurt'; z.hurtTimer = 12; z.animTimer = 0;
-                            sfxZombieHurt();
+                            sfxSlimeHurt();
                             registerComboHit(p, z.x, z.y);
                             if (z.hp <= 0) {
                                 z.state = 'dead'; z.animTimer = 0; z.deadTimer = 0;
@@ -6625,7 +6625,7 @@
                                     persistentScores[p.userName].score += z.pts;
                                     addCycleScore(p.userName, z.pts, 'kill');
                                 }
-                                sfxZombieDeath();
+                                sfxSlimeDeath();
                                 handleBossDeath(z);
                             }
                         }
@@ -6635,29 +6635,29 @@
             }
         }
 
-        function updateZombies() {
+        function updateSlimes() {
             var ZG = 0.35;
-            for (var i = zombies.length - 1; i >= 0; i--) {
-                var z = zombies[i];
+            for (var i = slimes.length - 1; i >= 0; i--) {
+                var z = slimes[i];
                 if (z._spinHitCD > 0) z._spinHitCD--;
 
                 // Remove if too far above camera (but never remove bosses with active gate)
                 if (z.y < camY - 400) {
-                    if (z.isZBoss && z.zone !== undefined && megaClearedZones[z.zone] && !megaClearedZones[z.zone + '_gateOpen']) {
+                    if (z.isSlimeBoss && z.zone !== undefined && megaClearedZones[z.zone] && !megaClearedZones[z.zone + '_gateOpen']) {
                         var bStart = getMegaStart(z.zone);
                         z.y = (bStart + MEGA_CLEARING_HEIGHT - 12) * TILE;
                         z.vy = 0;
                         console.log('[boss] Boss teleported back (was above camera) zone=' + z.zone);
                     } else {
-                        if (z.isZBoss) console.log('[boss] Boss REMOVED (above camera) zone=' + z.zone + ' y=' + Math.floor(z.y) + ' camY=' + Math.floor(camY));
-                        zombies.splice(i, 1); continue;
+                        if (z.isSlimeBoss) console.log('[boss] Boss REMOVED (above camera) zone=' + z.zone + ' y=' + Math.floor(z.y) + ' camY=' + Math.floor(camY));
+                        slimes.splice(i, 1); continue;
                     }
                 }
                 // Also prevent bosses from falling below the arena
-                if (z.isZBoss && z.zone !== undefined) {
+                if (z.isSlimeBoss && z.zone !== undefined) {
                     var maxY = (getMegaStart(z.zone) + MEGA_CLEARING_HEIGHT) * TILE;
                     if (z.y > maxY) {
-                        z.y = maxY - ZOMBIE_SIZE * (z.bossScale || ZBOSS_SCALE) * 0.5;
+                        z.y = maxY - SLIME_SIZE * (z.bossScale || SLIME_BOSS_SCALE) * 0.5;
                         z.vy = 0;
                         z.grounded = true;
                     }
@@ -6666,18 +6666,18 @@
                 // ── DEAD: play full animation then remove ──
                 if (z.state === 'dead') {
                     z.deadTimer++;
-                    z.animTimer += ZOMBIE_ANIMS.dead.speed;
-                    if (z.animTimer >= ZOMBIE_ANIMS.dead.count) z.animTimer = ZOMBIE_ANIMS.dead.count - 0.01;
+                    z.animTimer += SLIME_ANIMS.dead.speed;
+                    if (z.animTimer >= SLIME_ANIMS.dead.count) z.animTimer = SLIME_ANIMS.dead.count - 0.01;
                     // still apply gravity so corpse falls
                     z.vy += ZG;
                     if (isInWater(z.x, z.y)) { z.vx *= 0.85; z.vy *= 0.8; z.vy -= ZG * 0.8; }
                     z.y += z.vy;
-                    var dFootRow = Math.floor((z.y + ZOMBIE_SIZE * 0.5) / TILE);
+                    var dFootRow = Math.floor((z.y + SLIME_SIZE * 0.5) / TILE);
                     var dGround = getCell(dFootRow, Math.floor(z.x / TILE));
-                    if (dGround && dGround.t !== E) { z.y = dFootRow * TILE - ZOMBIE_SIZE * 0.5; z.vy = 0; }
+                    if (dGround && dGround.t !== E) { z.y = dFootRow * TILE - SLIME_SIZE * 0.5; z.vy = 0; }
                     if (z.deadTimer > 120) {
-                        if (z.isZBoss) console.log('[boss] Boss corpse removed zone=' + z.zone);
-                        zombies.splice(i, 1);
+                        if (z.isSlimeBoss) console.log('[boss] Boss corpse removed zone=' + z.zone);
+                        slimes.splice(i, 1);
                     }
                     continue;
                 }
@@ -6685,25 +6685,25 @@
                 // ── HURT: play full hurt anim, then transition ──
                 if (z.state === 'hurt') {
                     z.hurtTimer--;
-                    z.animTimer += ZOMBIE_ANIMS.hurt.speed;
+                    z.animTimer += SLIME_ANIMS.hurt.speed;
                     // apply gravity during hurt
                     z.vy += ZG;
                     if (isInWater(z.x, z.y)) { z.vx *= 0.85; z.vy *= 0.8; z.vy -= ZG * 0.7; }
                     z.y += z.vy;
-                    var hFootRow = Math.floor((z.y + ZOMBIE_SIZE * 0.5) / TILE);
+                    var hFootRow = Math.floor((z.y + SLIME_SIZE * 0.5) / TILE);
                     var hGround = getCell(hFootRow, Math.floor(z.x / TILE));
-                    if (hGround && hGround.t !== E) { z.y = hFootRow * TILE - ZOMBIE_SIZE * 0.5; z.vy = 0; }
+                    if (hGround && hGround.t !== E) { z.y = hFootRow * TILE - SLIME_SIZE * 0.5; z.vy = 0; }
                     if (z.hurtTimer <= 0) {
                         // transition to idle after hurt
                         z.state = 'idle'; z.animTimer = 0;
-                    } else if (z.animTimer >= ZOMBIE_ANIMS.hurt.count) {
+                    } else if (z.animTimer >= SLIME_ANIMS.hurt.count) {
                         z.animTimer = 0; // loop hurt if timer not done
                     }
                     continue;
                 }
 
-                // ── Zombie Boss: dynamic movement — patrol + chase + jump ──
-                if (z.isZBoss && !z._bhCaptured) {
+                // ── Slime Boss: dynamic movement — patrol + chase + jump ──
+                if (z.isSlimeBoss && !z._bhCaptured) {
                     z.vy += ZG * 1.5; // stronger gravity for bosses
                     // Find nearest pick to chase
                     var nearPick = null, nearDist = 600;
@@ -6715,21 +6715,21 @@
                         if (nd < nearDist) { nearDist = nd; nearPick = allP[np]; }
                     }
                     var moveSpeed = z.speed * 2.5;
-                    var pickClose = nearDist < ZOMBIE_SIZE * (z.bossScale || ZBOSS_SCALE) * 0.8;
+                    var pickClose = nearDist < SLIME_SIZE * (z.bossScale || SLIME_BOSS_SCALE) * 0.8;
 
                     // ── Boss state machine ──
                     if (!z.grounded && z.state !== 'hurt' && z.state !== 'dead') {
                         // Airborne — use jump animation
                         z.state = 'jump';
-                        z.animTimer += ZOMBIE_ANIMS.jump.speed;
-                        if (z.animTimer >= ZOMBIE_ANIMS.jump.count) z.animTimer = ZOMBIE_ANIMS.jump.count - 0.01;
+                        z.animTimer += SLIME_ANIMS.jump.speed;
+                        if (z.animTimer >= SLIME_ANIMS.jump.count) z.animTimer = SLIME_ANIMS.jump.count - 0.01;
                         z.vx *= 0.98;
                     } else if (z.grounded) {
                         if (pickClose && nearPick) {
                             // Attack when very close
                             if (z.state !== 'attack') { z.state = 'attack'; z.animTimer = 0; }
-                            z.animTimer += ZOMBIE_ANIMS.attack.speed;
-                            if (z.animTimer >= ZOMBIE_ANIMS.attack.count) z.animTimer = 0;
+                            z.animTimer += SLIME_ANIMS.attack.speed;
+                            if (z.animTimer >= SLIME_ANIMS.attack.count) z.animTimer = 0;
                             z.dir = nearPick.x > z.x ? 1 : -1;
                             z.vx *= 0.8;
                         } else if (nearPick) {
@@ -6737,8 +6737,8 @@
                             z.state = 'run';
                             z.dir = nearPick.x > z.x ? 1 : -1;
                             z.vx += z.dir * 0.2;
-                            z.animTimer += ZOMBIE_ANIMS.run.speed;
-                            if (z.animTimer >= ZOMBIE_ANIMS.run.count) z.animTimer = 0;
+                            z.animTimer += SLIME_ANIMS.run.speed;
+                            if (z.animTimer >= SLIME_ANIMS.run.count) z.animTimer = 0;
                             // Jump toward pick if it's above or randomly
                             if (nearPick.y < z.y - TILE * 2 && Math.random() < 0.01) {
                                 z.vy = -3 - Math.random() * 2;
@@ -6749,8 +6749,8 @@
                             // Patrol — walk with small hops
                             z.state = 'walk';
                             z.vx = z.dir * moveSpeed;
-                            z.animTimer += ZOMBIE_ANIMS.walk.speed;
-                            if (z.animTimer >= ZOMBIE_ANIMS.walk.count) z.animTimer = 0;
+                            z.animTimer += SLIME_ANIMS.walk.speed;
+                            if (z.animTimer >= SLIME_ANIMS.walk.count) z.animTimer = 0;
                             if (Math.random() < 0.008) {
                                 z.vy = -2 - Math.random() * 1.5;
                                 z.grounded = false;
@@ -6770,17 +6770,17 @@
                     if (z.x <= bwL) { z.x = bwL; z.dir = 1; z.vx = Math.abs(z.vx); }
                     if (z.x >= bwR) { z.x = bwR; z.dir = -1; z.vx = -Math.abs(z.vx); }
                     // Ground collision
-                    var bFootRow = Math.floor((z.y + ZOMBIE_SIZE * (z.bossScale || ZBOSS_SCALE) * 0.5) / TILE);
+                    var bFootRow = Math.floor((z.y + SLIME_SIZE * (z.bossScale || SLIME_BOSS_SCALE) * 0.5) / TILE);
                     var bFootCol = Math.floor(z.x / TILE);
                     var bGround = getCell(bFootRow, bFootCol);
                     z.grounded = false;
                     if (bGround && bGround.t !== E) {
-                        z.y = bFootRow * TILE - ZOMBIE_SIZE * (z.bossScale || ZBOSS_SCALE) * 0.5;
+                        z.y = bFootRow * TILE - SLIME_SIZE * (z.bossScale || SLIME_BOSS_SCALE) * 0.5;
                         if (z.vy > 0) z.vy = 0;
                         z.grounded = true;
                     }
                     // Random groan
-                    if (Math.random() < 0.004) sfxZombieGroan();
+                    if (Math.random() < 0.004) sfxSlimeGroan();
                     continue;
                 }
 
@@ -6806,17 +6806,17 @@
                 z.y += z.vy;
 
                 // NaN/Infinity safety
-                if (!isFinite(z.x) || !isFinite(z.y)) { zombies.splice(i, 1); continue; }
+                if (!isFinite(z.x) || !isFinite(z.y)) { slimes.splice(i, 1); continue; }
                 if (!isFinite(z.vx)) z.vx = 0;
                 if (!isFinite(z.vy)) z.vy = 0;
 
                 // Ground check
-                var footRow = Math.floor((z.y + ZOMBIE_SIZE * 0.5) / TILE);
+                var footRow = Math.floor((z.y + SLIME_SIZE * 0.5) / TILE);
                 var footCol = Math.floor(z.x / TILE);
                 var groundCell = getCell(footRow, footCol);
                 z.grounded = false;
                 if (groundCell && groundCell.t !== E && z.vy >= 0) {
-                    z.y = footRow * TILE - ZOMBIE_SIZE * 0.5;
+                    z.y = footRow * TILE - SLIME_SIZE * 0.5;
                     z.vy = 0;
                     z.grounded = true;
                 }
@@ -6840,13 +6840,13 @@
                 // Wall clamp
                 var wallLeft = 1;
                 var wallRight = COLS * TILE - 1;
-                if (z.x < wallLeft + ZOMBIE_SIZE * 0.4) { z.x = wallLeft + ZOMBIE_SIZE * 0.4; z.dir = 1; }
-                if (z.x > wallRight - ZOMBIE_SIZE * 0.4) { z.x = wallRight - ZOMBIE_SIZE * 0.4; z.dir = -1; }
+                if (z.x < wallLeft + SLIME_SIZE * 0.4) { z.x = wallLeft + SLIME_SIZE * 0.4; z.dir = 1; }
+                if (z.x > wallRight - SLIME_SIZE * 0.4) { z.x = wallRight - SLIME_SIZE * 0.4; z.dir = -1; }
 
                 // ── JUMP state: animate and wait for landing ──
                 if (z.state === 'jump') {
-                    z.animTimer += ZOMBIE_ANIMS.jump.speed;
-                    if (z.animTimer >= ZOMBIE_ANIMS.jump.count) z.animTimer = ZOMBIE_ANIMS.jump.count - 0.01;
+                    z.animTimer += SLIME_ANIMS.jump.speed;
+                    if (z.animTimer >= SLIME_ANIMS.jump.count) z.animTimer = SLIME_ANIMS.jump.count - 0.01;
                     // air friction
                     z.vx *= 0.98;
                     continue;
@@ -6864,10 +6864,10 @@
                 var myCol = footCol;
 
                 // Check wall/block in direction
-                var _scL = Math.floor((z.x - ZOMBIE_SIZE * 0.5) / TILE);
+                var _scL = Math.floor((z.x - SLIME_SIZE * 0.5) / TILE);
                 var _cL = getCell(myRow, _scL);
                 var blockedLeft = _cL && _cL.t !== E;
-                var _scR = Math.floor((z.x + ZOMBIE_SIZE * 0.5) / TILE);
+                var _scR = Math.floor((z.x + SLIME_SIZE * 0.5) / TILE);
                 var _cR = getCell(myRow, _scR);
                 var blockedRight = _cR && _cR.t !== E;
 
@@ -6886,7 +6886,7 @@
 
                 // Jump check helper — also checks headroom above zombie and landing space
                 var _canJump = function (dir) {
-                    var sc = Math.floor((z.x + dir * ZOMBIE_SIZE * 0.5) / TILE);
+                    var sc = Math.floor((z.x + dir * SLIME_SIZE * 0.5) / TILE);
                     var myCol2 = Math.floor(z.x / TILE);
                     var a1 = getCell(myRow - 1, sc);
                     if (!a1 || a1.t === E) {
@@ -6933,13 +6933,13 @@
                     var dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < nearPickDist) { nearPickDist = dist; nearPick = p; }
                 }
-                var pickClose = nearPickDist < ZOMBIE_SIZE * 1.2;
+                var pickClose = nearPickDist < SLIME_SIZE * 1.2;
 
                 // ── SLEEP state: zombie rests when isolated between walls ──
                 if (z.state === 'sleep') {
                     z.vx = 0;
-                    z.animTimer += ZOMBIE_ANIMS.idle.speed * 0.4;
-                    if (z.animTimer >= ZOMBIE_ANIMS.idle.count) z.animTimer = 0;
+                    z.animTimer += SLIME_ANIMS.idle.speed * 0.4;
+                    if (z.animTimer >= SLIME_ANIMS.idle.count) z.animTimer = 0;
                     z.sleepTimer = (z.sleepTimer || 0) + 1;
                     z.sleepZzz = (z.sleepZzz || 0) + 1;
                     // Only wake up if no longer isolated (wall was destroyed, path opened)
@@ -6960,15 +6960,15 @@
                         z.dir = nearPick.x > z.x ? 1 : -1;
                         z.state = 'attack'; z.animTimer = 0; z.returnToSleep = isolated;
                     }
-                    if (Math.random() < 0.002) sfxZombieGroan();
+                    if (Math.random() < 0.002) sfxSlimeGroan();
                     if (z.grounded) z.vx *= 0.85;
                     continue;
                 }
 
                 // ── ATTACK: only triggered by pickaxe proximity ──
                 if (z.state === 'attack') {
-                    z.animTimer += ZOMBIE_ANIMS.attack.speed;
-                    if (z.animTimer >= ZOMBIE_ANIMS.attack.count) {
+                    z.animTimer += SLIME_ANIMS.attack.speed;
+                    if (z.animTimer >= SLIME_ANIMS.attack.count) {
                         if (z.returnToSleep && isolated) {
                             z.state = 'sleep'; z.animTimer = 0; z.sleepTimer = 0;
                         } else {
@@ -7036,8 +7036,8 @@
                 // ── State machine: idle ↔ walk with random hurt as ambient ──
                 if (z.state === 'idle') {
                     z.vx = 0;
-                    z.animTimer += ZOMBIE_ANIMS.idle.speed;
-                    if (z.animTimer >= ZOMBIE_ANIMS.idle.count) z.animTimer = 0;
+                    z.animTimer += SLIME_ANIMS.idle.speed;
+                    if (z.animTimer >= SLIME_ANIMS.idle.count) z.animTimer = 0;
                     z.idleTimer++;
                     // Isolated between walls — go to sleep
                     if (isolated && z.idleTimer > 40) {
@@ -7067,8 +7067,8 @@
                     }
                 } else if (z.state === 'walk') {
                     z.vx = z.dir * z.speed;
-                    z.animTimer += ZOMBIE_ANIMS.walk.speed;
-                    if (z.animTimer >= ZOMBIE_ANIMS.walk.count) z.animTimer = 0;
+                    z.animTimer += SLIME_ANIMS.walk.speed;
+                    if (z.animTimer >= SLIME_ANIMS.walk.count) z.animTimer = 0;
                     z.idleTimer++;
                     // Attack if pickaxe is close
                     if (pickClose) {
@@ -7081,7 +7081,7 @@
                         z.state = 'idle'; z.animTimer = 0; z.idleTimer = 0;
                     }
                     // Random groan
-                    if (Math.random() < 0.003) sfxZombieGroan();
+                    if (Math.random() < 0.003) sfxSlimeGroan();
                     // Random jump to explore lower areas
                     if (Math.random() < 0.015) {
                         z.vy = -5 - Math.random() * 3;
@@ -7093,12 +7093,12 @@
                 // Ground friction
                 if (z.grounded) z.vx *= 0.85;
 
-                // Jelly-jelly collision (push apart + bounce)
-                var zR = ZOMBIE_SIZE * 0.4 * (z.isZBoss ? (z.bossScale || ZBOSS_SCALE) : 1);
-                for (var j = i + 1; j < zombies.length; j++) {
-                    var o = zombies[j];
+                // Slime-slime collision (push apart + bounce)
+                var zR = SLIME_SIZE * 0.4 * (z.isSlimeBoss ? (z.bossScale || SLIME_BOSS_SCALE) : 1);
+                for (var j = i + 1; j < slimes.length; j++) {
+                    var o = slimes[j];
                     if (o.state === 'dead' || o._bhCaptured) continue;
-                    var oR = ZOMBIE_SIZE * 0.4 * (o.isZBoss ? (o.bossScale || ZBOSS_SCALE) : 1);
+                    var oR = SLIME_SIZE * 0.4 * (o.isSlimeBoss ? (o.bossScale || SLIME_BOSS_SCALE) : 1);
                     var jdx = z.x - o.x, jdy = z.y - o.y;
                     var jdist = Math.sqrt(jdx * jdx + jdy * jdy);
                     var jmin = zR + oR;
@@ -7115,8 +7115,8 @@
             }
         }
 
-        // Jelly colors — cycle per zombie type
-        var JELLY_COLORS = [
+        // Slime colors — cycle per zombie type
+        var SLIME_COLORS = [
             { r: 50, g: 200, b: 80 },   // green
             { r: 200, g: 80, b: 180 },  // purple
             { r: 80, g: 150, b: 220 },  // blue
@@ -7321,11 +7321,11 @@
                 ctx.restore();
             }
             // Draw shields on Crystal Titans
-            for (var zi = 0; zi < zombies.length; zi++) {
-                var z = zombies[zi];
-                if (!z.isZBoss || z.state === 'dead' || !z.hasShield || z.shieldHp <= 0) continue;
-                var sScale = z.bossScale || ZBOSS_SCALE;
-                var sR = ZOMBIE_SIZE * sScale * 0.6;
+            for (var zi = 0; zi < slimes.length; zi++) {
+                var z = slimes[zi];
+                if (!z.isSlimeBoss || z.state === 'dead' || !z.hasShield || z.shieldHp <= 0) continue;
+                var sScale = z.bossScale || SLIME_BOSS_SCALE;
+                var sR = SLIME_SIZE * sScale * 0.6;
                 var sPct = z.shieldHp / z.shieldMax;
                 ctx.save();
                 ctx.globalAlpha = 0.3 + sPct * 0.3;
@@ -7344,19 +7344,19 @@
             }
         }
 
-        function drawZombies() {
+        function drawSlimes() {
             var viewTop = camY - TILE * 2;
             var viewBot = camY + canvas.height + TILE * 2;
             var t = Date.now() * 0.004;
             var _zombieDrawn = 0;
-            for (var i = 0; i < zombies.length; i++) {
-                var z = zombies[i];
+            for (var i = 0; i < slimes.length; i++) {
+                var z = slimes[i];
                 if (z.y < viewTop || z.y > viewBot) continue;
-                if (++_zombieDrawn > MAX_ZOMBIES_VISIBLE) break;
+                if (++_zombieDrawn > MAX_SLIMES_VISIBLE) break;
 
-                var baseW = ZOMBIE_SIZE * 0.9;
-                var baseH = ZOMBIE_SIZE * 0.8;
-                if (z.isZBoss) { var _zbs = z.bossScale || ZBOSS_SCALE; baseW *= _zbs; baseH *= _zbs; }
+                var baseW = SLIME_SIZE * 0.9;
+                var baseH = SLIME_SIZE * 0.8;
+                if (z.isSlimeBoss) { var _zbs = z.bossScale || SLIME_BOSS_SCALE; baseW *= _zbs; baseH *= _zbs; }
 
                 // Black hole shrink
                 if (z._bhScale !== undefined && z._bhScale < 1) {
@@ -7380,12 +7380,12 @@
                 var w = baseW * squashX;
                 var h = baseH * squashY;
 
-                // Jelly color
-                var jc = JELLY_COLORS[i % JELLY_COLORS.length];
-                if (z.isZBoss) jc = z.bossColor || { r: 255, g: 60, b: 60 };
+                // Slime color
+                var jc = SLIME_COLORS[i % SLIME_COLORS.length];
+                if (z.isSlimeBoss) jc = z.bossColor || { r: 255, g: 60, b: 60 };
 
                 ctx.save();
-                var dx = z.x, dy = z.y + ZOMBIE_SIZE * 0.3;
+                var dx = z.x, dy = z.y + SLIME_SIZE * 0.3;
                 ctx.translate(dx, dy);
 
                 // Black hole spin
@@ -7396,7 +7396,7 @@
                 if (z.state === 'hurt' && z.hurtTimer % 4 < 2) ctx.globalAlpha = 0.6;
                 if (z.state === 'dead') ctx.globalAlpha = Math.max(0, 1 - z.deadTimer / 120);
 
-                // ── Draw jelly body (ellipse, flat bottom) ──
+                // ── Draw slime body (ellipse, flat bottom) ──
                 ctx.beginPath();
                 // Top half: smooth arc
                 ctx.ellipse(0, -h * 0.1, w / 2, h * 0.5, 0, Math.PI, 0);
@@ -7414,7 +7414,7 @@
 
                 // Outline
                 ctx.strokeStyle = 'rgba(' + jc.r + ',' + jc.g + ',' + jc.b + ',0.5)';
-                ctx.lineWidth = z.isZBoss ? 3 : 1.5;
+                ctx.lineWidth = z.isSlimeBoss ? 3 : 1.5;
                 ctx.stroke();
 
                 // Highlight (top-left shine)
@@ -7432,7 +7432,7 @@
                 // Eyes (two dots)
                 var eyeY = -h * 0.15;
                 var eyeSpacing = w * 0.15;
-                var eyeR = z.isZBoss ? 5 : 3;
+                var eyeR = z.isSlimeBoss ? 5 : 3;
                 // White
                 ctx.fillStyle = 'rgba(255,255,255,0.8)';
                 ctx.beginPath(); ctx.arc(-eyeSpacing, eyeY, eyeR, 0, Math.PI * 2); ctx.fill();
@@ -7444,7 +7444,7 @@
                 ctx.beginPath(); ctx.arc(eyeSpacing + pupilOff, eyeY, eyeR * 0.5, 0, Math.PI * 2); ctx.fill();
 
                 // Boss indicator
-                if (z.isZBoss && z.state !== 'dead') {
+                if (z.isSlimeBoss && z.state !== 'dead') {
                     var _bc = z.bossColor || { r: 255, g: 60, b: 60 };
                     ctx.fillStyle = 'rgba(' + _bc.r + ',' + _bc.g + ',' + _bc.b + ',0.08)';
                     ctx.beginPath();
@@ -7472,7 +7472,7 @@
                 // HP bar
                 if (z.state !== 'dead' && z.hp < z.maxHp) {
                     ctx.globalAlpha = 0.8;
-                    var barW = z.isZBoss ? 80 : 35, barH = z.isZBoss ? 6 : 4;
+                    var barW = z.isSlimeBoss ? 80 : 35, barH = z.isSlimeBoss ? 6 : 4;
                     ctx.fillStyle = '#333'; ctx.fillRect(-barW / 2, -h / 2 - 10, barW, barH);
                     ctx.fillStyle = 'rgba(' + jc.r + ',' + jc.g + ',' + jc.b + ',0.9)';
                     ctx.fillRect(-barW / 2, -h / 2 - 10, barW * (z.hp / z.maxHp), barH);
@@ -7650,10 +7650,10 @@
             playNote(1320, 'sine', 0.08, 0.01, 0.14, t + 0.06);
         }
 
-        // Zombie groan — low guttural sound
+        // Slime groan — low guttural sound
         // Jelly groan — cute wobble sound
         var _lastZombieSfx = 0;
-        function sfxZombieGroan() {
+        function sfxSlimeGroan() {
             var now = Date.now();
             if (now - _lastZombieSfx < 3000) return;
             _lastZombieSfx = now;
@@ -7673,7 +7673,7 @@
             o.start(t); o.stop(t + 0.3);
         }
 
-        function sfxZombieHurt() {
+        function sfxSlimeHurt() {
             if (!_audioStarted) return;
             var ac = getAC(), t = ac.currentTime;
             // Squish/splat sound
@@ -7695,7 +7695,7 @@
             src.connect(ng); ng.connect(ac.destination); src.start(t);
         }
 
-        function sfxZombieDeath() {
+        function sfxSlimeDeath() {
             if (!_audioStarted) return;
             var ac = getAC(), t = ac.currentTime;
             // Funny deflate/splat — descending boing + pop
@@ -7802,13 +7802,13 @@
             // Boss music: any alive boss visible on screen
             var viewTop = camY - TILE * 2;
             var viewBot = camY + canvas.height + TILE * 2;
-            for (var bi = 0; bi < bats.length; bi++) {
-                var b = bats[bi];
+            for (var bi = 0; bi < bubbles.length; bi++) {
+                var b = bubbles[bi];
                 if (b.isQueen && b.state !== 'dead' && b.y > viewTop && b.y < viewBot) return 'boss';
             }
-            for (var zi = 0; zi < zombies.length; zi++) {
-                var z = zombies[zi];
-                if (z.isZBoss && z.state !== 'dead' && z.y > viewTop && z.y < viewBot) return 'boss';
+            for (var zi = 0; zi < slimes.length; zi++) {
+                var z = slimes[zi];
+                if (z.isSlimeBoss && z.state !== 'dead' && z.y > viewTop && z.y < viewBot) return 'boss';
             }
 
             if (isMegaClearingRow(row)) return 'mega';
@@ -8166,8 +8166,8 @@
                 MAX_PARTS = 10;
                 MAX_DEBRIS = 8;
                 MAX_TEXTS = 3;
-                MAX_BATS_VISIBLE = 15;
-                MAX_ZOMBIES_VISIBLE = 8;
+                MAX_BUBBLES_VISIBLE = 15;
+                MAX_SLIMES_VISIBLE = 8;
                 MAX_SPIDERS_VISIBLE = 8;
                 btn.style.color = '#00ff88';
                 btn.style.borderColor = '#00ff88';
@@ -8180,8 +8180,8 @@
                 MAX_PARTS = isMobile ? 10 : 150;
                 MAX_DEBRIS = isMobile ? 8 : 60;
                 MAX_TEXTS = isMobile ? 3 : 20;
-                MAX_BATS_VISIBLE = isMobile ? 15 : 999;
-                MAX_ZOMBIES_VISIBLE = isMobile ? 8 : 999;
+                MAX_BUBBLES_VISIBLE = isMobile ? 15 : 999;
+                MAX_SLIMES_VISIBLE = isMobile ? 8 : 999;
                 MAX_SPIDERS_VISIBLE = isMobile ? 8 : 999;
                 btn.style.color = '#888';
                 btn.style.borderColor = '#444';
@@ -8959,9 +8959,9 @@
                 var progress = 1 - Math.max(0, bh.timer) / BLACKHOLE_DURATION;
                 var hasCaptured = false; // track if any enemy is still being sucked
 
-                // ── Suck bats: orbit, shrink, spin, devour ──
-                for (var bi = bats.length - 1; bi >= 0; bi--) {
-                    var b = bats[bi];
+                // ── Suck bubbles: orbit, shrink, spin, devour ──
+                for (var bi = bubbles.length - 1; bi >= 0; bi--) {
+                    var b = bubbles[bi];
                     if (b.state === 'dead') continue;
                     var dx = bh.x - b.x, dy = bh.y - b.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
@@ -8991,16 +8991,16 @@
                                 persistentScores[bh.userName].score += b.pts;
                             }
                             spawnText(bh.x, bh.y - 30, '+' + b.pts, '#cc44ff');
-                            sfxBatDeath();
+                            sfxBubbleDeath();
                         }
                     } else {
                         if (b._bhScale !== undefined) { b._bhScale = undefined; b._bhSpin = 0; }
                     }
                 }
 
-                // ── Suck zombies: orbit, shrink, spin, devour ──
-                for (var zi = zombies.length - 1; zi >= 0; zi--) {
-                    var z = zombies[zi];
+                // ── Suck slimes: orbit, shrink, spin, devour ──
+                for (var zi = slimes.length - 1; zi >= 0; zi--) {
+                    var z = slimes[zi];
                     if (z.state === 'dead') continue;
                     var zdx = bh.x - z.x, zdy = bh.y - z.y;
                     var zdist = Math.sqrt(zdx * zdx + zdy * zdy);
@@ -9029,7 +9029,7 @@
                                 persistentScores[bh.userName].score += z.pts;
                             }
                             spawnText(bh.x, bh.y - 30, '+' + z.pts, '#cc44ff');
-                            sfxZombieDeath();
+                            sfxSlimeDeath();
                         }
                     } else {
                         if (z._bhScale !== undefined) { z._bhScale = undefined; z._bhSpin = 0; }
@@ -9062,7 +9062,7 @@
                                 if (!persistentScores[bh.userName]) persistentScores[bh.userName] = { score: 0, avatar: '' };
                                 persistentScores[bh.userName].score += sp.pts;
                             }
-                            sfxZombieDeath();
+                            sfxSlimeDeath();
                         }
                     } else {
                         if (sp._bhScale !== undefined) { sp._bhScale = undefined; sp._bhSpin = 0; }
@@ -9148,16 +9148,16 @@
                 }
                 // Force-kill any remaining captured enemies when collapsing
                 if (bh._collapsing) {
-                    for (var fbi = bats.length - 1; fbi >= 0; fbi--) {
-                        var fb = bats[fbi];
+                    for (var fbi = bubbles.length - 1; fbi >= 0; fbi--) {
+                        var fb = bubbles[fbi];
                         if (fb._bhCaptured && fb.state !== 'dead') {
                             fb.hp = 0; fb.state = 'dead'; fb.anim = 0; fb.deadTimer = 80; fb._bhScale = 0;
                             score += fb.pts;
                             if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fb.pts;
                         }
                     }
-                    for (var fzi = zombies.length - 1; fzi >= 0; fzi--) {
-                        var fz = zombies[fzi];
+                    for (var fzi = slimes.length - 1; fzi >= 0; fzi--) {
+                        var fz = slimes[fzi];
                         if (fz._bhCaptured && fz.state !== 'dead') {
                             fz.hp = 0; fz.state = 'dead'; fz.animTimer = 0; fz.deadTimer = 80; fz._bhScale = 0;
                             score += fz.pts;
@@ -9271,7 +9271,7 @@
             var submergedEnemies = [];
             if (inWater) {
                 // Collect ALL enemies in water (not dead, in view)
-                var allEnemies = [].concat(bats, zombies, spiders);
+                var allEnemies = [].concat(bubbles, slimes, spiders);
                 for (var ei = 0; ei < allEnemies.length; ei++) {
                     var e = allEnemies[ei];
                     if (!e || e.state === 'dead' || e.y < camY - 100 || e.y > camY + canvas.height + 100) continue;
@@ -9280,7 +9280,7 @@
             }
 
             var hasTarget = false;
-            var allCreatures = [].concat(bats, zombies, spiders);
+            var allCreatures = [].concat(bubbles, slimes, spiders);
             for (var i = 0; i < allCreatures.length; i++) {
                 var c = allCreatures[i];
                 if (c.state === 'dead' || c.y < camY - 200 || c.y > camY + canvas.height + 200) continue;
@@ -9308,7 +9308,7 @@
                         _thorBeams.push({ player: sourcePlayer, enemy: target, life: 40 + Math.random() * 20 });
                     }
 
-                    var isZombie = zombies.indexOf(target) !== -1;
+                    var isZombie = slimes.indexOf(target) !== -1;
                     var dmg = isZombie ? 3 : 2;
 
                     target.hp -= dmg; target.hurtTimer = 18; target.state = 'hurt';
