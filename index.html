@@ -1774,6 +1774,8 @@
             for (var c = 0; c < COLS; c++) {
                 var t;
                 if (depth < 2) { t = E; }
+                // Test clearing for slime demo (rows 15-29)
+                else if (r >= 15 && r <= 29 && c > 0 && c < COLS - 1) { t = E; }
                 else if (isMegaClearingCell(r, c)) { t = E; }
                 else if (isClearingCell(r, c)) { t = E; }
                 else if (isMiniClearingCell(r, c)) { t = E; }
@@ -3853,6 +3855,8 @@
             checkPickSpiderCollisions();
             updateBats();
             updateBossAbilities();
+            spawnTestSlimes();
+            updateTestSlimes();
             // ── Mega-clearing: spawn flyers when pick enters the zone ──
             if (pick) {
                 var pickRow = Math.floor(pick.y / TILE);
@@ -5047,6 +5051,7 @@
             // zombies
             drawZombies();
             drawBossEffects();
+            drawTestSlimes();
             // Spider webs
             if (spiderWebs.length > 0) {
                 var wvTop = camY - TILE * 2, wvBot = camY + canvas.height + TILE * 2;
@@ -7122,6 +7127,160 @@
             { r: 80, g: 150, b: 220 },  // blue
             { r: 220, g: 160, b: 50 }   // orange
         ];
+
+        // ── 3D Isometric Slime (Minecraft style) ─────────────────────────────
+        function drawSlime3D(cx, cy, size, color, hp, maxHp, wobble) {
+            var t = Date.now() * 0.003;
+            var w = size;
+            var h = size * 0.85;
+            var topH = size * 0.35;  // isometric top face height
+            var sideW = size * 0.25; // isometric side offset
+
+            // Wobble/bounce animation
+            var squish = 1 + Math.sin(t * 2 + wobble) * 0.06;
+            var squishX = 1 + (1 - squish) * 0.5;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(squishX, squish);
+
+            var r = color.r || 50, g = color.g || 200, b = color.b || 50;
+
+            // ── Right face (darker) ──
+            ctx.beginPath();
+            ctx.moveTo(0, -h * 0.1);
+            ctx.lineTo(sideW, -h * 0.1 - topH * 0.5);
+            ctx.lineTo(sideW, h * 0.4 - topH * 0.5);
+            ctx.lineTo(0, h * 0.4);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(' + Math.floor(r * 0.6) + ',' + Math.floor(g * 0.6) + ',' + Math.floor(b * 0.6) + ',0.85)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(' + Math.floor(r * 0.4) + ',' + Math.floor(g * 0.4) + ',' + Math.floor(b * 0.4) + ',0.5)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // ── Top face (lighter) ──
+            ctx.beginPath();
+            ctx.moveTo(-w * 0.5, -h * 0.1 - topH * 0.5);
+            ctx.lineTo(0, -h * 0.1 - topH);
+            ctx.lineTo(sideW, -h * 0.1 - topH * 0.5);
+            ctx.lineTo(0, -h * 0.1);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(' + Math.min(255, r + 40) + ',' + Math.min(255, g + 40) + ',' + Math.min(255, b + 40) + ',0.8)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(' + Math.floor(r * 0.5) + ',' + Math.floor(g * 0.5) + ',' + Math.floor(b * 0.5) + ',0.4)';
+            ctx.stroke();
+
+            // Pixel pattern on top
+            for (var pi = 0; pi < 4; pi++) {
+                var px = -w * 0.25 + (pi % 2) * w * 0.25;
+                var py = -h * 0.1 - topH * 0.7 + Math.floor(pi / 2) * topH * 0.25;
+                ctx.fillStyle = 'rgba(' + Math.floor(r * 0.7) + ',' + Math.floor(g * 0.7) + ',' + Math.floor(b * 0.7) + ',0.3)';
+                ctx.fillRect(px, py, w * 0.12, topH * 0.15);
+            }
+
+            // ── Front face (main) ──
+            ctx.beginPath();
+            ctx.moveTo(-w * 0.5, -h * 0.1 - topH * 0.5);
+            ctx.lineTo(0, -h * 0.1);
+            ctx.lineTo(0, h * 0.4);
+            ctx.lineTo(-w * 0.5, h * 0.4 - topH * 0.5);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.85)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(' + Math.floor(r * 0.4) + ',' + Math.floor(g * 0.4) + ',' + Math.floor(b * 0.4) + ',0.5)';
+            ctx.stroke();
+
+            // Pixel texture on front
+            for (var ti = 0; ti < 6; ti++) {
+                var tx = -w * 0.45 + (ti % 3) * w * 0.15;
+                var ty = -h * 0.05 - topH * 0.3 + Math.floor(ti / 3) * h * 0.2;
+                var shade = seededRand(ti * 17 + 3) > 0.5 ? 0.7 : 0.85;
+                ctx.fillStyle = 'rgba(' + Math.floor(r * shade) + ',' + Math.floor(g * shade) + ',' + Math.floor(b * shade) + ',0.35)';
+                ctx.fillRect(tx, ty, w * 0.1, h * 0.12);
+            }
+
+            // ── Eyes (on front face) ──
+            var eyeY = h * 0.05;
+            var eyeSpacing = w * 0.15;
+            // Eye whites
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fillRect(-eyeSpacing - 5, eyeY - 4, 8, 8);
+            ctx.fillRect(eyeSpacing - 8, eyeY - 4, 8, 8);
+            // Pupils
+            var pupilOff = Math.sin(t) * 1.5;
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-eyeSpacing - 3 + pupilOff, eyeY - 2, 4, 5);
+            ctx.fillRect(eyeSpacing - 6 + pupilOff, eyeY - 2, 4, 5);
+
+            // ── Mouth ──
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillRect(-eyeSpacing + 2, eyeY + 10, eyeSpacing * 1.2, 3);
+
+            // ── Inner core (translucent) ──
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = 'rgba(' + Math.floor(r * 0.5) + ',' + Math.floor(g * 0.5) + ',' + Math.floor(b * 0.5) + ',1)';
+            var coreSize = w * 0.3;
+            ctx.fillRect(-coreSize * 0.5, eyeY - coreSize * 0.3, coreSize, coreSize * 0.8);
+            ctx.globalAlpha = 1;
+
+            ctx.restore();
+
+            // ── HP bar ──
+            if (hp < maxHp) {
+                ctx.globalAlpha = 0.8;
+                var barW = size * 1.2;
+                var barH = 5;
+                var barY = cy - h * 0.5 - topH - 10;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(cx - barW / 2, barY, barW, barH);
+                ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+                ctx.fillRect(cx - barW / 2, barY, barW * (hp / maxHp), barH);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // ── Test slime in test clearing ──
+        var _testSlimeSpawned = false;
+        var _testSlimes = [];
+
+        function spawnTestSlimes() {
+            if (_testSlimeSpawned) return;
+            _testSlimeSpawned = true;
+            _testSlimes.push(
+                { x: 4 * TILE, y: 25 * TILE, size: 60, color: { r: 50, g: 220, b: 50 }, hp: 30, maxHp: 30, vx: 0.3, vy: 0, grounded: true, wobble: 0 },
+                { x: 8 * TILE, y: 25 * TILE, size: 90, color: { r: 255, g: 60, b: 180 }, hp: 50, maxHp: 50, vx: -0.2, vy: 0, grounded: true, wobble: 2 },
+                { x: 12 * TILE, y: 25 * TILE, size: 120, color: { r: 0, g: 200, b: 255 }, hp: 80, maxHp: 80, vx: 0.15, vy: 0, grounded: true, wobble: 4 }
+            );
+        }
+
+        function updateTestSlimes() {
+            for (var i = 0; i < _testSlimes.length; i++) {
+                var s = _testSlimes[i];
+                // Simple patrol
+                s.x += s.vx;
+                if (s.x < TILE * 2) { s.x = TILE * 2; s.vx = Math.abs(s.vx); }
+                if (s.x > (COLS - 2) * TILE) { s.x = (COLS - 2) * TILE; s.vx = -Math.abs(s.vx); }
+                s.wobble += 0.05;
+                // Small random hop
+                if (s.grounded && Math.random() < 0.01) {
+                    s.vy = -2;
+                    s.grounded = false;
+                }
+                if (!s.grounded) {
+                    s.vy += 0.15;
+                    s.y += s.vy;
+                    if (s.y >= 25 * TILE) { s.y = 25 * TILE; s.vy = 0; s.grounded = true; }
+                }
+            }
+        }
+
+        function drawTestSlimes() {
+            for (var i = 0; i < _testSlimes.length; i++) {
+                var s = _testSlimes[i];
+                drawSlime3D(s.x, s.y, s.size, s.color, s.hp, s.maxHp, s.wobble);
+            }
+        }
 
         function drawBossEffects() {
             var t = Date.now() * 0.005;
