@@ -801,13 +801,21 @@
             <div class="panel-title">⚡ Cmds</div>
 
             <div style="display: flex; flex-direction: column; gap: 1px;">
-                <div class="cmd-row" onclick="ensureAudio();var d=Math.random()<0.5?'right':'left';activateSpin(pick.userName||'@Player',d)">
-                    <span class="cmd-icon" style="color:#00ddff;">✥</span>
-                    <span class="cmd-badge badge-cyan">sr sl</span>
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','left')">
+                    <span class="cmd-icon" style="color:#00ddff;">◀</span>
+                    <span class="cmd-badge badge-cyan">sl</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var d=Math.random()<0.5?'up':'down';activateSpin(pick.userName||'@Player',d)">
-                    <span class="cmd-icon" style="color:#00ddff;">✥</span>
-                    <span class="cmd-badge badge-cyan">su sd</span>
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','right')">
+                    <span class="cmd-icon" style="color:#00ddff;">▶</span>
+                    <span class="cmd-badge badge-cyan">sr</span>
+                </div>
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','up')">
+                    <span class="cmd-icon" style="color:#00ddff;">▲</span>
+                    <span class="cmd-badge badge-cyan">su</span>
+                </div>
+                <div class="cmd-row" onclick="ensureAudio();activateSpin(pick.userName||'@Player','down')">
+                    <span class="cmd-icon" style="color:#00ddff;">▼</span>
+                    <span class="cmd-badge badge-cyan">sd</span>
                 </div>
                 <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">💥</span>
@@ -3891,8 +3899,16 @@
                 }
                 applyPhysics(pick, 28);
             }
-            var speed = Math.sqrt(pick.vx * pick.vx + pick.vy * pick.vy);
-            var depth = Math.floor(pick.y / TILE);
+            // Depth tracking: use deepest player (owner or visitor)
+            var _trackPick = pick;
+            if (_aiHidden) {
+                _trackPick = null;
+                for (var _ti = 0; _ti < userPicks.length; _ti++) {
+                    if (!_trackPick || userPicks[_ti].y > _trackPick.y) _trackPick = userPicks[_ti];
+                }
+            }
+            var speed = _trackPick ? Math.sqrt(_trackPick.vx * _trackPick.vx + _trackPick.vy * _trackPick.vy) : 0;
+            var depth = _trackPick ? Math.floor(_trackPick.y / TILE) : maxDepth;
             if (depth > maxDepth) {
                 var oldMilestone = Math.floor(maxDepth / 200);
                 var oldCycle = Math.floor(maxDepth / 400);
@@ -4088,9 +4104,10 @@
             checkPickSpiderCollisions();
             updateBubbles();
             updateBossAbilities();
-            // ── Mega-clearing: spawn flyers when pick enters the zone ──
-            if (pick) {
-                var pickRow = Math.floor(pick.y / TILE);
+            // ── Mega-clearing: spawn flyers when any player enters the zone ──
+            var _megaPick = _aiHidden ? (_trackPick || pick) : pick;
+            if (_megaPick) {
+                var pickRow = Math.floor(_megaPick.y / TILE);
                 // Debug: log position every 2 seconds
                 if (typeof _lastMegaLog === 'undefined') _lastMegaLog = 0;
                 if (Date.now() - _lastMegaLog > 2000 && pickRow > 150) {
