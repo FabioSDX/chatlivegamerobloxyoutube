@@ -2478,6 +2478,9 @@
             activeWebs = []; activeFireTrails = [];
             _gravityFlipped = false; _gravityFlipTimer = 0; _gravityRings = [];
             _kissEffect = null;
+            // Reset leaderboard
+            persistentScores = {};
+            savePersistentScores();
             bgChunks = {}; bgTick = 0;
             document.getElementById('depthDisplay').textContent = 'Depth: 0m';
             document.getElementById('scoreDisplay').textContent = '⛏ 0';
