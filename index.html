@@ -2147,6 +2147,85 @@
         var announcements = [];
         var persistentScores = {};
 
+        // ── Country Flags ────────────────────────────────────────────────────
+        var _playerFlags = {}; // { userName: '🇧🇷' }
+        var _countryMap = {
+            'brazil': '🇧🇷', 'brasil': '🇧🇷', 'br': '🇧🇷',
+            'usa': '🇺🇸', 'us': '🇺🇸', 'united states': '🇺🇸', 'america': '🇺🇸',
+            'uk': '🇬🇧', 'england': '🇬🇧', 'britain': '🇬🇧',
+            'portugal': '🇵🇹', 'pt': '🇵🇹',
+            'spain': '🇪🇸', 'espanha': '🇪🇸', 'españa': '🇪🇸',
+            'france': '🇫🇷', 'francia': '🇫🇷', 'frança': '🇫🇷',
+            'germany': '🇩🇪', 'alemanha': '🇩🇪', 'deutschland': '🇩🇪',
+            'italy': '🇮🇹', 'italia': '🇮🇹', 'itália': '🇮🇹',
+            'japan': '🇯🇵', 'japão': '🇯🇵', 'japao': '🇯🇵',
+            'korea': '🇰🇷', 'coreia': '🇰🇷',
+            'china': '🇨🇳',
+            'india': '🇮🇳', 'índia': '🇮🇳',
+            'russia': '🇷🇺', 'rússia': '🇷🇺', 'russia': '🇷🇺',
+            'mexico': '🇲🇽', 'méxico': '🇲🇽',
+            'argentina': '🇦🇷',
+            'colombia': '🇨🇴', 'colômbia': '🇨🇴',
+            'chile': '🇨🇱',
+            'peru': '🇵🇪',
+            'canada': '🇨🇦', 'canadá': '🇨🇦',
+            'australia': '🇦🇺', 'austrália': '🇦🇺',
+            'netherlands': '🇳🇱', 'holanda': '🇳🇱',
+            'belgium': '🇧🇪', 'bélgica': '🇧🇪',
+            'sweden': '🇸🇪', 'suécia': '🇸🇪',
+            'norway': '🇳🇴', 'noruega': '🇳🇴',
+            'denmark': '🇩🇰', 'dinamarca': '🇩🇰',
+            'finland': '🇫🇮', 'finlândia': '🇫🇮',
+            'poland': '🇵🇱', 'polônia': '🇵🇱',
+            'turkey': '🇹🇷', 'turquia': '🇹🇷',
+            'egypt': '🇪🇬', 'egito': '🇪🇬',
+            'south africa': '🇿🇦', 'áfrica do sul': '🇿🇦',
+            'nigeria': '🇳🇬', 'nigéria': '🇳🇬',
+            'indonesia': '🇮🇩', 'indonésia': '🇮🇩',
+            'thailand': '🇹🇭', 'tailândia': '🇹🇭',
+            'vietnam': '🇻🇳', 'vietnã': '🇻🇳',
+            'philippines': '🇵🇭', 'filipinas': '🇵🇭',
+            'ireland': '🇮🇪', 'irlanda': '🇮🇪',
+            'switzerland': '🇨🇭', 'suíça': '🇨🇭',
+            'austria': '🇦🇹', 'áustria': '🇦🇹',
+            'czech': '🇨🇿', 'república tcheca': '🇨🇿',
+            'romania': '🇷🇴', 'romênia': '🇷🇴',
+            'greece': '🇬🇷', 'grécia': '🇬🇷',
+            'ukraine': '🇺🇦', 'ucrânia': '🇺🇦',
+            'israel': '🇮🇱',
+            'saudi': '🇸🇦', 'arábia': '🇸🇦',
+            'uae': '🇦🇪', 'emirates': '🇦🇪',
+            'pakistan': '🇵🇰', 'paquistão': '🇵🇰',
+            'bangladesh': '🇧🇩',
+            'malaysia': '🇲🇾', 'malásia': '🇲🇾',
+            'singapore': '🇸🇬', 'singapura': '🇸🇬',
+            'new zealand': '🇳🇿', 'nova zelândia': '🇳🇿',
+            'venezuela': '🇻🇪',
+            'ecuador': '🇪🇨', 'equador': '🇪🇨',
+            'uruguay': '🇺🇾', 'uruguai': '🇺🇾',
+            'paraguay': '🇵🇾', 'paraguai': '🇵🇾',
+            'bolivia': '🇧🇴', 'bolívia': '🇧🇴',
+            'cuba': '🇨🇺',
+            'costa rica': '🇨🇷',
+            'panama': '🇵🇦', 'panamá': '🇵🇦',
+            'morocco': '🇲🇦', 'marrocos': '🇲🇦',
+            'angola': '🇦🇴',
+            'mozambique': '🇲🇿', 'moçambique': '🇲🇿'
+        };
+
+        function detectFlag(userName, message) {
+            var msg = message.toLowerCase().trim();
+            var keys = Object.keys(_countryMap);
+            for (var i = 0; i < keys.length; i++) {
+                if (msg === keys[i] || msg.indexOf(keys[i]) !== -1) {
+                    _playerFlags[userName] = _countryMap[keys[i]];
+                    spawnText(canvas.width / 2, camY + canvas.height / 2, _countryMap[keys[i]] + ' ' + userName, '#ffffff');
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // ── Cycle Scoring (every 200m) ──
         var _cycleScores = {}; // { userName: { score, kills, items } } — per cycle
         var _currentCycle = 0;
@@ -5623,6 +5702,11 @@
                     ctx.strokeText(pick.userName, pick.x + 10, oAvY);
                     if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
                     ctx.fillText(pick.userName, pick.x + 10, oAvY);
+                    // Flag
+                    if (_playerFlags[pick.userName]) {
+                        ctx.font = '14px sans-serif';
+                        ctx.fillText(_playerFlags[pick.userName], pick.x - 10 - oAvSize / 2, oAvY - oAvSize / 2 - 2);
+                    }
 
                     drawPlayerCooldowns(ctx, pick.x - 10 - oAvSize / 2, oAvY, pick.userName);
 
@@ -5749,6 +5833,11 @@
                 ctx.strokeText(up.userName, up.x + 10, avY);
                 if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
                 ctx.fillText(up.userName, up.x + 10, avY);
+                // Flag
+                if (_playerFlags[up.userName]) {
+                    ctx.font = '14px sans-serif';
+                    ctx.fillText(_playerFlags[up.userName], up.x - 10 - avSize / 2, avY - avSize / 2 - 2);
+                }
 
                 drawPlayerCooldowns(ctx, up.x - 10 - avSize / 2, avY, up.userName);
 
@@ -8847,6 +8936,9 @@
 
             // History messages: only detect owner + cache avatars, don't execute commands
             if (data.isHistory) return;
+
+            // Detect country flag from message
+            detectFlag(cUser, cText);
 
             var existingPick = userPicks.find(function(up) { return up.userName === cUser; });
             if (existingPick && cAvatarUrl && !existingPick.userAvatarUrl) {
