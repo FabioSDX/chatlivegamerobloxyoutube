@@ -2530,24 +2530,51 @@
 
         function activateKiss(userName, avatarUrl) {
             userName = (userName || '').replace(/^@@+/, '@');
-            var kisses = [];
-            for (var i = 0; i < 12; i++) {
-                var ang = Math.random() * Math.PI * 2;
-                var spd = 1.5 + Math.random() * 3;
-                kisses.push({
-                    x: canvas.width / 2 + (Math.random() - 0.5) * 200,
-                    y: canvas.height / 2 + (Math.random() - 0.5) * 150,
-                    vx: Math.cos(ang) * spd,
-                    vy: Math.sin(ang) * spd - 1,
-                    size: 28 + Math.random() * 36,
-                    rot: (Math.random() - 0.5) * 0.3,
-                    alpha: 1,
-                    delay: Math.floor(Math.random() * 20)
-                });
+            // Use DOM overlay instead of canvas (much lighter)
+            var overlay = document.getElementById('kissOverlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'kissOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden;';
+                document.body.appendChild(overlay);
             }
-            _kissEffect = { timer: 180, maxTimer: 180, userName: userName, avatarUrl: avatarUrl, kisses: kisses, pulse: 0 };
+            overlay.innerHTML = '';
+            overlay.style.display = 'block';
+
+            // Avatar in center
+            var avHtml = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;animation:kissAvPulse 0.5s ease infinite alternate;">';
+            if (avatarUrl) {
+                avHtml += '<img src="' + avatarUrl + '" style="width:80px;height:80px;border-radius:50%;border:3px solid #ff4488;display:block;margin:0 auto;">';
+            } else {
+                avHtml += '<div style="width:80px;height:80px;border-radius:50%;background:#ff6699;border:3px solid #ff4488;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:32px;color:#fff;font-weight:bold;">' + (userName || '?').replace('@','').charAt(0).toUpperCase() + '</div>';
+            }
+            avHtml += '<div style="color:#fff;font-size:16px;font-weight:bold;margin-top:6px;text-shadow:0 1px 4px #000;">' + userName + '</div></div>';
+            overlay.innerHTML = avHtml;
+
+            // Spawn emoji elements with CSS animation
+            var emojis = ['😘', '💋', '💕', '❤️', '💖', '😍'];
+            for (var i = 0; i < 15; i++) {
+                var em = document.createElement('div');
+                var x = 10 + Math.random() * 80;
+                var delay = Math.random() * 0.8;
+                var dur = 2 + Math.random() * 1.5;
+                var sz = 24 + Math.random() * 28;
+                em.textContent = emojis[i % emojis.length];
+                em.style.cssText = 'position:absolute;bottom:-50px;left:' + x + '%;font-size:' + sz + 'px;animation:kissFloat ' + dur + 's ease-out ' + delay + 's forwards;opacity:0;';
+                overlay.appendChild(em);
+            }
+
+            // Remove after 3s
+            setTimeout(function() { overlay.style.display = 'none'; overlay.innerHTML = ''; }, 3000);
             if (_audioStarted) sfxKiss();
         }
+
+        // Inject CSS animations for kiss (once)
+        (function() {
+            var style = document.createElement('style');
+            style.textContent = '@keyframes kissFloat { 0% { opacity:0; transform:translateY(0) scale(0.5); } 15% { opacity:1; transform:translateY(-100px) scale(1); } 100% { opacity:0; transform:translateY(-600px) scale(0.8) rotate(15deg); } } @keyframes kissAvPulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.08); } }';
+            document.head.appendChild(style);
+        })();
 
         function sfxKiss() {
             var ac = getAC(); if (!ac) return;
@@ -5581,75 +5608,7 @@
                 ctx.restore();
             }
 
-            // ── Beijinho (Kiss) Effect ──
-            if (_kissEffect && _kissEffect.timer > 0) {
-                var ke = _kissEffect;
-                ke.timer--;
-                ke.pulse += 0.15;
-                var fadeIn = Math.min(1, (ke.maxTimer - ke.timer) / 10);
-                var fadeOut = Math.min(1, ke.timer / 20);
-                var kAlpha = Math.min(fadeIn, fadeOut);
-
-                ctx.save();
-
-                // Draw kisses (12 big emojis)
-                var emojis = ['😘', '💋', '💕', '❤️', '💖', '😍'];
-                for (var ki = 0; ki < ke.kisses.length; ki++) {
-                    var k = ke.kisses[ki];
-                    if (k.delay > 0) { k.delay--; continue; }
-                    k.x += k.vx;
-                    k.y += k.vy;
-                    k.vy += 0.03;
-                    k.vx *= 0.99;
-                    k.alpha = Math.max(0, k.alpha - 0.005);
-                    if (k.alpha <= 0) continue;
-                    ctx.globalAlpha = k.alpha * kAlpha;
-                    ctx.font = Math.floor(k.size) + 'px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(emojis[ki % emojis.length], k.x, k.y);
-                }
-
-                // Pulsing avatar in center
-                var avUrl = ke.avatarUrl;
-                var avImg = avUrl ? avatarCache[avUrl] : null;
-                var avPulse = 1 + Math.sin(ke.pulse) * 0.12;
-                var avR = 45 * avPulse;
-                var cx = canvas.width / 2;
-                var cy = canvas.height / 2 - 20;
-
-                ctx.globalAlpha = kAlpha;
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(cx, cy, avR, 0, Math.PI * 2);
-                ctx.clip();
-                if (avImg && avImg.complete && avImg.naturalWidth > 0) {
-                    try { ctx.drawImage(avImg, cx - avR, cy - avR, avR * 2, avR * 2); } catch(e) {}
-                } else {
-                    ctx.fillStyle = '#ff6699';
-                    ctx.fill();
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 32px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText((ke.userName || '?').replace('@','').charAt(0).toUpperCase(), cx, cy);
-                }
-                ctx.restore();
-
-                // Name
-                ctx.globalAlpha = kAlpha;
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 18px Arial';
-                ctx.textAlign = 'center';
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 3;
-                ctx.lineJoin = 'round';
-                ctx.strokeText(ke.userName, cx, cy + avR + 20);
-                ctx.fillText(ke.userName, cx, cy + avR + 20);
-
-                ctx.restore();
-                if (ke.timer <= 0) _kissEffect = null;
-            }
+            // Beijinho effect handled by DOM overlay (no canvas drawing needed)
 
         }
 
