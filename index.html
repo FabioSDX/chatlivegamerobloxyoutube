@@ -2211,26 +2211,61 @@
             return img;
         }
 
+        // Emoji flag to country code map
+        var _emojiToCode = {
+            '🇧🇷': 'BR', '🇺🇸': 'US', '🇬🇧': 'GB', '🇵🇹': 'PT', '🇪🇸': 'ES',
+            '🇫🇷': 'FR', '🇩🇪': 'DE', '🇮🇹': 'IT', '🇯🇵': 'JP', '🇰🇷': 'KR',
+            '🇨🇳': 'CN', '🇮🇳': 'IN', '🇷🇺': 'RU', '🇲🇽': 'MX', '🇦🇷': 'AR',
+            '🇨🇴': 'CO', '🇨🇱': 'CL', '🇵🇪': 'PE', '🇨🇦': 'CA', '🇦🇺': 'AU',
+            '🇳🇱': 'NL', '🇧🇪': 'BE', '🇸🇪': 'SE', '🇳🇴': 'NO', '🇩🇰': 'DK',
+            '🇫🇮': 'FI', '🇵🇱': 'PL', '🇹🇷': 'TR', '🇪🇬': 'EG', '🇿🇦': 'ZA',
+            '🇳🇬': 'NG', '🇮🇩': 'ID', '🇹🇭': 'TH', '🇻🇳': 'VN', '🇵🇭': 'PH',
+            '🇮🇪': 'IE', '🇨🇭': 'CH', '🇦🇹': 'AT', '🇨🇿': 'CZ', '🇷🇴': 'RO',
+            '🇬🇷': 'GR', '🇺🇦': 'UA', '🇮🇱': 'IL', '🇸🇦': 'SA', '🇦🇪': 'AE',
+            '🇵🇰': 'PK', '🇧🇩': 'BD', '🇲🇾': 'MY', '🇸🇬': 'SG', '🇳🇿': 'NZ',
+            '🇻🇪': 'VE', '🇪🇨': 'EC', '🇺🇾': 'UY', '🇵🇾': 'PY', '🇧🇴': 'BO',
+            '🇨🇺': 'CU', '🇨🇷': 'CR', '🇵🇦': 'PA', '🇲🇦': 'MA', '🇦🇴': 'AO',
+            '🇲🇿': 'MZ'
+        };
+
         function detectFlag(userName, message) {
             var msg = message.toLowerCase().trim();
-            var flagMatch = msg.match(/\bflag\s+(\S+)/);
-            var search = flagMatch ? flagMatch[1] : msg;
-            var keys = Object.keys(_countryMap);
-            for (var i = 0; i < keys.length; i++) {
-                if (search === keys[i] || (flagMatch && search.indexOf(keys[i]) !== -1)) {
-                    var code = _countryMap[keys[i]];
+            var raw = message.trim();
+
+            // Check for emoji flags in the message
+            var emojiKeys = Object.keys(_emojiToCode);
+            for (var ei = 0; ei < emojiKeys.length; ei++) {
+                if (raw.indexOf(emojiKeys[ei]) !== -1) {
+                    var code = _emojiToCode[emojiKeys[ei]];
                     _playerFlags[userName] = code;
-                    getFlagImage(code); // preload
-                    spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[i].toUpperCase(), '#ffffff');
+                    getFlagImage(code);
+                    spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + code, '#ffffff');
                     return true;
                 }
             }
+
+            // Check for "flag country" or country name
+            var flagMatch = msg.match(/\bflag\s+(\S+)/);
+            var search = flagMatch ? flagMatch[1] : null;
+            var keys = Object.keys(_countryMap);
+            if (search) {
+                for (var i = 0; i < keys.length; i++) {
+                    if (search === keys[i] || search.indexOf(keys[i]) !== -1) {
+                        var code2 = _countryMap[keys[i]];
+                        _playerFlags[userName] = code2;
+                        getFlagImage(code2);
+                        spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[i].toUpperCase(), '#ffffff');
+                        return true;
+                    }
+                }
+            }
+            // Standalone country name (exact match only)
             if (!flagMatch) {
                 for (var j = 0; j < keys.length; j++) {
                     if (msg === keys[j]) {
-                        var code2 = _countryMap[keys[j]];
-                        _playerFlags[userName] = code2;
-                        getFlagImage(code2);
+                        var code3 = _countryMap[keys[j]];
+                        _playerFlags[userName] = code3;
+                        getFlagImage(code3);
                         spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[j].toUpperCase(), '#ffffff');
                         return true;
                     }
