@@ -3848,13 +3848,14 @@
 
         function update() {
             if (!pick) return;
-            if (_aiHidden) return; // AI owner hidden, skip physics
-            if (pick.stuck) {
-                pick.stuckTimer++;
-                if (pick.stuckTimer > 100) spawnPick();
-                return;
+            // When AI hidden, skip only the owner pick physics (game continues for visitors)
+            if (!_aiHidden) {
+                if (pick.stuck) {
+                    pick.stuckTimer++;
+                    if (pick.stuckTimer > 100) spawnPick();
+                }
+                applyPhysics(pick, 28);
             }
-            applyPhysics(pick, 28);
             var speed = Math.sqrt(pick.vx * pick.vx + pick.vy * pick.vy);
             var depth = Math.floor(pick.y / TILE);
             if (depth > maxDepth) {
