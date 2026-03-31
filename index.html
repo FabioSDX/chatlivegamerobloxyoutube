@@ -2154,88 +2154,101 @@
         // ── Country Flags ────────────────────────────────────────────────────
         var _playerFlags = {}; // { userName: '🇧🇷' }
         var _countryMap = {
-            'brazil': '🇧🇷', 'brasil': '🇧🇷', 'br': '🇧🇷',
-            'usa': '🇺🇸', 'us': '🇺🇸', 'united states': '🇺🇸', 'america': '🇺🇸',
-            'uk': '🇬🇧', 'england': '🇬🇧', 'britain': '🇬🇧',
-            'portugal': '🇵🇹', 'pt': '🇵🇹',
-            'spain': '🇪🇸', 'espanha': '🇪🇸', 'españa': '🇪🇸',
-            'france': '🇫🇷', 'francia': '🇫🇷', 'frança': '🇫🇷',
-            'germany': '🇩🇪', 'alemanha': '🇩🇪', 'deutschland': '🇩🇪',
-            'italy': '🇮🇹', 'italia': '🇮🇹', 'itália': '🇮🇹',
-            'japan': '🇯🇵', 'japão': '🇯🇵', 'japao': '🇯🇵',
-            'korea': '🇰🇷', 'coreia': '🇰🇷',
-            'china': '🇨🇳',
-            'india': '🇮🇳', 'índia': '🇮🇳',
-            'russia': '🇷🇺', 'rússia': '🇷🇺', 'russia': '🇷🇺',
-            'mexico': '🇲🇽', 'méxico': '🇲🇽',
-            'argentina': '🇦🇷',
-            'colombia': '🇨🇴', 'colômbia': '🇨🇴',
-            'chile': '🇨🇱',
-            'peru': '🇵🇪',
-            'canada': '🇨🇦', 'canadá': '🇨🇦',
-            'australia': '🇦🇺', 'austrália': '🇦🇺',
-            'netherlands': '🇳🇱', 'holanda': '🇳🇱',
-            'belgium': '🇧🇪', 'bélgica': '🇧🇪',
-            'sweden': '🇸🇪', 'suécia': '🇸🇪',
-            'norway': '🇳🇴', 'noruega': '🇳🇴',
-            'denmark': '🇩🇰', 'dinamarca': '🇩🇰',
-            'finland': '🇫🇮', 'finlândia': '🇫🇮',
-            'poland': '🇵🇱', 'polônia': '🇵🇱',
-            'turkey': '🇹🇷', 'turquia': '🇹🇷',
-            'egypt': '🇪🇬', 'egito': '🇪🇬',
-            'south africa': '🇿🇦', 'áfrica do sul': '🇿🇦',
-            'nigeria': '🇳🇬', 'nigéria': '🇳🇬',
-            'indonesia': '🇮🇩', 'indonésia': '🇮🇩',
-            'thailand': '🇹🇭', 'tailândia': '🇹🇭',
-            'vietnam': '🇻🇳', 'vietnã': '🇻🇳',
-            'philippines': '🇵🇭', 'filipinas': '🇵🇭',
-            'ireland': '🇮🇪', 'irlanda': '🇮🇪',
-            'switzerland': '🇨🇭', 'suíça': '🇨🇭',
-            'austria': '🇦🇹', 'áustria': '🇦🇹',
-            'czech': '🇨🇿', 'república tcheca': '🇨🇿',
-            'romania': '🇷🇴', 'romênia': '🇷🇴',
-            'greece': '🇬🇷', 'grécia': '🇬🇷',
-            'ukraine': '🇺🇦', 'ucrânia': '🇺🇦',
-            'israel': '🇮🇱',
-            'saudi': '🇸🇦', 'arábia': '🇸🇦',
-            'uae': '🇦🇪', 'emirates': '🇦🇪',
-            'pakistan': '🇵🇰', 'paquistão': '🇵🇰',
-            'bangladesh': '🇧🇩',
-            'malaysia': '🇲🇾', 'malásia': '🇲🇾',
-            'singapore': '🇸🇬', 'singapura': '🇸🇬',
-            'new zealand': '🇳🇿', 'nova zelândia': '🇳🇿',
-            'venezuela': '🇻🇪',
-            'ecuador': '🇪🇨', 'equador': '🇪🇨',
-            'uruguay': '🇺🇾', 'uruguai': '🇺🇾',
-            'paraguay': '🇵🇾', 'paraguai': '🇵🇾',
-            'bolivia': '🇧🇴', 'bolívia': '🇧🇴',
-            'cuba': '🇨🇺',
-            'costa rica': '🇨🇷',
-            'panama': '🇵🇦', 'panamá': '🇵🇦',
-            'morocco': '🇲🇦', 'marrocos': '🇲🇦',
-            'angola': '🇦🇴',
-            'mozambique': '🇲🇿', 'moçambique': '🇲🇿'
+            'brazil': 'BR', 'brasil': 'BR', 'br': 'BR',
+            'usa': 'US', 'us': 'US', 'united states': 'US', 'america': 'US',
+            'uk': 'GB', 'england': 'GB', 'britain': 'GB',
+            'portugal': 'PT', 'pt': 'PT',
+            'spain': 'ES', 'espanha': 'ES', 'españa': 'ES',
+            'france': 'FR', 'francia': 'FR', 'frança': 'FR',
+            'germany': 'DE', 'alemanha': 'DE', 'deutschland': 'DE',
+            'italy': 'IT', 'italia': 'IT', 'itália': 'IT',
+            'japan': 'JP', 'japão': 'JP', 'japao': 'JP',
+            'korea': 'KR', 'coreia': 'KR',
+            'china': 'CN',
+            'india': 'IN', 'índia': 'IN',
+            'russia': 'RU', 'rússia': 'RU',
+            'mexico': 'MX', 'méxico': 'MX',
+            'argentina': 'AR',
+            'colombia': 'CO', 'colômbia': 'CO',
+            'chile': 'CL',
+            'peru': 'PE',
+            'canada': 'CA', 'canadá': 'CA',
+            'australia': 'AU', 'austrália': 'AU',
+            'netherlands': 'NL', 'holanda': 'NL',
+            'belgium': 'BE', 'bélgica': 'BE',
+            'sweden': 'SE', 'suécia': 'SE',
+            'norway': 'NO', 'noruega': 'NO',
+            'denmark': 'DK', 'dinamarca': 'DK',
+            'finland': 'FI', 'finlândia': 'FI',
+            'poland': 'PL', 'polônia': 'PL',
+            'turkey': 'TR', 'turquia': 'TR',
+            'egypt': 'EG', 'egito': 'EG',
+            'south africa': 'ZA', 'áfrica do sul': 'ZA',
+            'nigeria': 'NG', 'nigéria': 'NG',
+            'indonesia': 'ID', 'indonésia': 'ID',
+            'thailand': 'TH', 'tailândia': 'TH',
+            'vietnam': 'VN', 'vietnã': 'VN',
+            'philippines': 'PH', 'filipinas': 'PH',
+            'ireland': 'IE', 'irlanda': 'IE',
+            'switzerland': 'CH', 'suíça': 'CH',
+            'austria': 'AT', 'áustria': 'AT',
+            'czech': 'CZ', 'república tcheca': 'CZ',
+            'romania': 'RO', 'romênia': 'RO',
+            'greece': 'GR', 'grécia': 'GR',
+            'ukraine': 'UA', 'ucrânia': 'UA',
+            'israel': 'IL',
+            'saudi': 'SA', 'arábia': 'SA',
+            'uae': 'AE', 'emirates': 'AE',
+            'pakistan': 'PK', 'paquistão': 'PK',
+            'bangladesh': 'BD',
+            'malaysia': 'MY', 'malásia': 'MY',
+            'singapore': 'SG', 'singapura': 'SG',
+            'new zealand': 'NZ', 'nova zelândia': 'NZ',
+            'venezuela': 'VE',
+            'ecuador': 'EC', 'equador': 'EC',
+            'uruguay': 'UY', 'uruguai': 'UY',
+            'paraguay': 'PY', 'paraguai': 'PY',
+            'bolivia': 'BO', 'bolívia': 'BO',
+            'cuba': 'CU',
+            'costa rica': 'CR',
+            'panama': 'PA', 'panamá': 'PA',
+            'morocco': 'MA', 'marrocos': 'MA',
+            'angola': 'AO',
+            'mozambique': 'MZ', 'moçambique': 'MZ'
         };
+
+        // Flag image cache
+        var _flagImages = {};
+        function getFlagImage(code) {
+            if (_flagImages[code]) return _flagImages[code];
+            var img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = 'https://flagcdn.com/w80/' + code.toLowerCase() + '.png';
+            _flagImages[code] = img;
+            return img;
+        }
 
         function detectFlag(userName, message) {
             var msg = message.toLowerCase().trim();
-            // Support "flag brazil" or "flag br" format
             var flagMatch = msg.match(/\bflag\s+(\S+)/);
             var search = flagMatch ? flagMatch[1] : msg;
             var keys = Object.keys(_countryMap);
             for (var i = 0; i < keys.length; i++) {
                 if (search === keys[i] || (flagMatch && search.indexOf(keys[i]) !== -1)) {
-                    _playerFlags[userName] = _countryMap[keys[i]];
-                    spawnText(canvas.width / 2, camY + canvas.height / 2, _countryMap[keys[i]] + ' ' + userName, '#ffffff');
+                    var code = _countryMap[keys[i]];
+                    _playerFlags[userName] = code;
+                    getFlagImage(code); // preload
+                    spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[i].toUpperCase(), '#ffffff');
                     return true;
                 }
             }
-            // Also match without flag prefix for standalone country names
             if (!flagMatch) {
                 for (var j = 0; j < keys.length; j++) {
                     if (msg === keys[j]) {
-                        _playerFlags[userName] = _countryMap[keys[j]];
-                        spawnText(canvas.width / 2, camY + canvas.height / 2, _countryMap[keys[j]] + ' ' + userName, '#ffffff');
+                        var code2 = _countryMap[keys[j]];
+                        _playerFlags[userName] = code2;
+                        getFlagImage(code2);
+                        spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[j].toUpperCase(), '#ffffff');
                         return true;
                     }
                 }
@@ -5722,22 +5735,23 @@
                     // Flag with pole
                     if (_playerFlags[pick.userName]) {
                         ctx.save();
+                        var flagCode = _playerFlags[pick.userName];
+                        var flagImg = getFlagImage(flagCode);
                         var flagX = pick.x - 10 - oAvSize / 2 - 8;
-                        var flagY = oAvY - oAvSize / 2 - 20;
+                        var flagY = oAvY - oAvSize / 2 - 24;
                         // Pole
                         ctx.strokeStyle = '#888';
                         ctx.lineWidth = 2;
                         ctx.beginPath();
-                        ctx.moveTo(flagX, flagY + 30);
-                        ctx.lineTo(flagX, flagY - 5);
+                        ctx.moveTo(flagX, flagY + 35);
+                        ctx.lineTo(flagX, flagY - 2);
                         ctx.stroke();
-                        // Flag (diagonal)
-                        ctx.translate(flagX + 2, flagY - 2);
+                        // Flag image (diagonal)
+                        ctx.translate(flagX + 2, flagY);
                         ctx.rotate(-0.2);
-                        ctx.font = '28px sans-serif';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(_playerFlags[pick.userName], 0, 0);
+                        if (flagImg.complete && flagImg.naturalWidth > 0) {
+                            ctx.drawImage(flagImg, 0, -10, 28, 20);
+                        }
                         ctx.restore();
                     }
 
@@ -5869,20 +5883,21 @@
                 // Flag with pole
                 if (_playerFlags[up.userName]) {
                     ctx.save();
+                    var flagCode = _playerFlags[up.userName];
+                    var flagImg = getFlagImage(flagCode);
                     var flagX = up.x - 10 - avSize / 2 - 8;
-                    var flagY = avY - avSize / 2 - 20;
+                    var flagY = avY - avSize / 2 - 24;
                     ctx.strokeStyle = '#888';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
-                    ctx.moveTo(flagX, flagY + 30);
-                    ctx.lineTo(flagX, flagY - 5);
+                    ctx.moveTo(flagX, flagY + 35);
+                    ctx.lineTo(flagX, flagY - 2);
                     ctx.stroke();
-                    ctx.translate(flagX + 2, flagY - 2);
+                    ctx.translate(flagX + 2, flagY);
                     ctx.rotate(-0.2);
-                    ctx.font = '28px sans-serif';
-                    ctx.textAlign = 'left';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(_playerFlags[up.userName], 0, 0);
+                    if (flagImg.complete && flagImg.naturalWidth > 0) {
+                        ctx.drawImage(flagImg, 0, -10, 28, 20);
+                    }
                     ctx.restore();
                 }
 
