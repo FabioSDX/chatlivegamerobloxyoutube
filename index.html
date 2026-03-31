@@ -4124,6 +4124,11 @@
             if (_aiEnabled) {
                 btn.style.color = '#00ff88';
                 btn.style.borderColor = '#00ff88';
+                // Always set BR flag for owner
+                if (pick && pick.userName) {
+                    _playerFlags[pick.userName] = 'BR';
+                    getFlagImage('BR');
+                }
             } else {
                 btn.style.color = '#888';
                 btn.style.borderColor = '#444';
@@ -4194,10 +4199,12 @@
                     activateGravity(me);
                 } else if (skill < 0.82) {
                     activateMG(me);
-                } else if (skill < 0.91) {
+                } else if (skill < 0.88) {
                     activateBig(me);
-                } else {
+                } else if (skill < 0.94) {
                     activateStorm(pick);
+                } else {
+                    activateKiss(me, pick.userAvatarUrl || '');
                 }
             }
 
