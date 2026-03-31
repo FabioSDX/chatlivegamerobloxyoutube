@@ -783,7 +783,7 @@
             <div class="status-dot" id="statusDotStats"></div>
             <span id="statusTextStats" style="font-size:11px;">API: —</span>
         </div>
-        <div class="depth" id="depthDisplay">Depth: 0m</div>
+        <div class="depth" id="depthDisplay" style="display:none">Depth: 0m</div>
         <div class="score-display" id="scoreDisplay" style="display:none">⛏ 0</div>
 
         <div id="commandBox">
@@ -3403,8 +3403,8 @@
                 { text: '🏅 9800m... ALMOST THERE!', color: '#ffdd44' },
                 { text: '🏆 10000m... YOU ARE THE GREATEST!', color: '#ffffff' }
             ];
-            var idx = Math.min(Math.floor(meters / 200) - 1, warnings.length - 1);
-            var w = warnings[idx] || { text: '🌟 ' + meters + 'm... BEYOND AMAZING!', color: '#ffdd44' };
+            var idx = (Math.floor(meters / 200) - 1) % warnings.length;
+            var w = warnings[idx];
             var overlay = document.getElementById('announceOverlay');
             var card = document.createElement('div');
             card.className = 'announce-card';
