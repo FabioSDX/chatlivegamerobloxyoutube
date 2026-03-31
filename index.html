@@ -4030,8 +4030,17 @@
                 ctx.globalAlpha = 0.25 + Math.sin(ball.sparkle) * 0.1;
                 ctx.fill(); ctx.globalAlpha = 1;
                 ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+                // Priority: flag > avatar > initial
+                var _ballFlag = ball.ownerName ? _playerFlags[ball.ownerName] : null;
+                var _ballFlagImg = _ballFlag ? getFlagImage(_ballFlag) : null;
                 var avImg = ball.ownerAvatar ? avatarCache[ball.ownerAvatar] : null;
-                if (avImg && avImg.complete && avImg.naturalWidth > 0) {
+                if (_ballFlagImg && _ballFlagImg.complete && _ballFlagImg.naturalWidth > 0) {
+                    // Draw flag filling the circle
+                    var flagAspect = _ballFlagImg.naturalWidth / _ballFlagImg.naturalHeight;
+                    var fh = ball.r * 2;
+                    var fw = fh * flagAspect;
+                    ctx.drawImage(_ballFlagImg, -fw / 2, -fh / 2, fw, fh);
+                } else if (avImg && avImg.complete && avImg.naturalWidth > 0) {
                     ctx.drawImage(avImg, -ball.r, -ball.r, ball.r * 2, ball.r * 2);
                 } else {
                     ctx.fillStyle = ball.color;
