@@ -2692,14 +2692,16 @@
                     mg.fireTimer = 0;
                     var p = mg.pick;
                     if (!p) continue;
-                    // Shoot downward with spread
-                    var angle = Math.PI / 2 + (Math.random() - 0.5) * 0.6; // mostly down with spread
+                    // Gun rotates 360° every 1.3s (78 frames)
+                    var gunAngle = (mg.timer * Math.PI * 2) / 78;
+                    var spread = (Math.random() - 0.5) * 0.15;
                     var speed = 25 + Math.random() * 6;
+                    var muzzleDist = 80; // tip of the gun sprite
                     _mgBullets.push({
-                        x: p.x + (Math.random() - 0.5) * 20,
-                        y: p.y + 10,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
+                        x: p.x + Math.cos(gunAngle) * muzzleDist,
+                        y: p.y + Math.sin(gunAngle) * muzzleDist,
+                        vx: Math.cos(gunAngle + spread) * speed,
+                        vy: Math.sin(gunAngle + spread) * speed,
                         life: 30,
                         userName: mg.userName
                     });
@@ -2757,13 +2759,15 @@
                 var p = mg.pick;
                 if (!p || !mg.sprite) continue;
                 ctx.save();
-                // Position in front of pickaxe (below)
-                ctx.translate(p.x, p.y + 30);
+                // Position centered on pickaxe, rotate with firing angle
+                var gunAngle = (mg.timer * Math.PI * 2) / 78;
+                ctx.translate(p.x, p.y);
+                ctx.rotate(gunAngle);
                 // Recoil shake when firing
-                if (mg.fireTimer === 0) ctx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
+                if (mg.fireTimer === 0) ctx.translate(3 + Math.random() * 2, (Math.random() - 0.5) * 3);
                 var gunSize = 160;
                 if (mg.sprite.complete && mg.sprite.naturalWidth > 0) {
-                    ctx.drawImage(mg.sprite, -gunSize / 2, -gunSize / 2, gunSize, gunSize);
+                    ctx.drawImage(mg.sprite, -gunSize * 0.3, -gunSize / 2, gunSize, gunSize);
                 }
                 ctx.restore();
             }
