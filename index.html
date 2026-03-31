@@ -900,36 +900,24 @@
         var canvas = document.getElementById('gameCanvas');
         var ctx = canvas.getContext('2d');
 
-        // ── Mobile detection & performance scaling ──
-        var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
+        // ── Performance (unified mobile-optimized) ──
+        var isMobile = true; // always use optimized mode
         var COLS = 15, TILE = 72;
         var VIS = 27;
+        canvas.width = COLS * TILE;
+        canvas.height = VIS * TILE;
 
-        // Mobile: reduce canvas resolution for GPU performance
-        if (isMobile) {
-            var mScale = 0.7;
-            canvas.style.width = (COLS * TILE) + 'px';
-            canvas.style.height = (VIS * TILE) + 'px';
-            canvas.width = Math.floor(COLS * TILE * mScale);
-            canvas.height = Math.floor(VIS * TILE * mScale);
-            TILE = Math.floor(TILE * mScale);
-        } else {
-            canvas.width = COLS * TILE;
-            canvas.height = VIS * TILE;
-        }
-
-        var MAX_PARTS = isMobile ? 10 : 150;
-        var MAX_DEBRIS = isMobile ? 8 : 60;
-        var MAX_TEXTS = isMobile ? 3 : 20;
-        var MAX_ITEMS = isMobile ? 15 : 30;
-        var SHADOW_ENABLED = !isMobile;
-        var SHIMMER_ENABLED = !isMobile;
-        var BG_DETAIL = isMobile ? 0 : 1; // 0=simple, 1=full crystals
-        var BLOCKS_3D = !isMobile;          // 3D block faces (biggest draw call saver)
-        var MAX_BUBBLES_VISIBLE = isMobile ? 15 : 999;
-        var MAX_SLIMES_VISIBLE = isMobile ? 8 : 999;
-        var MAX_SPIDERS_VISIBLE = isMobile ? 8 : 999;
+        var MAX_PARTS = 10;
+        var MAX_DEBRIS = 8;
+        var MAX_TEXTS = 3;
+        var MAX_ITEMS = 15;
+        var SHADOW_ENABLED = false;
+        var SHIMMER_ENABLED = false;
+        var BG_DETAIL = 0; // 0=simple, 1=full crystals
+        var BLOCKS_3D = false;          // 3D block faces (biggest draw call saver)
+        var MAX_BUBBLES_VISIBLE = 15;
+        var MAX_SLIMES_VISIBLE = 8;
+        var MAX_SPIDERS_VISIBLE = 8;
         // ── Tipos ──
         var E = 0, DIRT = 1, STONE = 2, COAL = 3, IRON = 4, GOLD = 5, REDSTONE = 6, DIAMOND = 7, EMERALD = 8, BEDROCK = 9,
             GRASS = 10, ANDESITE = 11, DIORITE = 12, GRANITE = 13, COBBLE = 14, MOSSY = 15, COPPER = 16, LAPIS = 17, OBSIDIAN = 18, BONUS_BOX = 19;
@@ -1256,14 +1244,14 @@
                     persistentScores[b.userName].score += pts;
                 }
             }
-            var debrisPerBlock = isMobile ? (b.mega ? 1 : 1) : (b.mega ? 4 : 2);
-            var maxExplosionDebris = isMobile ? (b.mega ? 20 : 10) : (b.mega ? 120 : 60);
+            var debrisPerBlock = 1;
+            var maxExplosionDebris = b.mega ? 20 : 10;
             var spawned = 0;
             for (var i = 0; i < destroyedBlocks.length && spawned < maxExplosionDebris; i++) {
                 var blk = destroyedBlocks[i];
                 var n = Math.min(debrisPerBlock, maxExplosionDebris - spawned);
                 for (var k = 0; k < n; k++) {
-                    if (debris.length >= (isMobile ? 50 : 200)) break;
+                    if (debris.length >= (50)) break;
                     var dx = blk.wx - b.x, dy = blk.wy - b.y;
                     var d = Math.sqrt(dx * dx + dy * dy) || 1;
                     var baseSpd = (b.mega ? 5 : 3.5) + Math.random() * 3;
@@ -3217,7 +3205,7 @@
         function spawnDebris(bx, by, blockType, source) {
             if (debris.length > MAX_DEBRIS) return;
             var target = source || pick;
-            var n = isMobile ? 1 : 1 + Math.floor(Math.random() * 2);
+            var n = 1;
             for (var i = 0; i < n; i++) {
                 var ox = (Math.random() - 0.5) * TILE * 0.6, oy = (Math.random() - 0.5) * TILE * 0.6;
                 var dx = (target ? target.x : bx) - (bx + ox), dy = (target ? target.y : by) - (by + oy);
@@ -3723,7 +3711,7 @@
                         var glow = def ? def.glow : '#888';
 
                         // Burst of particles (ring explosion)
-                        var pCount = isMobile ? 2 : 4;
+                        var pCount = 2;
                         for (var p = 0; p < pCount; p++) {
                             var ang = (p / pCount) * Math.PI * 2;
                             var spd = 2 + Math.random() * 3;
@@ -3736,7 +3724,7 @@
                         spawnDebris(fb.x, fb.y, fb.t, fb.owner);
 
                         // Shockwave ring particles
-                        if (!isMobile) {
+                        if (false) {
                             for (var sw = 0; sw < 6; sw++) {
                                 var sAng = (sw / 6) * Math.PI * 2;
                                 var sSpd = 4 + Math.random() * 2;
@@ -5086,7 +5074,7 @@
                     ctx.fillRect(x, y, TILE, TILE);
 
                     // Caustic shimmer (skip on mobile)
-                    if (!isMobile) {
+                    if (false) {
                     ctx.globalAlpha = alpha * 0.25;
                     ctx.fillStyle = '#4488cc';
                     var cx1 = Math.sin(t * 1.5 + c * 0.8 + r * 0.3) * TILE * 0.3;
@@ -5738,8 +5726,8 @@
                         loadAvatar(pick.userAvatarUrl);
                     }
                     var ownerAvImg = (pick.userAvatarUrl && avatarCache[pick.userAvatarUrl]) || null;
-                    var oAvSize = isMobile ? 42 : 62;
-                    var oAvY = pick.y - PICK_HALF - (isMobile ? 30 : 44);
+                    var oAvSize = 42;
+                    var oAvY = pick.y - PICK_HALF - (30);
                     if (ownerAvImg && ownerAvImg.complete && ownerAvImg.naturalWidth > 0) {
                         ctx.save();
                         ctx.beginPath(); ctx.arc(pick.x - 10 - oAvSize / 2, oAvY, oAvSize / 2, 0, Math.PI * 2); ctx.clip();
@@ -5757,8 +5745,8 @@
                         ctx.fillText((pick.userName || '?').replace('@','').charAt(0).toUpperCase(), pick.x - 10 - oAvSize / 2, oAvY);
                         ctx.restore();
                     }
-                    ctx.fillStyle = '#ffdd44'; ctx.font = isMobile ? 'bold 22px Arial' : 'bold 26px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                    ctx.strokeStyle = '#000'; ctx.lineWidth = isMobile ? 3 : 4; ctx.lineJoin = 'round';
+                    ctx.fillStyle = '#ffdd44'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
                     ctx.strokeText(pick.userName, pick.x + 10, oAvY);
                     if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
                     ctx.fillText(pick.userName, pick.x + 10, oAvY);
@@ -5816,8 +5804,8 @@
                     }
                     ctx.restore();
                     // Draw clone avatar and name (same size as original picks)
-                    var cloneAvSize = isMobile ? 42 : 62;
-                    var cloneAvY = ep.y - PICK_HALF - (isMobile ? 30 : 44);
+                    var cloneAvSize = 42;
+                    var cloneAvY = ep.y - PICK_HALF - (30);
                     if (ep.cloneAvatar && avatarCache[ep.cloneAvatar]) {
                         var avImg = avatarCache[ep.cloneAvatar];
                         if (avImg.complete && avImg.naturalWidth > 0) {
@@ -5835,8 +5823,8 @@
                     }
                     ctx.save();
                     ctx.globalAlpha = cloneAlpha * 0.85;
-                    ctx.fillStyle = '#fff'; ctx.font = isMobile ? 'bold 22px Arial' : 'bold 26px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                    ctx.strokeStyle = '#000'; ctx.lineWidth = isMobile ? 3 : 4; ctx.lineJoin = 'round';
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
                     ctx.strokeText(ep.cloneOwner || '', ep.x + 10, cloneAvY);
                     if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
                     ctx.fillText(ep.cloneOwner || '', ep.x + 10, cloneAvY);
@@ -5886,8 +5874,8 @@
                     loadAvatar(up.userAvatarUrl);
                 }
                 var avImg = (up.userAvatarUrl && avatarCache[up.userAvatarUrl]) || null;
-                var avSize = isMobile ? 42 : 62;
-                var avY = up.y - PICK_HALF - (isMobile ? 30 : 44);
+                var avSize = 42;
+                var avY = up.y - PICK_HALF - (30);
                 if (avImg && avImg.complete && avImg.naturalWidth > 0) {
                     ctx.save();
                     ctx.beginPath(); ctx.arc(up.x - 10 - avSize / 2, avY, avSize / 2, 0, Math.PI * 2); ctx.clip();
@@ -5905,8 +5893,8 @@
                     ctx.fillText((up.userName || '?').replace('@','').charAt(0).toUpperCase(), up.x - 10 - avSize / 2, avY);
                     ctx.restore();
                 }
-                ctx.fillStyle = '#fff'; ctx.font = isMobile ? 'bold 22px Arial' : 'bold 26px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                ctx.strokeStyle = '#000'; ctx.lineWidth = isMobile ? 3 : 4; ctx.lineJoin = 'round';
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
                 ctx.strokeText(up.userName, up.x + 10, avY);
                 if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
                 ctx.fillText(up.userName, up.x + 10, avY);
@@ -8931,17 +8919,17 @@
                 btn.style.color = '#00ff88';
                 btn.style.borderColor = '#00ff88';
             } else {
-                // Restore desktop settings
-                SHADOW_ENABLED = !isMobile;
-                SHIMMER_ENABLED = !isMobile;
-                BG_DETAIL = isMobile ? 0 : 1;
-                BLOCKS_3D = !isMobile;
-                MAX_PARTS = isMobile ? 10 : 150;
-                MAX_DEBRIS = isMobile ? 8 : 60;
-                MAX_TEXTS = isMobile ? 3 : 20;
-                MAX_BUBBLES_VISIBLE = isMobile ? 15 : 999;
-                MAX_SLIMES_VISIBLE = isMobile ? 8 : 999;
-                MAX_SPIDERS_VISIBLE = isMobile ? 8 : 999;
+                // Restore default settings
+                SHADOW_ENABLED = false;
+                SHIMMER_ENABLED = false;
+                BG_DETAIL = 0;
+                BLOCKS_3D = false;
+                MAX_PARTS = 10;
+                MAX_DEBRIS = 8;
+                MAX_TEXTS = 3;
+                MAX_BUBBLES_VISIBLE = 15;
+                MAX_SLIMES_VISIBLE = 8;
+                MAX_SPIDERS_VISIBLE = 8;
                 btn.style.color = '#888';
                 btn.style.borderColor = '#444';
             }
