@@ -2652,19 +2652,32 @@
         function sfxMGShot() {
             var ac = getAC(); if (!ac) return;
             var t = ac.currentTime;
-            // Short sharp burst
-            var nLen = Math.ceil(ac.sampleRate * 0.04);
+            // Realistic gunshot: sharp attack + low thump + noise burst
+            var nLen = Math.ceil(ac.sampleRate * 0.08);
             var buf = ac.createBuffer(1, nLen, ac.sampleRate);
             var d = buf.getChannelData(0);
-            for (var i = 0; i < nLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / nLen, 0.5);
+            for (var i = 0; i < nLen; i++) {
+                var env = Math.pow(1 - i / nLen, 3);
+                d[i] = (Math.random() * 2 - 1) * env;
+            }
             var src = ac.createBufferSource(); src.buffer = buf;
             var g = ac.createGain();
-            g.gain.setValueAtTime(0.12, t);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+            g.gain.setValueAtTime(0.18, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+            // Bandpass for metallic crack
             var filt = ac.createBiquadFilter();
-            filt.type = 'highpass'; filt.frequency.value = 800;
+            filt.type = 'bandpass'; filt.frequency.value = 2000 + Math.random() * 1000; filt.Q.value = 1.5;
             src.connect(filt); filt.connect(g); g.connect(ac.destination);
             src.start(t);
+            // Low thump
+            var osc = ac.createOscillator(), og = ac.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(80, t);
+            osc.frequency.exponentialRampToValueAtTime(30, t + 0.06);
+            og.gain.setValueAtTime(0.15, t);
+            og.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+            osc.connect(og); og.connect(ac.destination);
+            osc.start(t); osc.stop(t + 0.08);
         }
 
         function updateMGs() {
@@ -2681,7 +2694,7 @@
                     if (!p) continue;
                     // Shoot downward with spread
                     var angle = Math.PI / 2 + (Math.random() - 0.5) * 0.6; // mostly down with spread
-                    var speed = 12 + Math.random() * 4;
+                    var speed = 25 + Math.random() * 6;
                     _mgBullets.push({
                         x: p.x + (Math.random() - 0.5) * 20,
                         y: p.y + 10,
@@ -2744,10 +2757,11 @@
                 var p = mg.pick;
                 if (!p || !mg.sprite) continue;
                 ctx.save();
-                ctx.translate(p.x + 15, p.y + 5);
-                // Slight recoil shake
-                if (mg.fireTimer === 0) ctx.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
-                var gunSize = 40;
+                // Position in front of pickaxe (below)
+                ctx.translate(p.x, p.y + 30);
+                // Recoil shake when firing
+                if (mg.fireTimer === 0) ctx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
+                var gunSize = 160;
                 if (mg.sprite.complete && mg.sprite.naturalWidth > 0) {
                     ctx.drawImage(mg.sprite, -gunSize / 2, -gunSize / 2, gunSize, gunSize);
                 }
