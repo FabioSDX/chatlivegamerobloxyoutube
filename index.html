@@ -3724,6 +3724,7 @@
         var _aiTimer = 0;
         var _aiNextAction = 0;
         var _aiSkillTimer = 0;
+        var _aiHidden = false; // true when AI owner is hidden because visitors are playing
 
         function toggleAI() {
             _aiEnabled = !_aiEnabled;
@@ -3734,11 +3735,39 @@
             } else {
                 btn.style.color = '#888';
                 btn.style.borderColor = '#444';
+                // Restore owner if was hidden
+                if (_aiHidden) {
+                    _aiHidden = false;
+                    pick.userName = ownerName || '';
+                }
+            }
+        }
+
+        function updateAIVisibility() {
+            if (!_aiEnabled) return;
+            var hasVisitors = userPicks.length > 0;
+            if (hasVisitors && !_aiHidden) {
+                // Visitors arrived — hide owner pickaxe
+                _aiHidden = true;
+                // Move owner off screen (don't remove, just hide)
+                pick.x = -9999;
+                pick.y = -9999;
+                pick.vx = 0;
+                pick.vy = 0;
+            } else if (!hasVisitors && _aiHidden) {
+                // All visitors left — restore owner
+                _aiHidden = false;
+                spawnPick();
             }
         }
 
         function updateAI() {
             if (!_aiEnabled || !pick) return;
+            // Check visitor presence
+            updateAIVisibility();
+            // If hidden, don't act
+            if (_aiHidden) return;
+
             _aiTimer++;
 
             // Random spin every 2-5 seconds
@@ -3746,7 +3775,6 @@
                 _aiNextAction = _aiTimer + 120 + Math.floor(Math.random() * 180);
                 var dirs = ['right', 'left', 'down', 'up'];
                 var dir = dirs[Math.floor(Math.random() * dirs.length)];
-                // Prefer down/right for progression
                 if (Math.random() < 0.4) dir = 'down';
                 else if (Math.random() < 0.3) dir = Math.random() < 0.5 ? 'right' : 'left';
                 activateSpin(pick.userName || '@Player', dir);
@@ -3785,6 +3813,7 @@
 
         function update() {
             if (!pick) return;
+            if (_aiHidden) return; // AI owner hidden, skip physics
             if (pick.stuck) {
                 pick.stuckTimer++;
                 if (pick.stuckTimer > 100) spawnPick();
@@ -3811,7 +3840,7 @@
             document.getElementById('scoreDisplay').textContent = '⛏ ' + score;
 
             // ── Democratic Camera: follow the deepest player for 5+ seconds ──
-            var allCamPicks = [pick].concat(userPicks).filter(function(p) { return p && !p.stuck; });
+            var allCamPicks = (_aiHidden ? [] : [pick]).concat(userPicks).filter(function(p) { return p && !p.stuck; });
             var deepestPick = pick;
             var deepestY = pick ? pick.y : 0;
             for (var ci = 0; ci < allCamPicks.length; ci++) {
@@ -3834,8 +3863,11 @@
                     }
                 }
             }
-            // If camTarget got stuck or removed, fallback to pick
-            if (!camTarget || camTarget.stuck) { camTarget = pick; camLeaderTimer = 0; }
+            // If camTarget got stuck or removed, fallback
+            if (!camTarget || camTarget.stuck) {
+                camTarget = _aiHidden && userPicks.length > 0 ? userPicks[0] : pick;
+                camLeaderTimer = 0;
+            }
 
             var followPick = camTarget || pick;
             var targetCamY = followPick.y - canvas.height * 0.60;
@@ -5255,7 +5287,7 @@
             ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 
             // picareta principal - sprite
-            if (pick) {
+            if (pick && !_aiHidden) {
                 drawTormentaAura(pick);
                 drawSpinAura(pick);
                 ctx.save();
