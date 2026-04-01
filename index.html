@@ -2392,26 +2392,6 @@
                 ctx.fillRect(c.x, c.y, c.w, c.h);
             }
 
-            // ── Title banner ──
-            var titleY = H * 0.06;
-            var bannerScale = Math.min(1, _cycleOverlayTimer / 20);
-            ctx.save();
-            ctx.translate(W / 2, titleY);
-            ctx.scale(bannerScale, bannerScale);
-            // Banner bg
-            var bw = Math.min(W * 0.95, 900);
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            _roundRect(ctx, -bw/2, -40, bw, 80, 20);
-            ctx.fill();
-            ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 3;
-            _roundRect(ctx, -bw/2, -40, bw, 80, 20);
-            ctx.stroke();
-            ctx.font = 'bold ' + Math.min(48, Math.floor(W * 0.11)) + 'px Arial';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#ffdd44';
-            ctx.fillText('🏆 CYCLE ' + (_cycleOverlay.cycle * 400) + 'm', 0, 0);
-            ctx.restore();
-
             // ── Podium cards ──
             var cardW = Math.min(W * 0.92, 840);
             var cardH = Math.min(140, H * 0.22);
@@ -3468,7 +3448,8 @@
             var card = document.createElement('div');
             card.className = 'announce-card';
             card.innerHTML =
-                '<div class="announce-title" style="color:' + w.color + ';text-shadow:0 0 15px ' + w.color + ',0 1px 4px #000;font-size:clamp(16px,7vw,28px);">' + w.text + '</div>';
+                '<div class="announce-title" style="color:' + w.color + ';text-shadow:0 0 15px ' + w.color + ',0 1px 4px #000;font-size:clamp(16px,7vw,28px);">' + w.text + '</div>' +
+                '<div class="announce-pts" style="color:#ccc;text-shadow:0 1px 3px #000;">— ' + meters + ' meters deep —</div>';
             overlay.appendChild(card);
             shakeAmt = Math.max(shakeAmt, 12);
             setTimeout(function () {
