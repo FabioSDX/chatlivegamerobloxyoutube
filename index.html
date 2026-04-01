@@ -4170,6 +4170,8 @@
                     _playerFlags[pick.userName] = 'BR';
                     getFlagImage('BR');
                 }
+                // Show first fan banner immediately
+                _fanBannerTimer = _fanBannerInterval - 1;
             } else {
                 btn.style.color = '#888';
                 btn.style.borderColor = '#444';
@@ -9011,8 +9013,8 @@
         // Load fans from server on start
         fetch('/fans').then(function(r) { return r.json(); }).then(function(data) {
             _fanActivity = data || {};
-            console.log('[fans] Loaded ' + Object.keys(_fanActivity).length + ' fans from server');
-        }).catch(function() {});
+            console.log('[fans] Loaded ' + Object.keys(_fanActivity).length + ' fans from server:', Object.keys(_fanActivity).slice(0,3));
+        }).catch(function(e) { console.warn('[fans] Failed to load:', e); });
 
         // Sync fans to server every 2 minutes
         function syncFansToServer() {
@@ -9093,8 +9095,9 @@
         }
 
         function updateFanBanners() {
-            if (!_fanActivity) return;
-            // Only show when no visitors (solo or AI mode)
+            if (!_aiEnabled) return; // only show when AI is active
+            if (!_fanActivity || Object.keys(_fanActivity).length === 0) return;
+            // Only show when no visitors
             if (userPicks.length > 0) return;
             _fanBannerTimer++;
             if (_fanBannerTimer < _fanBannerInterval) return;
