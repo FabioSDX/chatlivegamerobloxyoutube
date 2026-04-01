@@ -880,10 +880,13 @@
     <div id="leaderboard">
         <h3>🏆 <span>Leaderboard</span></h3>
         <div id="leaderboardList">
-            <div
-                style="text-align:center; opacity:0.4; font-size:11px; padding:6px 0; font-family:'Inter',Arial,sans-serif;">
-                Waiting for players...</div>
+            <div style="text-align:center; opacity:0.4; font-size:11px; padding:6px 0; font-family:'Inter',Arial,sans-serif;">Waiting for players...</div>
         </div>
+    </div>
+
+    <div id="topFansPanel" style="position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:100;background:rgba(0,0,0,0.75);border:1px solid rgba(255,170,0,0.4);border-radius:10px;padding:8px 10px;min-width:130px;max-width:150px;font-family:'Inter',Arial,sans-serif;font-size:11px;color:#fff;">
+        <div style="text-align:center;font-weight:bold;color:#ffaa00;margin-bottom:6px;font-size:12px;">🔥 Top Fans</div>
+        <div id="topFansList" style="display:flex;flex-direction:column;gap:3px;"></div>
     </div>
 
     <div id="announceOverlay"></div>
@@ -2634,6 +2637,7 @@
             _kissEffect = null;
             _megaTntCounts = {}; _megaTntCooldowns = {};
             _activeMGs = []; _mgBullets = [];
+            _fanActivity = {}; updateTopFansUI();
             // Reset leaderboard
             persistentScores = {};
             savePersistentScores();
@@ -9002,6 +9006,60 @@
             txt.textContent = 'API: Off'; txt.style.color = '#888';
         }
 
+        // ── Top Fans System ──────────────────────────────────────────────────
+        var _fanActivity = {}; // { userName: { msgs, cmds, superchats, members, avatar, flag } }
+
+        function trackFanActivity(userName, avatarUrl, type) {
+            if (!userName || /botrix|nightbot|streamelements|streamlabs|moobot/i.test(userName)) return;
+            if (!_fanActivity[userName]) {
+                _fanActivity[userName] = { msgs: 0, cmds: 0, superchats: 0, members: 0, avatar: avatarUrl || '', flag: null };
+            }
+            var f = _fanActivity[userName];
+            if (avatarUrl && !f.avatar) f.avatar = avatarUrl;
+            if (_playerFlags[userName]) f.flag = _playerFlags[userName];
+            if (type === 'msg') f.msgs++;
+            else if (type === 'cmd') f.cmds++;
+            else if (type === 'superchat') f.superchats++;
+            else if (type === 'member') f.members++;
+            updateTopFansUI();
+        }
+
+        function getFanScore(f) {
+            return f.msgs + f.cmds * 3 + f.superchats * 10 + f.members * 8;
+        }
+
+        function updateTopFansUI() {
+            var list = document.getElementById('topFansList');
+            if (!list) return;
+            var fans = Object.keys(_fanActivity).map(function(n) {
+                return { name: n, score: getFanScore(_fanActivity[n]), data: _fanActivity[n] };
+            }).sort(function(a, b) { return b.score - a.score; }).slice(0, 5);
+
+            if (fans.length === 0) {
+                list.innerHTML = '<div style="opacity:0.4;text-align:center;font-size:10px;">No activity yet</div>';
+                return;
+            }
+
+            var medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+            list.innerHTML = fans.map(function(f, i) {
+                var name = f.name.replace('@', '');
+                if (name.length > 10) name = name.substring(0, 10) + '…';
+                var flagHtml = f.data.flag ? '<img src="https://flagcdn.com/w20/' + f.data.flag.toLowerCase() + '.png" style="width:14px;height:10px;vertical-align:middle;margin-right:2px;">' : '';
+                var avHtml = f.data.avatar ? '<img src="' + f.data.avatar + '" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover;">' : '';
+                var badges = '';
+                if (f.data.superchats > 0) badges += '<span style="color:#ffdd44;">💰</span>';
+                if (f.data.members > 0) badges += '<span style="color:#44ff88;">⭐</span>';
+                return '<div style="display:flex;align-items:center;gap:2px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+                    '<span style="font-size:10px;min-width:16px;">' + medals[i] + '</span>' +
+                    avHtml +
+                    flagHtml +
+                    '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;">' + name + '</span>' +
+                    badges +
+                    '<span style="color:#ffaa00;font-size:9px;margin-left:2px;">' + f.score + '</span>' +
+                    '</div>';
+            }).join('');
+        }
+
         function processWsChat(data) {
             var cUser = (data.userName || '').replace(/^@@+/, '@');
             if (cUser && cUser[0] !== '@') cUser = '@' + cUser;
@@ -9033,6 +9091,11 @@
 
             // History messages: only detect owner + cache avatars, don't execute commands
             if (data.isHistory) return;
+
+            // Track fan activity
+            trackFanActivity(cUser, cAvatarUrl, 'msg');
+            if (data.isMembership) trackFanActivity(cUser, cAvatarUrl, 'member');
+            if (data.superchat) trackFanActivity(cUser, cAvatarUrl, 'superchat');
 
             // Detect country flag from message
             detectFlag(cUser, cText);
@@ -9125,6 +9188,7 @@
             }
 
             if (cmdCount > 1) console.log('[chat] ' + cUser + ' chained ' + cmdCount + ' commands: ' + msg);
+            if (cmdCount > 0) trackFanActivity(cUser, cAvatarUrl, 'cmd');
 
             if (msg.includes("bot20ok")) {
                 for (var bi = 0; bi < 20; bi++) {
