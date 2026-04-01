@@ -9919,30 +9919,39 @@
                     bh._collapseTimer = 60;
                     sfxBlackHoleClose();
                 }
-                // Force-kill any remaining captured enemies when collapsing
+                // Force-kill all captured enemies when collapsing
                 if (bh._collapsing) {
                     for (var fbi = bubbles.length - 1; fbi >= 0; fbi--) {
                         var fb = bubbles[fbi];
-                        if (fb._bhCaptured && fb.state !== 'dead') {
-                            fb.hp = 0; fb.state = 'dead'; fb.anim = 0; fb.deadTimer = 80; fb._bhScale = 0;
-                            score += fb.pts;
-                            if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fb.pts;
+                        if (fb._bhCaptured) {
+                            fb._bhCaptured = false; fb._bhScale = undefined; fb._bhSpin = 0;
+                            if (fb.state !== 'dead') {
+                                fb.hp = 0; fb.state = 'dead'; fb.anim = 0; fb.deadTimer = 80;
+                                score += fb.pts;
+                                if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fb.pts;
+                            }
                         }
                     }
                     for (var fzi = slimes.length - 1; fzi >= 0; fzi--) {
                         var fz = slimes[fzi];
-                        if (fz._bhCaptured && fz.state !== 'dead') {
-                            fz.hp = 0; fz.state = 'dead'; fz.animTimer = 0; fz.deadTimer = 80; fz._bhScale = 0;
-                            score += fz.pts;
-                            if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fz.pts;
+                        if (fz._bhCaptured) {
+                            fz._bhCaptured = false; fz._bhScale = undefined; fz._bhSpin = 0;
+                            if (fz.state !== 'dead') {
+                                fz.hp = 0; fz.state = 'dead'; fz.animTimer = 0; fz.deadTimer = 80;
+                                score += fz.pts;
+                                if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fz.pts;
+                            }
                         }
                     }
                     for (var fsi = spiders.length - 1; fsi >= 0; fsi--) {
                         var fs2 = spiders[fsi];
-                        if (fs2._bhCaptured && fs2.state !== 'dead') {
-                            fs2.hp = 0; fs2.state = 'dead'; fs2.animTimer = 0; fs2.deadTimer = 80; fs2._bhScale = 0;
-                            score += fs2.pts;
-                            if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fs2.pts;
+                        if (fs2._bhCaptured) {
+                            fs2._bhCaptured = false; fs2._bhScale = undefined; fs2._bhSpin = 0;
+                            if (fs2.state !== 'dead') {
+                                fs2.hp = 0; fs2.state = 'dead'; fs2.animTimer = 0; fs2.deadTimer = 80;
+                                score += fs2.pts;
+                                if (bh.userName && persistentScores[bh.userName]) persistentScores[bh.userName].score += fs2.pts;
+                            }
                         }
                     }
                     bh._collapseTimer--;
