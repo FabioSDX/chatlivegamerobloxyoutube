@@ -9111,8 +9111,10 @@
                 if (_fanActivity[fan.name]) _fanActivity[fan.name].flag = fan.data.flag;
             }
 
-            var avHtml = avatarUrl
-                ? '<img src="' + avatarUrl + '" style="width:72px;height:72px;border-radius:50%;border:3px solid #ffaa00;object-fit:cover;flex-shrink:0;box-shadow:0 0 12px rgba(255,170,0,0.5);">'
+            // Route avatar through proxy to bypass CORS
+            var proxyAv = avatarUrl ? '/avatar-proxy?url=' + encodeURIComponent(avatarUrl) : '';
+            var avHtml = proxyAv
+                ? '<img src="' + proxyAv + '" style="width:72px;height:72px;border-radius:50%;border:3px solid #ffaa00;object-fit:cover;flex-shrink:0;box-shadow:0 0 12px rgba(255,170,0,0.5);" onerror="this.style.display=\'none\'">'
                 : '<div style="width:72px;height:72px;border-radius:50%;background:#ffaa00;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:28px;flex-shrink:0;">' + (fan.name || '?').replace('@','').charAt(0).toUpperCase() + '</div>';
             var badges = '';
             if (fan.data.superchats > 0) badges += '<span style="font-size:20px;">💰</span>';
