@@ -9031,7 +9031,8 @@
         var _fanBannerActive = null; // current banner DOM element
 
         function trackFanActivity(userName, avatarUrl, type) {
-            if (!userName || /botrix|nightbot|streamelements|streamlabs|moobot/i.test(userName)) return;
+            if (!userName || /botrix|nightbot|streamelements|streamlabs|moobot|fabiosdx/i.test(userName)) return;
+            if (ownerName && userName === ownerName) return; // owner never in fan ranking
             if (!_fanActivity[userName]) {
                 _fanActivity[userName] = { msgs: 0, cmds: 0, superchats: 0, members: 0, avatar: avatarUrl || '', flag: null };
             }
