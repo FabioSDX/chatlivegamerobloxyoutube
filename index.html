@@ -2202,6 +2202,22 @@
 
         // Flag image cache
         var _flagImages = {};
+
+        function _removeAccents(str) {
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        // Build accent-free lookup from countryMap
+        var _countryMapClean = {};
+        (function() {
+            var keys = Object.keys(_countryMap);
+            for (var i = 0; i < keys.length; i++) {
+                _countryMapClean[keys[i]] = _countryMap[keys[i]];
+                var clean = _removeAccents(keys[i]);
+                if (clean !== keys[i]) _countryMapClean[clean] = _countryMap[keys[i]];
+            }
+        })();
+
         function getFlagImage(code) {
             if (_flagImages[code]) return _flagImages[code];
             var img = new Image();
@@ -2229,7 +2245,7 @@
         };
 
         function detectFlag(userName, message) {
-            var msg = message.toLowerCase().trim();
+            var msg = _removeAccents(message.toLowerCase().trim());
             var raw = message.trim();
 
             // Check for emoji flags in the message
@@ -2244,14 +2260,14 @@
                 }
             }
 
-            // Check for "flag country" or country name
+            // Check for "flag country" or country name (accent-insensitive)
             var flagMatch = msg.match(/\bflag\s+(\S+)/);
             var search = flagMatch ? flagMatch[1] : null;
-            var keys = Object.keys(_countryMap);
+            var keys = Object.keys(_countryMapClean);
             if (search) {
                 for (var i = 0; i < keys.length; i++) {
                     if (search === keys[i] || search.indexOf(keys[i]) !== -1) {
-                        var code2 = _countryMap[keys[i]];
+                        var code2 = _countryMapClean[keys[i]];
                         _playerFlags[userName] = code2;
                         getFlagImage(code2);
                         spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[i].toUpperCase(), '#ffffff');
@@ -2263,7 +2279,7 @@
             if (!flagMatch) {
                 for (var j = 0; j < keys.length; j++) {
                     if (msg === keys[j]) {
-                        var code3 = _countryMap[keys[j]];
+                        var code3 = _countryMapClean[keys[j]];
                         _playerFlags[userName] = code3;
                         getFlagImage(code3);
                         spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[j].toUpperCase(), '#ffffff');
