@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Pickaxe Drop</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛏️</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -1172,7 +1173,7 @@
         var BOUNCE = 0.82;
         var FRICTION = 0.995;
         var SPIN_DAMP = 0.99;
-        var GRAVITY = 0.21; // Reduzido em 30% para gameplay mais rápido
+        var GRAVITY = 0.30;
 
         // ── Swept AABB para TNT ──
         function sweptAABB(bx, by, vx, vy, hs, tileCol, tileRow) {
@@ -2439,6 +2440,46 @@
         var _robloxAvatars = {}; // { userName: { avatarUrl, robloxName } }
         var _robloxUserIds = {}; // { userName: userId }
 
+        // ── Roblox Campaign Stats Tracking ───────────────────────────────────
+        var _robloxSessionStart = {}; // { userName: timestamp }
+        var _robloxCmdCount = {};     // { userName: count }
+
+        function startRobloxSession(userName) {
+            if (!_robloxAvatars[userName]) return; // only track roblox users
+            if (!_robloxSessionStart[userName]) {
+                _robloxSessionStart[userName] = Date.now();
+                _robloxCmdCount[userName] = _robloxCmdCount[userName] || 0;
+            }
+        }
+
+        function endRobloxSession(userName) {
+            if (!_robloxAvatars[userName] || !_robloxSessionStart[userName]) return;
+            var sessionMs = Date.now() - _robloxSessionStart[userName];
+            var cmds = _robloxCmdCount[userName] || 0;
+            var robloxName = _robloxAvatars[userName].robloxName || '';
+            delete _robloxSessionStart[userName];
+            _robloxCmdCount[userName] = 0;
+            // Send to server
+            fetch('/roblox-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ youtubeUser: userName, robloxUser: robloxName, cmds: cmds, sessionMs: sessionMs })
+            }).catch(function() {});
+        }
+
+        function trackRobloxCmd(userName) {
+            if (!_robloxAvatars[userName]) return;
+            _robloxCmdCount[userName] = (_robloxCmdCount[userName] || 0) + 1;
+        }
+
+        // End all active roblox sessions on page unload
+        window.addEventListener('beforeunload', function() {
+            var keys = Object.keys(_robloxSessionStart);
+            for (var i = 0; i < keys.length; i++) {
+                endRobloxSession(keys[i]);
+            }
+        });
+
         function fetchRobloxAvatar(userName, robloxUsername) {
             fetch('/roblox-avatar?username=' + encodeURIComponent(robloxUsername))
                 .then(function (r) { return r.json(); })
@@ -2766,7 +2807,7 @@
         var SPIN_CHARGE = 30;       // 0.5s charge-up
         var SPIN_DASH = 39;         // ~0.65s dash duration
         var SPIN_COOLDOWN = 300;    // 5s cooldown per direction
-        var SPIN_SPEED = 13;        // dash velocity
+        var SPIN_SPEED = 16;        // dash velocity (faster)
         var SPIN_DMG_MULT = 4;      // damage multiplier during dash
         var SPIN_MAX_QUEUE = 4;     // max queued spins per player
         var spinCooldowns = {};     // { userName_direction: framesLeft }
@@ -6510,8 +6551,8 @@
         var MAX_SLIMES = 30;
         var SLIME_SIZE = TILE;
 
-        // Preload zombie sprites
-        var SLIME_TYPES = ['Zombie1', 'Zombie2', 'Zombie3', 'Zombie4'];
+        // Slime types (visual only - drawn procedurally, no sprites needed)
+        var SLIME_TYPES = ['Slime1', 'Slime2', 'Slime3', 'Slime4'];
         var SLIME_ANIMS = {
             idle: { prefix: 'Idle', count: 4, speed: 0.08 },
             walk: { prefix: 'Walk', count: 6, speed: 0.12 },
@@ -6521,26 +6562,7 @@
             dead: { prefix: 'Dead', count: 8, speed: 0.10 },
             jump: { prefix: 'Jump', count: 7, speed: 0.12 }
         };
-        var zombieSprites = {};
-        SLIME_TYPES.forEach(function (zt) {
-            zombieSprites[zt] = {};
-            Object.keys(SLIME_ANIMS).forEach(function (anim) {
-                var a = SLIME_ANIMS[anim];
-                zombieSprites[zt][anim] = [];
-                for (var i = 1; i <= a.count; i++) {
-                    var img = new Image();
-                    var prefix = a.prefix;
-                    if (zt === 'Zombie3' && anim === 'attack' && i === 6) {
-                        img.src = zt + '/animation/Attaxk6.png';
-                    } else if (zt === 'Zombie4') {
-                        img.src = zt + '/animation/' + prefix + '_' + i + '.png';
-                    } else {
-                        img.src = zt + '/animation/' + prefix + i + '.png';
-                    }
-                    zombieSprites[zt][anim].push(img);
-                }
-            });
-        });
+        var zombieSprites = {}; // empty - slimes are drawn procedurally
 
         // ── DARK JELLY SYSTEM (mini-clearings) ──────────────────────────────────────
         var spiders = [];
@@ -6560,24 +6582,8 @@
             jump: { folder: 'Jump_Simple', count: 24, speed: 0.15 }
         };
 
-        // Baby spiders use 256x144, mothers use 384x216
+        // Baby spiders use procedural drawing - no sprites needed
         var spiderSprites = { baby: {}, mother: {} };
-        (function () {
-            ['baby', 'mother'].forEach(function (size) {
-                var res = size === 'baby' ? 'Frames_256x144' : 'Frames_384x216';
-                Object.keys(SPIDER_ANIMS).forEach(function (anim) {
-                    var a = SPIDER_ANIMS[anim];
-                    spiderSprites[size][anim] = [];
-                    for (var i = 1; i <= a.count; i++) {
-                        var img = new Image();
-                        var frame = String(i);
-                        while (frame.length < 4) frame = '0' + frame;
-                        img.src = 'Spider/' + res + '/' + a.folder + '/Body/' + a.folder + '_' + frame + '.png';
-                        spiderSprites[size][anim].push(img);
-                    }
-                });
-            });
-        })();
 
         function spawnSpider(wx, wy, isMother) {
             if (spiders.length >= MAX_SPIDERS) return;
@@ -6877,7 +6883,7 @@
         var MOTHER_SCALE = 3.0; // 300% size
         var MOTHER_SPAWN_MS = 4000; // spawn baby every 4s
 
-        var FLYER_TYPES = ['bat', 'vesp', 'marimbondo'];
+        var FLYER_TYPES = ['bubble1', 'bubble2', 'bubble3'];
         var BUBBLE_ANIMS = {
             fly: { prefix: 'Fly', count: 18, speed: 0.25 },
             idle: { prefix: 'Idle', count: 18, speed: 0.12 },
@@ -6885,24 +6891,8 @@
             dying: { prefix: 'Dying', count: 18, speed: 0.12 },
             fall: { prefix: 'Fall', count: 18, speed: 0.15 }
         };
-        // Sprites indexed by flyer type
+        // Bubbles are drawn procedurally - no sprites needed
         var flyerSprites = {};
-        (function () {
-            FLYER_TYPES.forEach(function (ft) {
-                flyerSprites[ft] = {};
-                Object.keys(BUBBLE_ANIMS).forEach(function (anim) {
-                    var a = BUBBLE_ANIMS[anim];
-                    flyerSprites[ft][anim] = [];
-                    for (var i = 0; i < a.count; i++) {
-                        var img = new Image();
-                        var frame = String(i);
-                        while (frame.length < 3) frame = '0' + frame;
-                        img.src = ft + '/' + a.prefix + '/0_Monster_' + a.prefix + '_' + frame + '.png';
-                        flyerSprites[ft][anim].push(img);
-                    }
-                });
-            });
-        })();
 
         function spawnBubble(wx, wy, zone, isMother) {
             // Use higher cap during mega-clearings
@@ -10262,6 +10252,8 @@
             userName = userName.replace(/^@@+/, '@');
             if (ownerName && userName === ownerName) return;
             if (userPicks.some(up => up.userName === userName)) return;
+            // Start Roblox session tracking if applicable
+            startRobloxSession(userName);
 
             // Fallback: get avatar from persistentScores if not provided
             if (!avatarUrl && persistentScores[userName] && persistentScores[userName].avatar) {
@@ -11128,6 +11120,7 @@
                 if (up.isStorm) continue; // storm picks are not real players
                 var last = lastActivity[up.userName] || 0;
                 if (now - last > INACTIVE_MS) {
+                    endRobloxSession(up.userName); // save roblox stats before removing
                     userPicks.splice(i, 1);
                 }
             }

@@ -34,6 +34,9 @@ setInterval(saveFans, 60000);
 app.use(express.static(path.join(__dirname)));
 app.use(express.json());
 
+// Suppress favicon 404
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // ── Fans API ─────────────────────────────────────────────────────────────
 app.get('/fans', (req, res) => {
   res.json(fansData);
@@ -93,7 +96,64 @@ app.get('/avatar-proxy', async (req, res) => {
   }
 });
 
-// ── Roblox Avatar Lookup ─────────────────────────────────────────────────
+// ── Roblox Campaign Stats ────────────────────────────────────────────────
+const ROBLOX_STATS_FILE = path.join(__dirname, 'roblox-stats.json');
+let robloxStats = {};
+
+function loadRobloxStats() {
+  try {
+    if (fs.existsSync(ROBLOX_STATS_FILE)) {
+      robloxStats = JSON.parse(fs.readFileSync(ROBLOX_STATS_FILE, 'utf8'));
+      console.log(`[roblox-stats] Loaded ${Object.keys(robloxStats).length} players`);
+    }
+  } catch (e) { robloxStats = {}; }
+}
+
+function saveRobloxStats() {
+  try { fs.writeFileSync(ROBLOX_STATS_FILE, JSON.stringify(robloxStats, null, 2), 'utf8'); } catch (e) {}
+}
+
+loadRobloxStats();
+setInterval(saveRobloxStats, 60000);
+
+// GET all stats
+app.get('/roblox-stats', (req, res) => {
+  res.json(robloxStats);
+});
+
+// POST update stats for a player
+app.post('/roblox-stats', (req, res) => {
+  const { youtubeUser, robloxUser, cmds, sessionMs } = req.body;
+  if (!youtubeUser || !robloxUser) return res.status(400).json({ error: 'missing fields' });
+
+  const key = youtubeUser;
+  if (!robloxStats[key]) {
+    robloxStats[key] = {
+      youtubeUser,
+      robloxUser,
+      totalCmds: 0,
+      totalSessionMs: 0,
+      sessions: [],
+      firstSeen: new Date().toISOString(),
+      lastSeen: new Date().toISOString()
+    };
+  }
+  const p = robloxStats[key];
+  p.robloxUser = robloxUser; // update in case changed
+  p.totalCmds = (p.totalCmds || 0) + (cmds || 0);
+  p.totalSessionMs = (p.totalSessionMs || 0) + (sessionMs || 0);
+  p.lastSeen = new Date().toISOString();
+  p.sessions.push({
+    date: new Date().toISOString(),
+    cmds: cmds || 0,
+    durationMs: sessionMs || 0
+  });
+  // Keep last 50 sessions
+  if (p.sessions.length > 50) p.sessions = p.sessions.slice(-50);
+
+  saveRobloxStats();
+  res.json({ ok: true, player: p });
+});
 const robloxCache = new Map(); // username -> { avatarUrl, userId, timestamp }
 
 app.get('/roblox-avatar', async (req, res) => {
