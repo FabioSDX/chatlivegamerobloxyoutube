@@ -1764,7 +1764,7 @@
         var BOSS_TIERS = [
             {
                 name: 'Jelly King',
-                type: 'slime',       // ground boss (uses zombie system)
+                type: 'slime',       // ground boss (uses slime system)
                 count: 2,
                 hp: 60,
                 scale: 3.2,
@@ -1780,7 +1780,7 @@
             },
             {
                 name: 'Bubble Queen',
-                type: 'flyer',       // flying boss (uses bat system)
+                type: 'flyer',       // flying boss (uses bubble system)
                 count: 3,
                 hp: 70,
                 scale: 2.8,
@@ -1795,7 +1795,7 @@
             },
             {
                 name: 'Dark Jelly Empress',
-                type: 'ground',      // ground boss (uses zombie system)
+                type: 'ground',      // ground boss (uses slime system)
                 count: 2,
                 hp: 90,
                 scale: 2.8,
@@ -8542,11 +8542,11 @@
             var viewTop = camY - TILE * 2;
             var viewBot = camY + canvas.height + TILE * 2;
             var t = Date.now() * 0.004;
-            var _zombieDrawn = 0;
+            var _slimeDrawn = 0;
             for (var i = 0; i < slimes.length; i++) {
                 var z = slimes[i];
                 if (z.y < viewTop || z.y > viewBot) continue;
-                if (++_zombieDrawn > MAX_SLIMES_VISIBLE) break;
+                if (++_slimeDrawn > MAX_SLIMES_VISIBLE) break;
 
                 var baseW = SLIME_SIZE * 0.9;
                 var baseH = SLIME_SIZE * 0.8;
@@ -9666,16 +9666,6 @@
                     setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 500);
                 }
             }, 4000);
-        }
-        
-        var _aiEnabled = false;
-        function toggleAI() {
-            _aiEnabled = !_aiEnabled;
-            var btn = document.getElementById('aiToggle');
-            if (btn) {
-                btn.style.color = _aiEnabled ? '#00ff88' : '#888';
-                btn.style.borderColor = _aiEnabled ? '#00ff88' : '#444';
-            }
         }
 
         function processWsChat(data) {
