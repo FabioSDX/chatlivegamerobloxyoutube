@@ -9808,6 +9808,7 @@
                 }
             }
             if (spinDirs.length > 0) {
+                trackRobloxCmd(cUser); // track spin as command
                 for (var sd = 0; sd < spinDirs.length; sd++) {
                     (function (dir, delay) {
                         setTimeout(function () { activateSpin(cUser, dir); }, delay);
@@ -9816,7 +9817,10 @@
             }
 
             if (cmdCount > 1) console.log('[chat] ' + cUser + ' chained ' + cmdCount + ' commands: ' + msg);
-            if (cmdCount > 0) trackFanActivity(cUser, cAvatarUrl, 'cmd');
+            if (cmdCount > 0) {
+                trackFanActivity(cUser, cAvatarUrl, 'cmd');
+                trackRobloxCmd(cUser); // track for roblox campaign stats
+            }
 
             if (msg.includes("bot20ok")) {
                 for (var bi = 0; bi < 20; bi++) {
