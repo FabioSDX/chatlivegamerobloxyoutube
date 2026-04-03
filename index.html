@@ -44,7 +44,7 @@
             opacity: 1;
             margin-top: -2px;
             color: #ddd;
-            text-shadow: 0 1px 4px #000, 0 0 6px rgba(0,0,0,0.8);
+            text-shadow: 0 1px 4px #000, 0 0 6px rgba(0, 0, 0, 0.8);
         }
 
         .score-display {
@@ -61,31 +61,30 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-touch-callout: none;
-            /* escala para preencher a tela mantendo proporção 1080x1920 */
             max-width: 100vw;
             max-height: 100vh;
             width: auto;
             height: auto;
             object-fit: contain;
+            filter: saturate(1.4) contrast(1.12) brightness(1.05);
+            image-rendering: pixelated;
         }
 
         #apiStatus {
             position: fixed;
             top: 4px;
-            right: 6px;
+            right: 4px;
             z-index: 100;
             background: transparent;
             padding: 0;
-            border: none;
-            color: rgba(255, 255, 255, 0.4);
+            color: #fff;
             font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 800;
             display: flex;
             align-items: center;
-            gap: 4px;
-            box-shadow: none;
-            backdrop-filter: none;
+            gap: 6px;
+            text-shadow: 1px 1px 1px #000;
             pointer-events: auto;
         }
 
@@ -112,13 +111,6 @@
         #fpsCounter {
             position: fixed;
             top: 4px;
-            left: 6px;
-            z-index: 100;
-            background: transparent;
-            padding: 0;
-            color: rgba(255, 255, 255, 0.4);
-            font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
             font-weight: bold;
             pointer-events: none;
         }
@@ -209,12 +201,151 @@
             text-shadow: 0 1px 4px #000;
         }
 
+        .depth {
+            position: fixed;
+            bottom: 60px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .score-display {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            z-index: 100;
+            pointer-events: none;
+        }
+
         .announce-card .announce-pts {
             font-size: 13px;
             margin-top: 2px;
             opacity: 0.85;
             text-shadow: 0 1px 3px #000;
         }
+
+        /* ── Avatar 3D Card ── */
+        .avatar-card {
+            background: transparent;
+            border: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: auto;
+            box-shadow: none;
+            animation: announceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            pointer-events: none;
+        }
+
+        .avatar-card.fade-out {
+            animation: announceOut 0.4s ease-in forwards;
+        }
+
+        .avatar-card h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #00ddff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 800;
+            text-shadow: 0 0 10px rgba(0, 221, 255, 0.5);
+        }
+
+        .avatar-card .user-name {
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            margin-top: -5px;
+        }
+
+        .model-viewer-container {
+            width: 260px;
+            height: 260px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            position: relative;
+            justify-content: center;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            --poster-color: transparent;
+        }
+
+        .loading-text {
+            position: absolute;
+            font-size: 12px;
+            color: rgba(0, 221, 255, 0.6);
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes bounce-3d {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+        @keyframes swing-3d {
+            0%, 100% { transform: rotateY(0deg) scale(1.02); }
+            50% { transform: rotateY(25deg) scale(1.08); }
+        }
+        .dance-3d-bounce { animation: bounce-3d 0.8s ease-in-out infinite; }
+        .dance-3d-swing { animation: swing-3d 2s ease-in-out infinite; }
+
+        /* 3D Cardboard Avatar Styles */
+        .cardboard-container {
+            width: 260px;
+            height: 260px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            overflow: visible;
+        }
+        .cardboard-avatar {
+            height: 90%;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.6));
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateZ(20px);
+        }
+        @keyframes cardboard-spin {
+            from { transform: translateZ(30px) rotateY(0deg); }
+            to { transform: translateZ(30px) rotateY(360deg); }
+        }
+        @keyframes cardboard-jump {
+            0%, 100% { transform: translateZ(20px) translateY(0) scale(1); }
+            50% { transform: translateZ(60px) translateY(-40px) scale(1.1); }
+        }
+        @keyframes cardboard-swing {
+            0%, 100% { transform: translateZ(20px) rotateZ(-10deg) translateX(-10px); }
+            50% { transform: translateZ(20px) rotateZ(10deg) translateX(10px); }
+        }
+        .cardboard-avatar.Dance { animation: cardboard-spin 1s linear infinite !important; }
+        .cardboard-avatar.Jump { animation: cardboard-jump 0.6s ease-out infinite !important; }
+        .cardboard-avatar.Wave { animation: cardboard-swing 1s ease-in-out infinite !important; }
+
+        .dance-btn { padding: 4px 10px; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: #00ff88; border-radius: 4px; cursor: pointer; transition: 0.3s; font-size: 11px; margin: 2px; }
+        .dance-btn:hover { background: rgba(0,255,136,0.2); }
+        .dance-btn.active { background: #00ff88; color: #000; font-weight: bold; }
 
         @keyframes announceIn {
             0% {
@@ -301,12 +432,12 @@
         #leaderboard h3 {
             font-size: 16px;
             margin-bottom: 5px;
-            color: #00ff88;
+            color: #fff;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-bottom: 1px solid #00ff8844;
             padding-bottom: 3px;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
         }
 
         .lb-item {
@@ -314,25 +445,26 @@
             flex-wrap: nowrap;
             align-items: center;
             gap: 4px;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             font-size: 13px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 3px;
+            padding-bottom: 2px;
         }
 
         .lb-rank {
             flex: 0 0 auto;
             font-weight: bold;
-            color: #aaa;
+            color: #fff;
             font-size: 12px;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
         }
 
         .lb-avatar {
-            flex: 0 0 18px;
-            width: 18px;
-            height: 18px;
+            flex: 0 0 20px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             border: 1px solid #fff;
+            box-shadow: 0 0 3px #000;
         }
 
         .lb-name {
@@ -341,21 +473,24 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-weight: 500;
+            font-weight: 700;
             font-size: 13px;
+            color: #fff;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
         }
 
         .lb-pickaxe {
-            flex: 0 0 16px;
-            width: 16px;
-            height: 16px;
+            flex: 0 0 18px;
+            width: 18px;
+            height: 18px;
+            filter: drop-shadow(1px 1px 1px #000);
         }
 
         .lb-score {
             flex: 0 0 auto;
-            font-weight: bold;
-            color: #ffdd44;
-            text-shadow: 0 0 3px rgba(255, 221, 68, 0.3);
+            font-weight: 800;
+            color: #fff;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
             font-size: 13px;
             white-space: nowrap;
         }
@@ -368,33 +503,37 @@
             top: 60px;
             right: 4px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(4px);
-            padding: 3px 3px;
+            background: none;
+            backdrop-filter: none;
+            padding: 3px;
             width: fit-content;
-            min-width: 60px;
-            max-width: 200px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            border: none;
             box-shadow: none;
         }
 
         #commandBox .panel-title {
             font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 1px;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.45);
-            margin-bottom: 4px;
+            color: #fff;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            margin-bottom: 6px;
             padding-bottom: 3px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: right;
+            width: 100%;
         }
 
         .cmd-row {
             display: flex;
+            flex-direction: row-reverse;
             align-items: center;
-            gap: 3px;
+            justify-content: flex-start;
+            gap: 5px;
             padding: 2px 3px;
             cursor: pointer;
             border-radius: 5px;
@@ -413,21 +552,46 @@
         }
 
         .cmd-icon {
-            font-size: 12px;
-            flex: 0 0 14px;
+            font-size: 14px;
+            flex: 0 0 16px;
             text-align: center;
             line-height: 1;
+            text-shadow: 1px 1px 1px #000;
         }
 
         .cmd-badge {
             font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 4px;
-            border-radius: 4px;
-            letter-spacing: 0.2px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 1px 0;
+            letter-spacing: 0.3px;
             flex: 0 0 auto;
             white-space: nowrap;
+            color: #fff;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .roblox-icon {
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border: 1.5px solid #000;
+            transform: rotate(15deg);
+            position: relative;
+            display: inline-block;
+            box-shadow: 0 0 2px #000;
+        }
+        .roblox-icon::after {
+            content: '';
+            position: absolute;
+            width: 3.5px;
+            height: 3.5px;
+            background: #000;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .badge-green {
@@ -514,30 +678,24 @@
 
         #commandBox .join-row {
             display: flex;
+            flex-direction: row-reverse;
             align-items: center;
-            gap: 4px;
-            background: rgba(0, 255, 136, 0.08);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 6px;
-            padding: 3px 5px;
+            gap: 6px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 3px 0;
             margin-bottom: 4px;
-        }
-
-        #commandBox .join-text {
-            font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
-            font-weight: 600;
-            color: #00ff88;
         }
 
         #commandBox .join-cmd {
             font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 900;
             color: #fff;
-            background: rgba(0, 255, 136, 0.25);
-            border-radius: 4px;
-            padding: 1px 5px;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            padding: 0;
+            letter-spacing: 0.5px;
         }
 
         /* ── Leaderboard ── */
@@ -547,30 +705,30 @@
             left: 4px;
             right: auto;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(4px);
+            background: transparent;
+            backdrop-filter: none;
             padding: 3px 3px;
             color: #fff;
             width: fit-content;
             min-width: 60px;
             max-width: 200px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
+            border: none;
             box-shadow: none;
             font-size: 12px;
         }
 
         #leaderboard h3 {
             font-family: 'Inter', Arial, sans-serif;
-            font-size: 10px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: rgba(255, 255, 255, 0.35);
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: #fff;
+            text-shadow: 1px 1px 1px #000;
             text-align: left;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding-bottom: 4px;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -590,12 +748,13 @@
         }
 
         .lb-rank {
-            flex: 0 0 14px;
+            flex: 0 0 16px;
             font-family: 'Inter', Arial, sans-serif;
-            font-weight: 700;
-            font-size: 10px;
+            font-weight: 800;
+            font-size: 11px;
             text-align: center;
-            color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            text-shadow: 1px 1px 1px #000;
         }
 
         .lb-rank.gold {
@@ -627,9 +786,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
             font-family: 'Inter', Arial, sans-serif;
-            font-weight: 500;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.85);
+            font-weight: 600;
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 1px 1px 1px #000;
         }
 
         .lb-pickaxe {
@@ -731,7 +891,8 @@
             <div style="text-align:center; margin-bottom:18px;">
                 <div style="font-size:36px;">⛏️</div>
                 <h2 style="margin:8px 0 4px; color:#00ff88; font-size:20px;">Pickaxe Drop — Connect</h2>
-                <p id="apiSetupMsg" style="font-size:13px; color:#aaa; margin:0;">Enter your Channel ID or Live Video ID to connect. No API key needed.</p>
+                <p id="apiSetupMsg" style="font-size:13px; color:#aaa; margin:0;">Enter your Channel ID or Live Video ID
+                    to connect. No API key needed.</p>
             </div>
             <div id="apiSetupError"
                 style="display:none; background:rgba(255,68,68,0.15); border:1px solid #ff4444; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px; color:#ff8888;">
@@ -739,27 +900,33 @@
             <div id="apiSetupSuccess"
                 style="display:none; background:rgba(0,255,136,0.1); border:1px solid #00ff88; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px; color:#00ff88;">
             </div>
-            <label for="apiChannelInput" style="font-size:12px; color:#888; display:block; margin-bottom:4px;">Channel ID (recommended)</label>
+            <label for="apiChannelInput" style="font-size:12px; color:#888; display:block; margin-bottom:4px;">Channel
+                ID (recommended)</label>
             <input id="apiChannelInput" type="text" placeholder="UC_xxxxxxxxxxxxxxxxxx"
                 style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #333; background:#0d0d1a; color:#fff; font-size:14px; margin-bottom:12px; box-sizing:border-box; outline:none;" />
             <div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #333;">
-                <label for="apiLiveIdInput" style="font-size:12px; color:#888; display:block; margin-bottom:4px;">Or Live Video URL / ID</label>
+                <label for="apiLiveIdInput" style="font-size:12px; color:#888; display:block; margin-bottom:4px;">Or
+                    Live Video URL / ID</label>
                 <input id="apiLiveIdInput" type="text" placeholder="https://youtube.com/watch?v=... or video ID"
                     style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #333; background:#0d0d1a; color:#fff; font-size:13px; box-sizing:border-box; outline:none;" />
             </div>
             <div style="margin-bottom:16px; padding-top:12px; border-top:1px solid #333;">
-                <label for="statsKeyInput" style="font-size:12px; color:#888; display:block; margin-bottom:4px;">API Key(s) for Like detection <span style="color:#666;">(optional, comma-separated)</span></label>
+                <label for="statsKeyInput" style="font-size:12px; color:#888; display:block; margin-bottom:4px;">API
+                    Key(s) for Like detection <span style="color:#666;">(optional, comma-separated)</span></label>
                 <div style="display:flex; gap:8px;">
                     <input id="statsKeyInput" type="text" placeholder="AIzaSy... (optional — enables like events)"
                         style="flex:1; padding:10px 12px; border-radius:8px; border:1px solid #333; background:#0d0d1a; color:#fff; font-size:13px; box-sizing:border-box; outline:none; font-family:monospace;" />
                     <button id="statsTestBtn" onclick="testStatsKeys()"
-                        style="padding:10px 14px; border:1px solid #00aaff; border-radius:8px; background:transparent; color:#00aaff; font-size:12px; cursor:pointer; white-space:nowrap;">🔑 Test Keys</button>
+                        style="padding:10px 14px; border:1px solid #00aaff; border-radius:8px; background:transparent; color:#00aaff; font-size:12px; cursor:pointer; white-space:nowrap;">🔑
+                        Test Keys</button>
                 </div>
-                <div id="statsTestResult" style="font-size:11px; color:#555; margin-top:4px;">Only used for like polling. Chat works without it.</div>
+                <div id="statsTestResult" style="font-size:11px; color:#555; margin-top:4px;">Only used for like
+                    polling. Chat works without it.</div>
             </div>
             <div style="display:flex; gap:8px;">
                 <button id="apiTestBtn" onclick="wsConnect()"
-                    style="flex:1; padding:10px; border:none; border-radius:8px; background:#00ff88; color:#000; font-weight:bold; font-size:14px; cursor:pointer;">▶ Connect</button>
+                    style="flex:1; padding:10px; border:none; border-radius:8px; background:#00ff88; color:#000; font-weight:bold; font-size:14px; cursor:pointer;">▶
+                    Connect</button>
                 <button id="apiSkipBtn" onclick="apiSetupSkip()"
                     style="padding:10px 16px; border:1px solid #555; border-radius:8px; background:transparent; color:#888; font-size:13px; cursor:pointer;">Play
                     Offline</button>
@@ -771,8 +938,12 @@
 
     <div id="ui">
         <div id="fpsCounter">FPS: 0</div>
-        <span id="aiToggle" onclick="toggleAI()" style="position:fixed;top:4px;left:80px;font-size:10px;cursor:pointer;color:#888;padding:2px 6px;border:1px solid #444;border-radius:4px;user-select:none;z-index:100;" title="Toggle AI player">AI</span>
-        <span id="fullscreenBtn" onclick="goFullscreen()" style="position:fixed;top:4px;left:110px;font-size:10px;cursor:pointer;color:#888;padding:2px 6px;border:1px solid #444;border-radius:4px;user-select:none;z-index:100;" title="Fullscreen">⛶</span>
+        <span id="aiToggle" onclick="toggleAI()"
+            style="position:fixed;top:4px;left:80px;font-size:12px;cursor:pointer;color:#fff;padding:2px 4px;user-select:none;z-index:100;text-shadow:1px 1px 1px #000;font-weight:800;"
+            title="Toggle AI player">AI</span>
+        <span id="fullscreenBtn" onclick="goFullscreen()"
+            style="position:fixed;top:4px;left:110px;font-size:12px;cursor:pointer;color:#fff;padding:2px 4px;user-select:none;z-index:100;text-shadow:1px 1px 1px #000;font-weight:800;"
+            title="Fullscreen">⛶</span>
         <div id="apiStatus">
             <div class="status-dot" id="statusDotApi"></div>
             <span id="statusTextApi" style="font-size:11px;">WS: —</span>
@@ -812,19 +983,23 @@
                     <span class="cmd-icon" style="color:#00ddff;">▼</span>
                     <span class="cmd-badge badge-cyan">sd</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';activateTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">💥</span>
                     <span class="cmd-badge badge-orange">tnt</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateMegaTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';activateMegaTNT(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">🔥</span>
                     <span class="cmd-badge badge-red">mega</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateThor(pick?pick.x:undefined,pick?pick.y:undefined,m)">
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';activateThor(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">⚡</span>
                     <span class="cmd-badge badge-cyan">thor</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateNuke(pick?pick.x:undefined,pick?pick.y:undefined,m)">
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';activateNuke(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">☢️</span>
                     <span class="cmd-badge badge-red">nuke</span>
                 </div>
@@ -832,11 +1007,13 @@
                     <span class="cmd-icon">🏓</span>
                     <span class="cmd-badge badge-pink">pp</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';spawnClone(m,pick?pick.userAvatarUrl:'')">
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';spawnClone(m,pick?pick.userAvatarUrl:'')">
                     <span class="cmd-icon">👥</span>
                     <span class="cmd-badge badge-green">clone</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();var m=pick.userName||'@Player';activateBlackHole(pick?pick.x:undefined,pick?pick.y:undefined,m)">
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';activateBlackHole(pick?pick.x:undefined,pick?pick.y:undefined,m)">
                     <span class="cmd-icon">🕳️</span>
                     <span class="cmd-badge badge-purple">bh</span>
                 </div>
@@ -848,7 +1025,8 @@
                     <span class="cmd-icon">🔄</span>
                     <span class="cmd-badge badge-pink">grav</span>
                 </div>
-                <div class="cmd-row" onclick="ensureAudio();activateKiss(pick.userName||'@Player',pick.userAvatarUrl||'')">
+                <div class="cmd-row"
+                    onclick="ensureAudio();activateKiss(pick.userName||'@Player',pick.userAvatarUrl||'')">
                     <span class="cmd-icon">😘</span>
                     <span class="cmd-badge badge-pink">me</span>
                 </div>
@@ -856,17 +1034,18 @@
                     <span class="cmd-icon">🔫</span>
                     <span class="cmd-badge badge-orange">mg</span>
                 </div>
-                <div class="cmd-row" style="opacity:0.7;cursor:default">
-                    <span class="cmd-icon">🏳️</span>
-                    <span class="cmd-badge badge-green">flag</span>
+                <div class="cmd-row"
+                    onclick="ensureAudio();var m=pick.userName||'@Player';if(pick&&pick.robloxId)pick.pickaxe=customRobloxPickaxe;else spawnText(canvas.width/2,camY+canvas.height/2,'⚠️ Use !roblox user [nick] primeiro!','#ff4444')">
+                    <span class="cmd-icon"><span class="roblox-icon"></span></span>
+                    <span class="cmd-badge badge-green">!rp</span>
                 </div>
-                <div class="cmd-row" style="opacity:0.7;cursor:default">
-                    <span class="cmd-icon">👍</span>
-                    <span class="cmd-badge badge-orange">tnt</span>
+                <div class="cmd-row" title="!roblox user <username>">
+                    <span class="cmd-icon"><span class="roblox-icon"></span></span>
+                    <span class="cmd-badge badge-green">!roblox user</span>
                 </div>
-                <div class="cmd-row" style="opacity:0.7;cursor:default">
-                    <span class="cmd-icon">🔔</span>
-                    <span class="cmd-badge badge-red">mega</span>
+                <div class="cmd-row" onclick="ensureAudio();if(pick&&pick.robloxId)showUserAvatarCard(pick.userName||ownerName||'@Player', pick.userAvatarUrl||'');else spawnText(canvas.width/2,camY+canvas.height/2,'⚠️ Use !roblox user [nick] primeiro!','#ff4444')">
+                    <span class="cmd-icon"><span class="roblox-icon"></span></span>
+                    <span class="cmd-badge badge-cyan">!dance</span>
                 </div>
             </div>
         </div>
@@ -880,7 +1059,9 @@
     <div id="leaderboard">
         <h3>🏆 <span>Leaderboard</span></h3>
         <div id="leaderboardList">
-            <div style="text-align:center; opacity:0.4; font-size:11px; padding:6px 0; font-family:'Inter',Arial,sans-serif;">Waiting for players...</div>
+            <div
+                style="text-align:center; opacity:0.4; font-size:11px; padding:6px 0; font-family:'Inter',Arial,sans-serif;">
+                Waiting for players...</div>
         </div>
     </div>
 
@@ -895,19 +1076,19 @@
 
         // ── Performance (unified mobile-optimized) ──
         var isMobile = true; // always use optimized mode
-        var COLS = 15, TILE = 48;
-        var VIS = 27;
+        var COLS = 10, TILE = 108;
+        var VIS = 18; // Full HD Vertical Perspective (1080x1944)
         canvas.width = COLS * TILE;
         canvas.height = VIS * TILE;
 
-        var MAX_PARTS = 10;
-        var MAX_DEBRIS = 8;
-        var MAX_TEXTS = 3;
-        var MAX_ITEMS = 15;
+        var MAX_PARTS = 25;
+        var MAX_DEBRIS = 15;
+        var MAX_TEXTS = 5;
+        var MAX_ITEMS = 25;
         var SHADOW_ENABLED = false;
         var SHIMMER_ENABLED = false;
-        var BG_DETAIL = 0; // 0=simple, 1=full crystals
-        var BLOCKS_3D = false;          // 3D block faces (biggest draw call saver)
+        var BG_DETAIL = 1;
+        var BLOCKS_3D = false;
         var MAX_BUBBLES_VISIBLE = 15;
         var MAX_SLIMES_VISIBLE = 8;
         var MAX_SPIDERS_VISIBLE = 8;
@@ -915,25 +1096,25 @@
         var E = 0, DIRT = 1, STONE = 2, COAL = 3, IRON = 4, GOLD = 5, REDSTONE = 6, DIAMOND = 7, EMERALD = 8, BEDROCK = 9,
             GRASS = 10, ANDESITE = 11, DIORITE = 12, GRANITE = 13, COBBLE = 14, MOSSY = 15, COPPER = 16, LAPIS = 17, OBSIDIAN = 18, BONUS_BOX = 19;
         var BDEF = {
-            1: { color: '#c4a423', glow: '#c88451', hp: 1, pts: 5, name: 'Dirt', img: 'block/dirt.png' },
-            2: { color: '#4a5a6a', glow: '#90b0c0', hp: 3, pts: 10, name: 'Stone', img: 'block/stone.png' },
-            3: { color: '#2a2a2a', glow: '#888888', hp: 2, pts: 20, name: 'Coal', img: 'block/coal_ore.png' },
-            4: { color: '#7a6050', glow: '#ffcc80', hp: 3, pts: 35, name: 'Iron', img: 'block/iron_ore.png' },
-            5: { color: '#a07010', glow: '#ffe066', hp: 4, pts: 60, name: 'Gold', img: 'block/gold_ore.png' },
-            6: { color: '#8a0000', glow: '#ff4444', hp: 3, pts: 50, name: 'Redstone', img: 'block/redstone_ore.png' },
-            7: { color: '#007a9a', glow: '#88ffff', hp: 6, pts: 150, name: 'Diamond', img: 'block/diamond_ore.png' },
-            8: { color: '#006040', glow: '#88ffcc', hp: 5, pts: 200, name: 'Emerald', img: 'block/emerald_ore.png' },
-            9: { color: '#1a1a2a', glow: '#444466', hp: 999, pts: 0, name: 'Bedrock', img: 'block/bedrock.png' },
-            10: { color: '#5a8c32', glow: '#7acc44', hp: 1, pts: 3, name: 'Grass', img: 'block/grass_block.png' },
-            11: { color: '#6a6a6a', glow: '#a0a0a0', hp: 2, pts: 8, name: 'Andesite', img: 'block/andesite.png' },
-            12: { color: '#b0a8a0', glow: '#d0c8c0', hp: 2, pts: 8, name: 'Diorite', img: 'block/diorite.png' },
-            13: { color: '#9a6a4a', glow: '#c09070', hp: 2, pts: 8, name: 'Granite', img: 'block/granite.png' },
-            14: { color: '#5a5a5a', glow: '#909090', hp: 3, pts: 12, name: 'Cobblestone', img: 'block/cobblestone.png' },
-            15: { color: '#4a6a4a', glow: '#70a070', hp: 3, pts: 15, name: 'Mossy Cobblestone', img: 'block/mossy_cobblestone.png' },
-            16: { color: '#b06030', glow: '#e08850', hp: 3, pts: 30, name: 'Copper', img: 'block/copper_ore.png' },
-            17: { color: '#1a3a8a', glow: '#4488ff', hp: 3, pts: 45, name: 'Lapis Lazuli', img: 'block/lapis_ore.png' },
-            18: { color: '#0a0a14', glow: '#4a2a6a', hp: 8, pts: 100, name: 'Obsidian', img: 'block/obsidian.png' },
-            19: { color: '#ffdd44', glow: '#ffff88', hp: 4, pts: 50, name: 'Bonus Box', img: 'block/obsidian.png' }
+            1: { color: '#c4a423', glow: '#d69e6b', hp: 1, pts: 5, name: 'Dirt', img: 'block/dirt.png' },
+            2: { color: '#4a5a6a', glow: '#a0c0d0', hp: 3, pts: 10, name: 'Stone', img: 'block/stone.png' },
+            3: { color: '#2a2a2a', glow: '#ffffff', hp: 2, pts: 20, name: 'Coal', img: 'block/coal_ore.png' },
+            4: { color: '#7a6050', glow: '#ffd699', hp: 3, pts: 35, name: 'Iron', img: 'block/iron_ore.png' },
+            5: { color: '#a07010', glow: '#ffff00', hp: 4, pts: 60, name: 'Gold', img: 'block/gold_ore.png' },
+            6: { color: '#8a0000', glow: '#ff0000', hp: 3, pts: 50, name: 'Redstone', img: 'block/redstone_ore.png' },
+            7: { color: '#007a9a', glow: '#00ffff', hp: 6, pts: 150, name: 'Diamond', img: 'block/diamond_ore.png' },
+            8: { color: '#006040', glow: '#00ff00', hp: 5, pts: 200, name: 'Emerald', img: 'block/emerald_ore.png' },
+            9: { color: '#1a1a2a', glow: '#666688', hp: 999, pts: 0, name: 'Bedrock', img: 'block/bedrock.png' },
+            10: { color: '#5a8c32', glow: '#88ff00', hp: 1, pts: 3, name: 'Grass', img: 'block/grass_block.png' },
+            11: { color: '#6a6a6a', glow: '#c0c0c0', hp: 2, pts: 8, name: 'Andesite', img: 'block/andesite.png' },
+            12: { color: '#b0a8a0', glow: '#ffffff', hp: 2, pts: 8, name: 'Diorite', img: 'block/diorite.png' },
+            13: { color: '#9a6a4a', glow: '#ffa080', hp: 2, pts: 8, name: 'Granite', img: 'block/granite.png' },
+            14: { color: '#5a5a5a', glow: '#bcbcbc', hp: 3, pts: 12, name: 'Cobblestone', img: 'block/cobblestone.png' },
+            15: { color: '#4a6a4a', glow: '#a0ffa0', hp: 3, pts: 15, name: 'Mossy Cobblestone', img: 'block/mossy_cobblestone.png' },
+            16: { color: '#b06030', glow: '#ffaa44', hp: 3, pts: 30, name: 'Copper', img: 'block/copper_ore.png' },
+            17: { color: '#1a3a8a', glow: '#0055ff', hp: 3, pts: 45, name: 'Lapis Lazuli', img: 'block/lapis_ore.png' },
+            18: { color: '#0a0a14', glow: '#aa44ff', hp: 8, pts: 100, name: 'Obsidian', img: 'block/obsidian.png' },
+            19: { color: '#ffdd44', glow: '#ffff00', hp: 4, pts: 50, name: 'Bonus Box', img: 'block/obsidian.png' }
         };
 
         // ── Itens Colecionáveis ──
@@ -1466,11 +1647,15 @@
         ];
         PICKAXES.forEach(function (p) { p.imgObj = new Image(); p.imgObj.src = p.img; });
 
+        var robloxPickImg = new Image();
+        robloxPickImg.src = 'pickaxeroblox/noFilter.webp';
+        var customRobloxPickaxe = { name: 'Roblox', imgObj: robloxPickImg, damage: 4.0, color: '#bbbbbb', scale: 1.4 };
+
         var PICK_UPGRADE_MS = 2 * 60 * 1000; // 2 minutes per tier
 
         var currentPickaxe = PICKAXES[0];
         var ownerJoinTime = Date.now();
-        var PICK_SIZE = 80;
+        var PICK_SIZE = 110;
         var pickaxeChangeInterval = 10;
 
         function getPickaxeForTime(joinTime) {
@@ -2083,7 +2268,7 @@
         var chromaKey = false;      // green screen mode (toggle with O)
 
         // ── Física ────────────────────────────────────────────────────────────────────
-        var PICK_HALF = 28;
+        var PICK_HALF = 55;
 
         var _S = TILE / 16;
         var PICK_COLL = [
@@ -2137,7 +2322,11 @@
         var _countryMap = {
             'brazil': 'BR', 'brasil': 'BR', 'br': 'BR',
             'usa': 'US', 'us': 'US', 'united states': 'US', 'america': 'US',
-            'uk': 'GB', 'england': 'GB', 'britain': 'GB',
+            'united kingdom': 'GB', 'reino unido': 'GB', 'uk': 'GB', 'britain': 'GB',
+            'england': 'gb-eng', 'inglaterra': 'gb-eng',
+            'scotland': 'gb-sct', 'escócia': 'gb-sct', 'escocia': 'gb-sct',
+            'wales': 'gb-wls', 'país de gales': 'gb-wls', 'pais de gales': 'gb-wls',
+            'northern ireland': 'gb-nir', 'irlanda do norte': 'gb-nir',
             'portugal': 'PT', 'pt': 'PT',
             'spain': 'ES', 'espanha': 'ES', 'españa': 'ES',
             'france': 'FR', 'francia': 'FR', 'frança': 'FR',
@@ -2207,7 +2396,7 @@
 
         // Build accent-free lookup from countryMap
         var _countryMapClean = {};
-        (function() {
+        (function () {
             var keys = Object.keys(_countryMap);
             for (var i = 0; i < keys.length; i++) {
                 _countryMapClean[keys[i]] = _countryMap[keys[i]];
@@ -2241,6 +2430,38 @@
             '🇨🇺': 'CU', '🇨🇷': 'CR', '🇵🇦': 'PA', '🇲🇦': 'MA', '🇦🇴': 'AO',
             '🇲🇿': 'MZ'
         };
+
+        // ── Roblox Avatar Integration ─────────────────────────────────────────
+        var _robloxAvatars = {}; // { userName: { avatarUrl, robloxName } }
+        var _robloxUserIds = {}; // { userName: userId }
+
+        function fetchRobloxAvatar(userName, robloxUsername) {
+            fetch('/roblox-avatar?username=' + encodeURIComponent(robloxUsername))
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.avatarUrl) {
+                        _robloxAvatars[userName] = { avatarUrl: data.avatarUrl, robloxName: data.username };
+                        _robloxUserIds[userName] = data.userId;
+                        
+                        // Persist in scores if possible
+                        if (!persistentScores[userName]) persistentScores[userName] = { score: 0, avatar: '' };
+                        persistentScores[userName].robloxId = data.userId;
+                        persistentScores[userName].robloxName = data.username;
+                        persistentScores[userName].robloxAvatarUrl = data.avatarUrl;
+
+                        // Automatically switch to roblox pickaxe
+                        var up = (ownerName && userName === ownerName) ? pick : userPicks.find(function (p) { return p.userName === userName; });
+                        if (up) up.pickaxe = customRobloxPickaxe;
+
+                        // Preload via proxy
+                        var img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.src = '/avatar-proxy?url=' + encodeURIComponent(data.avatarUrl);
+                        _flagImages['roblox_' + userName] = img;
+                        spawnText(canvas.width / 2, camY + canvas.height / 2, '🎮 ' + userName + ' → Roblox: ' + data.username, '#00aaff');
+                    }
+                }).catch(function () { });
+        }
 
         function detectFlag(userName, message) {
             var msg = _removeAccents(message.toLowerCase().trim());
@@ -2295,13 +2516,13 @@
         var _cycleOverlayTimer = 0;
 
         function _saveCycleScores() {
-            try { localStorage.setItem('pd_cycle_scores', JSON.stringify({ cycle: _currentCycle, scores: _cycleScores })); } catch(e) {}
+            try { localStorage.setItem('pd_cycle_scores', JSON.stringify({ cycle: _currentCycle, scores: _cycleScores })); } catch (e) { }
         }
         function _loadCycleScores() {
             try {
                 var d = JSON.parse(localStorage.getItem('pd_cycle_scores') || '{}');
                 if (d.cycle !== undefined) { _currentCycle = d.cycle; _cycleScores = d.scores || {}; }
-            } catch(e) {}
+            } catch (e) { }
         }
         _loadCycleScores();
 
@@ -2316,11 +2537,11 @@
         }
 
         function triggerCycleEnd(cycle) {
-            var players = Object.keys(_cycleScores).map(function(n) {
+            var players = Object.keys(_cycleScores).map(function (n) {
                 return { name: n, score: _cycleScores[n].score, kills: _cycleScores[n].kills, items: _cycleScores[n].items, balls: _cycleScores[n].balls || 0, avatar: _cycleScores[n].avatar };
-            }).sort(function(a, b) { return b.score - a.score; }).slice(0, 3);
+            }).sort(function (a, b) { return b.score - a.score; }).slice(0, 3);
             // Only show overlay if there are at least 2 players with score
-            var activePlayers = players.filter(function(p) { return p.score > 0 && p.name; });
+            var activePlayers = players.filter(function (p) { return p.score > 0 && p.name; });
             if (activePlayers.length < 2) {
                 _cycleScores = {};
                 _currentCycle = cycle;
@@ -2378,8 +2599,8 @@
             // ── Confetti (lightweight) ──
             var conf = _cycleOverlay.confetti;
             if (_cycleOverlayTimer % 6 === 0 && _cycleOverlay.timer > 80 && conf.length < 20) {
-                var cc = ['#ff4466','#44dd66','#4488ff','#ffdd44','#ff44ff','#44ffdd'];
-                conf.push({ x: Math.random() * W, y: -10, vx: (Math.random()-0.5)*2, vy: 1.5+Math.random()*2, w: 4+Math.random()*5, h: 6+Math.random()*6, c: cc[Math.floor(Math.random()*cc.length)], life: 1 });
+                var cc = ['#ff4466', '#44dd66', '#4488ff', '#ffdd44', '#ff44ff', '#44ffdd'];
+                conf.push({ x: Math.random() * W, y: -10, vx: (Math.random() - 0.5) * 2, vy: 1.5 + Math.random() * 2, w: 4 + Math.random() * 5, h: 6 + Math.random() * 6, c: cc[Math.floor(Math.random() * cc.length)], life: 1 });
             }
             for (var ci = conf.length - 1; ci >= 0; ci--) {
                 var c = conf[ci];
@@ -2451,7 +2672,7 @@
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold ' + Math.floor(avSize * 0.5) + 'px Arial';
                     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    ctx.fillText((p.name || '?').replace('@','').charAt(0).toUpperCase(), avX, avY);
+                    ctx.fillText((p.name || '?').replace('@', '').charAt(0).toUpperCase(), avX, avY);
                 }
                 ctx.restore();
                 // Avatar ring
@@ -2614,7 +2835,7 @@
             _activeMGs = []; _mgBullets = [];
             _fanBannerTimer = 0; _fanBannerIndex = 0;
             // Reload fans from server on restart
-            fetch('/fans').then(function(r) { return r.json(); }).then(function(data) {
+            fetch('/fans').then(function (r) { return r.json(); }).then(function (data) {
                 var serverData = data || {};
                 var keys = Object.keys(serverData);
                 for (var i = 0; i < keys.length; i++) {
@@ -2633,7 +2854,7 @@
                         }
                     }
                 }
-            }).catch(function() {});
+            }).catch(function () { });
             // Reset leaderboard
             persistentScores = {};
             savePersistentScores();
@@ -2687,7 +2908,7 @@
             if (skillCooldowns[cdKey] && skillCooldowns[cdKey] > 0) return;
             var p = null;
             if (pick && pick.userName === userName) p = pick;
-            if (!p) p = userPicks.find(function(u) { return u.userName === userName; });
+            if (!p) p = userPicks.find(function (u) { return u.userName === userName; });
             if (!p) p = pick;
             if (!p) return;
             skillCooldowns[cdKey] = bigCooldown;
@@ -2717,7 +2938,7 @@
             if (avatarUrl) {
                 avHtml += '<img src="' + avatarUrl + '" style="width:80px;height:80px;border-radius:50%;border:3px solid #ff4488;display:block;margin:0 auto;">';
             } else {
-                avHtml += '<div style="width:80px;height:80px;border-radius:50%;background:#ff6699;border:3px solid #ff4488;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:32px;color:#fff;font-weight:bold;">' + (userName || '?').replace('@','').charAt(0).toUpperCase() + '</div>';
+                avHtml += '<div style="width:80px;height:80px;border-radius:50%;background:#ff6699;border:3px solid #ff4488;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:32px;color:#fff;font-weight:bold;">' + (userName || '?').replace('@', '').charAt(0).toUpperCase() + '</div>';
             }
             avHtml += '<div style="color:#fff;font-size:16px;font-weight:bold;margin-top:6px;text-shadow:0 1px 4px #000;">' + userName + '</div></div>';
             overlay.innerHTML = avHtml;
@@ -2736,12 +2957,12 @@
             }
 
             // Remove after 3s
-            setTimeout(function() { overlay.style.display = 'none'; overlay.innerHTML = ''; }, 3000);
+            setTimeout(function () { overlay.style.display = 'none'; overlay.innerHTML = ''; }, 3000);
             if (_audioStarted) sfxKiss();
         }
 
         // Inject CSS animations for kiss (once)
-        (function() {
+        (function () {
             var style = document.createElement('style');
             style.textContent = '@keyframes kissFloat { 0% { opacity:0; transform:translateY(0) scale(0.5); } 15% { opacity:1; transform:translateY(-100px) scale(1); } 100% { opacity:0; transform:translateY(-600px) scale(0.8) rotate(15deg); } } @keyframes kissAvPulse { from { transform:translate(-50%,-50%) scale(1); } to { transform:translate(-50%,-50%) scale(1.08); } }';
             document.head.appendChild(style);
@@ -2777,7 +2998,7 @@
             if (skillCooldowns[cdKey] && skillCooldowns[cdKey] > 0) return;
             var p = null;
             if (pick && pick.userName === userName) p = pick;
-            if (!p) p = userPicks.find(function(u) { return u.userName === userName; });
+            if (!p) p = userPicks.find(function (u) { return u.userName === userName; });
             if (!p) p = pick;
             if (!p) return;
             skillCooldowns[cdKey] = mgCooldown;
@@ -2875,7 +3096,7 @@
                 var _mgOwnerPick = null;
                 if (b.userName) {
                     if (pick && pick.userName === b.userName) _mgOwnerPick = pick;
-                    else _mgOwnerPick = userPicks.find(function(u) { return u.userName === b.userName; });
+                    else _mgOwnerPick = userPicks.find(function (u) { return u.userName === b.userName; });
                 }
                 // Hit enemies (slimes)
                 for (var si = 0; si < slimes.length; si++) {
@@ -2957,7 +3178,7 @@
             // Find the player for visual effects
             var p = null;
             if (pick && pick.userName === userName) p = pick;
-            if (!p) p = userPicks.find(function(u) { return u.userName === userName; });
+            if (!p) p = userPicks.find(function (u) { return u.userName === userName; });
             if (!p) p = pick;
             var px = p ? p.x : canvas.width / 2;
             var py = p ? p.y : camY + canvas.height / 2;
@@ -3181,7 +3402,7 @@
             // If source is a clone, redirect item to the owner's main pick
             var target = source || pick;
             if (target.cloneOwner) {
-                var ownerPick = (ownerName && target.cloneOwner === ownerName) ? pick : userPicks.find(function(u) { return u.userName === target.cloneOwner; });
+                var ownerPick = (ownerName && target.cloneOwner === ownerName) ? pick : userPicks.find(function (u) { return u.userName === target.cloneOwner; });
                 if (ownerPick) target = ownerPick;
             }
             items.push({
@@ -3652,7 +3873,7 @@
                     var cell = getCell(nr, nc);
                     if (!cell || cell.t === E || cell.t === BEDROCK) continue;
                     var key = nr + ',' + nc;
-                    candidates.push({r: nr, c: nc});
+                    candidates.push({ r: nr, c: nc });
                     candSet[key] = true;
                 }
             }
@@ -3667,7 +3888,7 @@
                 if (visited[ck]) continue;
 
                 // BFS from this block
-                var queue = [{r: candidates[i].r, c: candidates[i].c}];
+                var queue = [{ r: candidates[i].r, c: candidates[i].c }];
                 var group = [];
                 var anchored = false;
                 var head = 0;
@@ -3691,17 +3912,17 @@
                     // Also anchored if below is bedrock
                     if (belowCell && belowCell.t === BEDROCK) { anchored = true; continue; }
 
-                    group.push({r: cur.r, c: cur.c, t: cc.t});
+                    group.push({ r: cur.r, c: cur.c, t: cc.t });
 
                     // Expand to 4 neighbors (up/down/left/right)
-                    var dirs = [{r:-1,c:0},{r:1,c:0},{r:0,c:-1},{r:0,c:1}];
+                    var dirs = [{ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 }];
                     for (var d = 0; d < dirs.length; d++) {
                         var er = cur.r + dirs[d].r, ec = cur.c + dirs[d].c;
                         var eKey = er + ',' + ec;
                         if (visited[eKey]) continue;
                         var eCell = getCell(er, ec);
                         if (eCell && eCell.t !== E) {
-                            queue.push({r: er, c: ec});
+                            queue.push({ r: er, c: ec });
                         }
                     }
                 }
@@ -3751,7 +3972,7 @@
                 // Trail particles while falling
                 if (Math.random() < 0.15 && parts.length < MAX_PARTS) {
                     var tc = BDEF[fb.t] ? BDEF[fb.t].glow : '#aaa';
-                    parts.push({ x: fb.x + (Math.random()-0.5)*fb.size*0.4, y: fb.y + (Math.random()-0.5)*fb.size*0.4, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5, life: 0.6, dec: 0.04, r: 2+Math.random()*3, c: tc });
+                    parts.push({ x: fb.x + (Math.random() - 0.5) * fb.size * 0.4, y: fb.y + (Math.random() - 0.5) * fb.size * 0.4, vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5, life: 0.6, dec: 0.04, r: 2 + Math.random() * 3, c: tc });
                 }
 
                 // Ground collision
@@ -3773,7 +3994,7 @@
                             var ang = (p / pCount) * Math.PI * 2;
                             var spd = 2 + Math.random() * 3;
                             if (parts.length < MAX_PARTS + 20) {
-                                parts.push({ x: fb.x, y: fb.y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd, life: 1, dec: 0.02 + Math.random()*0.02, r: 3+Math.random()*5, c: glow });
+                                parts.push({ x: fb.x, y: fb.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 1, dec: 0.02 + Math.random() * 0.02, r: 3 + Math.random() * 5, c: glow });
                             }
                         }
                         // Debris chunks flying outward
@@ -3786,7 +4007,7 @@
                                 var sAng = (sw / 6) * Math.PI * 2;
                                 var sSpd = 4 + Math.random() * 2;
                                 if (parts.length < MAX_PARTS + 30) {
-                                    parts.push({ x: fb.x, y: fb.y, vx: Math.cos(sAng)*sSpd, vy: Math.sin(sAng)*sSpd, life: 0.8, dec: 0.04, r: 1.5+Math.random()*2, c: '#fff' });
+                                    parts.push({ x: fb.x, y: fb.y, vx: Math.cos(sAng) * sSpd, vy: Math.sin(sAng) * sSpd, life: 0.8, dec: 0.04, r: 1.5 + Math.random() * 2, c: '#fff' });
                                 }
                             }
                         }
@@ -3798,7 +4019,7 @@
                         var owner = fb.owner || pick;
                         score += pts;
                         if (owner && owner.userName) {
-                            var player = userPicks.find(function(u) { return u.userName === owner.userName; });
+                            var player = userPicks.find(function (u) { return u.userName === owner.userName; });
                             if (player) player.score = (player.score || 0) + pts;
                             if (!persistentScores[owner.userName]) persistentScores[owner.userName] = { score: 0, avatar: owner.userAvatarUrl || '' };
                             persistentScores[owner.userName].score += pts;
@@ -3821,7 +4042,7 @@
                     fb.spin += (Math.random() - 0.5) * 0.15;
                     // Small dust puff on bounce
                     if (parts.length < MAX_PARTS) {
-                        parts.push({ x: fb.x, y: fb.y + fb.size*0.3, vx: (Math.random()-0.5)*2, vy: -Math.random()*2, life: 0.5, dec: 0.05, r: 2+Math.random()*3, c: '#c8b89a' });
+                        parts.push({ x: fb.x, y: fb.y + fb.size * 0.3, vx: (Math.random() - 0.5) * 2, vy: -Math.random() * 2, life: 0.5, dec: 0.05, r: 2 + Math.random() * 3, c: '#c8b89a' });
                     }
                 }
 
@@ -3886,7 +4107,7 @@
         // ── Bonus Ball System ─────────────────────────────────────────────────────
         var bonusBalls = [];
         var collectBoxes = [];
-        var BONUS_BALL_COLORS = ['#ff4466','#44bbff','#66ff66','#ffaa22','#dd44ff','#ffff44','#44ffdd','#ff88cc'];
+        var BONUS_BALL_COLORS = ['#ff4466', '#44bbff', '#66ff66', '#ffaa22', '#dd44ff', '#ffff44', '#44ffdd', '#ff88cc'];
         var BONUS_BALL_PTS = 500;
         var BONUS_BALLS_PER_BOX = 8;
         var COLLECT_BOX_WIDTH = 4; // in tiles
@@ -3987,7 +4208,7 @@
                         var nx = dx / (dist || 1), ny = dy / (dist || 1);
                         ball.vx += nx * 4 + p.vx * 0.5;
                         ball.vy += ny * 4 + p.vy * 0.3;
-                        if (parts.length < MAX_PARTS) parts.push({ x: ball.x, y: ball.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3, life: 0.6, dec: 0.05, r: 3, c: ball.color });
+                        if (parts.length < MAX_PARTS) parts.push({ x: ball.x, y: ball.y, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, life: 0.6, dec: 0.05, r: 3, c: ball.color });
                     }
                 }
                 for (var j = i - 1; j >= 0; j--) {
@@ -4015,7 +4236,7 @@
                         box.collected++;
                         box.shakeTimer = 20;
                         if (owner.userName) {
-                            var player = userPicks.find(function(u) { return u.userName === owner.userName; });
+                            var player = userPicks.find(function (u) { return u.userName === owner.userName; });
                             if (player) player.score = (player.score || 0) + BONUS_BALL_PTS;
                             if (!persistentScores[owner.userName]) persistentScores[owner.userName] = { score: 0, avatar: owner.userAvatarUrl || '' };
                             persistentScores[owner.userName].score += BONUS_BALL_PTS;
@@ -4026,7 +4247,7 @@
                         spawnText(boxX + boxW / 2, boxY - 16, '→ ' + (ball.ownerName || '?'), ball.color);
                         for (var cp = 0; cp < 3; cp++) {
                             var ca = (cp / 3) * Math.PI * 2;
-                            if (parts.length < MAX_PARTS + 10) parts.push({ x: ball.x, y: ball.y, vx: Math.cos(ca)*3, vy: Math.sin(ca)*3, life: 1, dec: 0.03, r: 4, c: ball.color });
+                            if (parts.length < MAX_PARTS + 10) parts.push({ x: ball.x, y: ball.y, vx: Math.cos(ca) * 3, vy: Math.sin(ca) * 3, life: 1, dec: 0.03, r: 4, c: ball.color });
                         }
                         sfxPop();
                         bonusBalls.splice(i, 1);
@@ -4094,7 +4315,7 @@
                     ctx.fillRect(-ball.r, -ball.r, ball.r * 2, ball.r * 2);
                     ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.floor(ball.r * 1.1) + 'px Arial';
                     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    ctx.fillText((ball.ownerName || '?').replace('@','').charAt(0).toUpperCase(), 0, 0);
+                    ctx.fillText((ball.ownerName || '?').replace('@', '').charAt(0).toUpperCase(), 0, 0);
                 }
                 ctx.restore();
                 ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
@@ -4113,7 +4334,7 @@
                 g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.15);
                 o.connect(g); g.connect(ac.destination);
                 o.start(); o.stop(ac.currentTime + 0.15);
-            } catch(e) {}
+            } catch (e) { }
         }
 
         function hitBlock(col, row, force, source) {
@@ -4295,7 +4516,7 @@
                     pick.stuckTimer++;
                     if (pick.stuckTimer > 100) spawnPick();
                 }
-                applyPhysics(pick, 28);
+                applyPhysics(pick, 48);
             }
             // Depth tracking: use deepest player (owner or visitor)
             var _trackPick = pick;
@@ -4325,7 +4546,7 @@
             document.getElementById('scoreDisplay').textContent = '⛏ ' + score;
 
             // ── Democratic Camera: follow the deepest player for 5+ seconds ──
-            var allCamPicks = (_aiHidden ? [] : [pick]).concat(userPicks).filter(function(p) { return p && !p.stuck; });
+            var allCamPicks = (_aiHidden ? [] : [pick]).concat(userPicks).filter(function (p) { return p && !p.stuck; });
             var deepestPick = pick;
             var deepestY = pick ? pick.y : 0;
             for (var ci = 0; ci < allCamPicks.length; ci++) {
@@ -4822,16 +5043,16 @@
 
         // ── Weather/Sky System — changes every 100m with smooth transitions ──
         var WEATHER_TYPES = [
-            { name: 'sunny',   sky1: '#4a90d9', sky2: '#87ceeb', decor: ['clouds','birds'] },
-            { name: 'rainbow', sky1: '#88bbff', sky2: '#aaddff', decor: ['clouds','rainbow'] },
-            { name: 'sunset',  sky1: '#ff8855', sky2: '#ffd700', decor: ['birds','clouds'] },
-            { name: 'starry',  sky1: '#0a0a3e', sky2: '#1a1a5e', decor: ['stars','comets','planets'] },
-            { name: 'snow',    sky1: '#aabbcc', sky2: '#ddeeff', decor: ['snow','clouds'] },
-            { name: 'spring',  sky1: '#55bb55', sky2: '#99dd99', decor: ['balloons','birds','clouds'] },
-            { name: 'dawn',    sky1: '#ff9a76', sky2: '#ffecd2', decor: ['birds','clouds'] },
-            { name: 'aurora',  sky1: '#0a1a3a', sky2: '#1a3a5a', decor: ['aurora','stars'] },
-            { name: 'cotton',  sky1: '#ddbbff', sky2: '#ffccee', decor: ['clouds','balloons'] },
-            { name: 'golden',  sky1: '#ffbb33', sky2: '#ffee99', decor: ['balloons','birds','clouds'] }
+            { name: 'sunny', sky1: '#4a90d9', sky2: '#87ceeb', decor: ['clouds', 'birds'] },
+            { name: 'rainbow', sky1: '#88bbff', sky2: '#aaddff', decor: ['clouds', 'rainbow'] },
+            { name: 'sunset', sky1: '#ff8855', sky2: '#ffd700', decor: ['birds', 'clouds'] },
+            { name: 'starry', sky1: '#0a0a3e', sky2: '#1a1a5e', decor: ['stars', 'comets', 'planets'] },
+            { name: 'snow', sky1: '#aabbcc', sky2: '#ddeeff', decor: ['snow', 'clouds'] },
+            { name: 'spring', sky1: '#55bb55', sky2: '#99dd99', decor: ['balloons', 'birds', 'clouds'] },
+            { name: 'dawn', sky1: '#ff9a76', sky2: '#ffecd2', decor: ['birds', 'clouds'] },
+            { name: 'aurora', sky1: '#0a1a3a', sky2: '#1a3a5a', decor: ['aurora', 'stars'] },
+            { name: 'cotton', sky1: '#ddbbff', sky2: '#ffccee', decor: ['clouds', 'balloons'] },
+            { name: 'golden', sky1: '#ffbb33', sky2: '#ffee99', decor: ['balloons', 'birds', 'clouds'] }
         ];
         var _bgElements = [];
         var _prevSky = { sky1: '#4a90d9', sky2: '#87ceeb' };
@@ -4844,8 +5065,8 @@
             return WEATHER_TYPES[zone % WEATHER_TYPES.length];
         }
 
-        function _hexToRgb(hex) { var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return [r,g,b]; }
-        function _lerpColor(c1, c2, t) { var a = _hexToRgb(c1), b = _hexToRgb(c2); return 'rgb(' + Math.round(a[0]+(b[0]-a[0])*t) + ',' + Math.round(a[1]+(b[1]-a[1])*t) + ',' + Math.round(a[2]+(b[2]-a[2])*t) + ')'; }
+        function _hexToRgb(hex) { var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return [r, g, b]; }
+        function _lerpColor(c1, c2, t) { var a = _hexToRgb(c1), b = _hexToRgb(c2); return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' + Math.round(a[1] + (b[1] - a[1]) * t) + ',' + Math.round(a[2] + (b[2] - a[2]) * t) + ')'; }
 
         function updateWeatherParticles() {
             var w = getWeather();
@@ -4918,7 +5139,7 @@
                 else if (e.type === 'comet') { ctx.globalAlpha = 0.6 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, 8, 0, Math.PI * 2); ctx.fill(); var cg = ctx.createLinearGradient(e.x, e.y, e.x - 120, e.y - 120 * e.angle); cg.addColorStop(0, 'rgba(255,255,200,0.4)'); cg.addColorStop(1, 'rgba(255,255,200,0)'); ctx.strokeStyle = cg; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x - 120, e.y - 120 * e.angle); ctx.stroke(); }
                 else if (e.type === 'planet') { ctx.globalAlpha = 0.35 * al; var pg = ctx.createRadialGradient(e.x - e.r * 0.2, e.y - e.r * 0.2, 0, e.x, e.y, e.r); pg.addColorStop(0, e.color); pg.addColorStop(1, 'rgba(0,0,0,0.3)'); ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.r * 1.5, e.r * 0.3, 0.2, 0, Math.PI * 2); ctx.stroke(); }
                 else if (e.type === 'snow') { ctx.globalAlpha = 0.7 * al; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2); ctx.fill(); }
-                else if (e.type === 'rainbow') { ctx.globalAlpha = 0.18 * al; var rc = ['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#4400ff','#8800ff']; for (var ri = 0; ri < rc.length; ri++) { ctx.strokeStyle = rc[ri]; ctx.lineWidth = 30; ctx.beginPath(); ctx.arc(W * 0.5, H * 0.7, W * 0.6 - ri * 35, Math.PI, 0); ctx.stroke(); } }
+                else if (e.type === 'rainbow') { ctx.globalAlpha = 0.18 * al; var rc = ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0088ff', '#4400ff', '#8800ff']; for (var ri = 0; ri < rc.length; ri++) { ctx.strokeStyle = rc[ri]; ctx.lineWidth = 30; ctx.beginPath(); ctx.arc(W * 0.5, H * 0.7, W * 0.6 - ri * 35, Math.PI, 0); ctx.stroke(); } }
                 else if (e.type === 'aurora') { ctx.globalAlpha = 0.15 * al; var ay = H * 0.06 + e.idx * 22 + Math.sin(t + e.idx) * 12; var ag = ctx.createLinearGradient(0, ay, W, ay); ag.addColorStop(0, '#00ff88'); ag.addColorStop(0.3, '#00ffcc'); ag.addColorStop(0.6, '#8844ff'); ag.addColorStop(1, '#00ff88'); ctx.fillStyle = ag; ctx.fillRect(0, ay, W, 10 + Math.sin(t * 2 + e.idx) * 5); }
             }
             ctx.globalAlpha = 1; ctx.restore();
@@ -5158,13 +5379,13 @@
 
                     // Caustic shimmer (skip on mobile)
                     if (false) {
-                    ctx.globalAlpha = alpha * 0.25;
-                    ctx.fillStyle = '#4488cc';
-                    var cx1 = Math.sin(t * 1.5 + c * 0.8 + r * 0.3) * TILE * 0.3;
-                    var cy1 = Math.cos(t * 1.1 + r * 0.6 + c * 0.5) * TILE * 0.25;
-                    ctx.beginPath();
-                    ctx.arc(x + TILE * 0.5 + cx1, y + TILE * 0.5 + cy1, 11, 0, Math.PI * 2);
-                    ctx.fill();
+                        ctx.globalAlpha = alpha * 0.25;
+                        ctx.fillStyle = '#4488cc';
+                        var cx1 = Math.sin(t * 1.5 + c * 0.8 + r * 0.3) * TILE * 0.3;
+                        var cy1 = Math.cos(t * 1.1 + r * 0.6 + c * 0.5) * TILE * 0.25;
+                        ctx.beginPath();
+                        ctx.arc(x + TILE * 0.5 + cx1, y + TILE * 0.5 + cy1, 11, 0, Math.PI * 2);
+                        ctx.fill();
                     }
 
                     // Surface wave on top row
@@ -5275,6 +5496,21 @@
                 drawBackground();
                 drawWeatherOverlay();
             }
+
+            // ── Shaft Perspective Shadow ──
+            var shadowW = TILE * 1.5;
+            // Left Shadow
+            var gradL = ctx.createLinearGradient(0, 0, shadowW, 0);
+            gradL.addColorStop(0, 'rgba(0,0,0,0.5)');
+            gradL.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = gradL;
+            ctx.fillRect(0, 0, shadowW, canvas.height);
+            // Right Shadow
+            var gradR = ctx.createLinearGradient(canvas.width - shadowW, 0, canvas.width, 0);
+            gradR.addColorStop(0, 'rgba(0,0,0,0)');
+            gradR.addColorStop(1, 'rgba(0,0,0,0.5)');
+            ctx.fillStyle = gradR;
+            ctx.fillRect(canvas.width - shadowW, 0, shadowW, canvas.height);
             ctx.save();
             var sx = shakeAmt > 0 ? (Math.random() - 0.5) * 2 * shakeAmt : 0;
             var sy = shakeAmt > 0 ? (Math.random() - 0.5) * 2 * shakeAmt : 0;
@@ -5285,7 +5521,7 @@
             var rEnd = Math.ceil((camY + canvas.height) / TILE) + 1;
 
             // Ore shimmer set — blocks that glow
-            var _oreShimmer = { 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 16:1, 17:1 };
+            var _oreShimmer = { 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 16: 1, 17: 1 };
             var _shimmerTime = Date.now() * 0.003;
 
             // 3D block dimensions
@@ -5294,84 +5530,84 @@
 
             // Pass 1: 3D faces (drawn BEHIND front faces)
             if (BLOCKS_3D) {
-            for (var r = rStart; r <= rEnd; r++) {
-                for (var c = 0; c < COLS; c++) {
-                    var cell = getCell(r, c);
-                    if (!cell || cell.t === E) continue;
-                    var x = c * TILE;
-                    var y = r * TILE;
-                    var tex = BTEX[cell.t];
+                for (var r = rStart; r <= rEnd; r++) {
+                    for (var c = 0; c < COLS; c++) {
+                        var cell = getCell(r, c);
+                        if (!cell || cell.t === E) continue;
+                        var x = c * TILE;
+                        var y = r * TILE;
+                        var tex = BTEX[cell.t];
 
-                    var aboveCell = getCell(r - 1, c);
-                    var rightCell = getCell(r, c + 1);
-                    var aboveEmpty = !aboveCell || aboveCell.t === E;
-                    var rightEmpty = !rightCell || rightCell.t === E;
+                        var aboveCell = getCell(r - 1, c);
+                        var rightCell = getCell(r, c + 1);
+                        var aboveEmpty = !aboveCell || aboveCell.t === E;
+                        var rightEmpty = !rightCell || rightCell.t === E;
 
-                    // Top face
-                    if (aboveEmpty) {
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + _3D_SIDE, y - _3D_TOP);
-                        ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
-                        ctx.lineTo(x + TILE, y);
-                        ctx.closePath();
-                        ctx.clip();
-                        if (tex && tex.complete && tex.naturalWidth > 0) {
+                        // Top face
+                        if (aboveEmpty) {
                             ctx.save();
-                            ctx.transform(1, 0, _3D_SIDE / TILE, -_3D_TOP / TILE, x, y);
-                            ctx.drawImage(tex, 0, 0, TILE, TILE);
-                            ctx.restore();
-                        }
-                        // Crack on top face
-                        if (cell.cr > 0.01) {
-                            var stageT = Math.min(9, Math.floor(cell.cr * 10));
-                            var dtexT = DESTROY_TEX[stageT];
-                            if (dtexT && dtexT.complete && dtexT.naturalWidth > 0) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x + _3D_SIDE, y - _3D_TOP);
+                            ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
+                            ctx.lineTo(x + TILE, y);
+                            ctx.closePath();
+                            ctx.clip();
+                            if (tex && tex.complete && tex.naturalWidth > 0) {
                                 ctx.save();
                                 ctx.transform(1, 0, _3D_SIDE / TILE, -_3D_TOP / TILE, x, y);
-                                ctx.drawImage(dtexT, 0, 0, TILE, TILE);
+                                ctx.drawImage(tex, 0, 0, TILE, TILE);
                                 ctx.restore();
                             }
-                        }
-                        ctx.fillStyle = 'rgba(255,255,255,0.22)';
-                        ctx.fill();
-                        ctx.restore();
-                    }
-
-                    // Right face
-                    if (rightEmpty) {
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.moveTo(x + TILE, y);
-                        ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
-                        ctx.lineTo(x + TILE + _3D_SIDE, y + TILE - _3D_TOP);
-                        ctx.lineTo(x + TILE, y + TILE);
-                        ctx.closePath();
-                        ctx.clip();
-                        if (tex && tex.complete && tex.naturalWidth > 0) {
-                            ctx.save();
-                            ctx.transform(_3D_SIDE / TILE, -_3D_TOP / TILE, 0, 1, x + TILE, y);
-                            ctx.drawImage(tex, 0, 0, TILE, TILE);
+                            // Crack on top face
+                            if (cell.cr > 0.01) {
+                                var stageT = Math.min(9, Math.floor(cell.cr * 10));
+                                var dtexT = DESTROY_TEX[stageT];
+                                if (dtexT && dtexT.complete && dtexT.naturalWidth > 0) {
+                                    ctx.save();
+                                    ctx.transform(1, 0, _3D_SIDE / TILE, -_3D_TOP / TILE, x, y);
+                                    ctx.drawImage(dtexT, 0, 0, TILE, TILE);
+                                    ctx.restore();
+                                }
+                            }
+                            ctx.fillStyle = 'rgba(255,255,255,0.22)';
+                            ctx.fill();
                             ctx.restore();
                         }
-                        // Crack on right face
-                        if (cell.cr > 0.01) {
-                            var stageR = Math.min(9, Math.floor(cell.cr * 10));
-                            var dtexR = DESTROY_TEX[stageR];
-                            if (dtexR && dtexR.complete && dtexR.naturalWidth > 0) {
+
+                        // Right face
+                        if (rightEmpty) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.moveTo(x + TILE, y);
+                            ctx.lineTo(x + TILE + _3D_SIDE, y - _3D_TOP);
+                            ctx.lineTo(x + TILE + _3D_SIDE, y + TILE - _3D_TOP);
+                            ctx.lineTo(x + TILE, y + TILE);
+                            ctx.closePath();
+                            ctx.clip();
+                            if (tex && tex.complete && tex.naturalWidth > 0) {
                                 ctx.save();
                                 ctx.transform(_3D_SIDE / TILE, -_3D_TOP / TILE, 0, 1, x + TILE, y);
-                                ctx.drawImage(dtexR, 0, 0, TILE, TILE);
+                                ctx.drawImage(tex, 0, 0, TILE, TILE);
                                 ctx.restore();
                             }
+                            // Crack on right face
+                            if (cell.cr > 0.01) {
+                                var stageR = Math.min(9, Math.floor(cell.cr * 10));
+                                var dtexR = DESTROY_TEX[stageR];
+                                if (dtexR && dtexR.complete && dtexR.naturalWidth > 0) {
+                                    ctx.save();
+                                    ctx.transform(_3D_SIDE / TILE, -_3D_TOP / TILE, 0, 1, x + TILE, y);
+                                    ctx.drawImage(dtexR, 0, 0, TILE, TILE);
+                                    ctx.restore();
+                                }
+                            }
+                            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                            ctx.fill();
+                            ctx.restore();
                         }
-                        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                        ctx.fill();
-                        ctx.restore();
                     }
                 }
-            }
             } // end BLOCKS_3D
 
             // Pass 2: Front faces + shimmer + cracks (drawn ON TOP of 3D faces)
@@ -5625,17 +5861,17 @@
                 if (b.userName) {
                     ctx.save();
                     var avImg = avatarCache[b.avatarUrl];
-                    var avSize = 42;
-                    var avY = b.y - drawSize / 2 - 28;
+                    var avSize = Math.floor(TILE * 0.55);
+                    var avY = b.y - drawSize / 2 - Math.floor(TILE * 0.4);
                     if (avImg && avImg.complete && avImg.naturalWidth > 0) {
                         ctx.save();
                         ctx.beginPath(); ctx.arc(b.x - 5 - avSize / 2, avY, avSize / 2, 0, Math.PI * 2); ctx.clip();
-                        try { ctx.drawImage(avImg, b.x - 5 - avSize, avY - avSize / 2, avSize, avSize); } catch(e) {}
+                        try { ctx.drawImage(avImg, b.x - 5 - avSize, avY - avSize / 2, avSize, avSize); } catch (e) { }
                         ctx.restore();
-                        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.03));
                         ctx.beginPath(); ctx.arc(b.x - 5 - avSize / 2, avY, avSize / 2, 0, Math.PI * 2); ctx.stroke();
                     }
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.floor(TILE * 0.3) + 'px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
                     if (SHADOW_ENABLED) { ctx.shadowBlur = 4; ctx.shadowColor = '#000'; }
                     ctx.fillText(b.userName, b.x + 5, avY);
                     ctx.restore();
@@ -5702,43 +5938,10 @@
             }
             ctx.globalAlpha = 1;
 
-            // slimes
-            drawSlimes();
-            drawBossEffects();
-            drawMGs();
-            // Spider webs
-            if (spiderWebs.length > 0) {
-                var wvTop = camY - TILE * 2, wvBot = camY + canvas.height + TILE * 2;
-                for (var wi = 0; wi < spiderWebs.length; wi++) {
-                    var web = spiderWebs[wi];
-                    if (web.y < wvTop || web.y > wvBot) continue;
-                    ctx.save();
-                    ctx.globalAlpha = web.alpha;
-                    ctx.strokeStyle = '#cccccc';
-                    ctx.lineWidth = 0.8;
-                    var ws = web.size;
-                    // Draw web pattern: radial lines + concentric rings
-                    for (var ri = 0; ri < 6; ri++) {
-                        var a = ri * Math.PI / 3;
-                        ctx.beginPath(); ctx.moveTo(web.x, web.y);
-                        ctx.lineTo(web.x + Math.cos(a) * ws, web.y + Math.sin(a) * ws);
-                        ctx.stroke();
-                    }
-                    for (var ci = 1; ci <= 3; ci++) {
-                        var cr = ws * ci / 3;
-                        ctx.beginPath();
-                        for (var ai = 0; ai <= 6; ai++) {
-                            var a2 = ai * Math.PI / 3 + Math.sin(ci * 0.5) * 0.15;
-                            var px = web.x + Math.cos(a2) * cr, py = web.y + Math.sin(a2) * cr;
-                            if (ai === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-                        }
-                        ctx.stroke();
-                    }
-                    ctx.restore();
-                }
-            }
             drawSpiders();
+            drawSlimes();
             drawBlackHoles();
+            drawBossEffects();
 
             // ── Boss Gate barrier visual ──
             if (pick) {
@@ -5754,11 +5957,11 @@
                         ctx.save();
                         // Glow line
                         ctx.strokeStyle = 'rgba(' + gColor + ', ' + (0.4 * gPulse) + ')';
-                        ctx.lineWidth = 8 + Math.sin(Date.now() * 0.006) * 3;
+                        ctx.lineWidth = 12 + Math.sin(Date.now() * 0.006) * 4;
                         ctx.beginPath(); ctx.moveTo(0, gateY); ctx.lineTo(COLS * TILE, gateY); ctx.stroke();
                         // Bright core
                         ctx.strokeStyle = 'rgba(' + gColor + ', ' + (0.7 * gPulse) + ')';
-                        ctx.lineWidth = 2;
+                        ctx.lineWidth = 3;
                         ctx.beginPath(); ctx.moveTo(0, gateY); ctx.lineTo(COLS * TILE, gateY); ctx.stroke();
                         ctx.restore();
                     }
@@ -5767,13 +5970,14 @@
 
             // bubbles
             drawBubbles();
+            drawMGs();
 
             // textos flutuantes
             for (var j = 0; j < texts.length; j++) {
                 var t = texts[j];
-                ctx.globalAlpha = t.life; ctx.font = 'bold 22px Arial';
+                ctx.globalAlpha = t.life; ctx.font = 'bold ' + Math.floor(TILE * 0.3) + 'px Arial';
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.strokeStyle = 'rgba(0,0,0,' + (t.life * 0.8) + ')'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+                ctx.strokeStyle = 'rgba(0,0,0,' + (t.life * 0.8) + ')'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.04)); ctx.lineJoin = 'round';
                 ctx.strokeText(t.txt, t.x, t.y);
                 ctx.fillStyle = t.c;
                 ctx.fillText(t.txt, t.x, t.y);
@@ -5789,12 +5993,14 @@
                 ctx.rotate(pick.ang);
                 var _bigS = (pick.bigTimer > 0) ? BIG_SCALE : 1;
                 if (_bigS > 1) ctx.scale(_bigS, _bigS);
-                var pimg = currentPickaxe.imgObj;
+                var pPick = pick.pickaxe || currentPickaxe;
+                var pimg = pPick.imgObj;
+                var pScale = pPick.scale || 1.0;
                 if (pimg && pimg.complete && pimg.naturalWidth > 0) {
-                    ctx.drawImage(pimg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                    ctx.drawImage(pimg, -PICK_HALF * pScale, -PICK_HALF * pScale, PICK_HALF * 2 * pScale, PICK_HALF * 2 * pScale);
                 } else {
-                    ctx.fillStyle = currentPickaxe.color;
-                    ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                    ctx.fillStyle = pPick.color || '#fff';
+                    ctx.fillRect(-PICK_HALF * pScale, -PICK_HALF * pScale, PICK_HALF * 2 * pScale, PICK_HALF * 2 * pScale);
                 }
                 ctx.restore();
 
@@ -5808,15 +6014,16 @@
                         pick.userAvatarUrl = persistentScores[pick.userName].avatar;
                         loadAvatar(pick.userAvatarUrl);
                     }
-                    var ownerAvImg = (pick.userAvatarUrl && avatarCache[pick.userAvatarUrl]) || null;
-                    var oAvSize = 42;
-                    var oAvY = pick.y - PICK_HALF - (30);
+                    var avUrl = pick.userAvatarUrl;
+                    var ownerAvImg = (avUrl && avatarCache[avUrl]) || null;
+                    var oAvSize = Math.floor(TILE * 0.6);
+                    var oAvY = pick.y - PICK_HALF - Math.floor(TILE * 0.45);
                     if (ownerAvImg && ownerAvImg.complete && ownerAvImg.naturalWidth > 0) {
                         ctx.save();
                         ctx.beginPath(); ctx.arc(pick.x - 10 - oAvSize / 2, oAvY, oAvSize / 2, 0, Math.PI * 2); ctx.clip();
-                        try { ctx.drawImage(ownerAvImg, pick.x - 10 - oAvSize, oAvY - oAvSize / 2, oAvSize, oAvSize); } catch(e) {}
+                        try { ctx.drawImage(ownerAvImg, pick.x - 10 - oAvSize, oAvY - oAvSize / 2, oAvSize, oAvSize); } catch (e) { }
                         ctx.restore();
-                        ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.03));
                         ctx.beginPath(); ctx.arc(pick.x - 10 - oAvSize / 2, oAvY, oAvSize / 2, 0, Math.PI * 2); ctx.stroke();
                     } else {
                         // Fallback: golden circle with initials
@@ -5825,44 +6032,128 @@
                         ctx.beginPath(); ctx.arc(pick.x - 10 - oAvSize / 2, oAvY, oAvSize / 2, 0, Math.PI * 2); ctx.fill();
                         ctx.fillStyle = '#000'; ctx.font = 'bold ' + Math.floor(oAvSize * 0.4) + 'px Arial';
                         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.fillText((pick.userName || '?').replace('@','').charAt(0).toUpperCase(), pick.x - 10 - oAvSize / 2, oAvY);
+                        ctx.fillText((pick.userName || '?').replace('@', '').charAt(0).toUpperCase(), pick.x - 10 - oAvSize / 2, oAvY);
                         ctx.restore();
                     }
-                    ctx.fillStyle = '#ffdd44'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                    ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+                    var nameFontSize = Math.floor(TILE * 0.32);
+                    ctx.fillStyle = '#ffdd44'; ctx.font = 'bold ' + nameFontSize + 'px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.04)); ctx.lineJoin = 'round';
                     ctx.strokeText(pick.userName, pick.x + 10, oAvY);
                     if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
                     ctx.fillText(pick.userName, pick.x + 10, oAvY);
+                    if (_robloxAvatars[pick.userName]) {
+                        ctx.save();
+                        var rbName = _robloxAvatars[pick.userName].robloxName;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold ' + Math.floor(nameFontSize * 0.9) + 'px Arial';
+                        ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.04)); ctx.lineJoin = 'round';
+
+                        // Drawn Roblox Logo Vector
+                        ctx.save();
+                        ctx.translate(pick.x + 21, oAvY + 26);
+                        ctx.rotate(0.2); // Tilted square
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(-9, -9, 18, 18);
+                        ctx.strokeRect(-9, -9, 18, 18);
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(-3, -3, 6, 6);
+                        ctx.restore();
+
+                        ctx.strokeText(rbName, pick.x + 36, oAvY + 26);
+                        if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
+                        ctx.fillText(rbName, pick.x + 36, oAvY + 26);
+                        ctx.restore();
+                    }
                     // Flag with pole
                     if (_playerFlags[pick.userName]) {
                         ctx.save();
                         var flagCode = _playerFlags[pick.userName];
                         var flagImg = getFlagImage(flagCode);
-                        var flagX = pick.x - 10 - oAvSize / 2 - 8;
-                        var flagY = oAvY - oAvSize / 2 - 24;
+                        var cx = pick.x - 10 - oAvSize / 2;
+                        var flagX = cx - oAvSize / 2 - 4;
+                        var flagY = oAvY - oAvSize / 2 - 20;
+
+                        ctx.translate(flagX, flagY);
+                        ctx.rotate(0.15); // tilt flag and pole together
+
                         // Pole
-                        ctx.strokeStyle = '#888';
-                        ctx.lineWidth = 2;
+                        var poleGrad = ctx.createLinearGradient(-3, 0, 3, 0);
+                        poleGrad.addColorStop(0, '#555');
+                        poleGrad.addColorStop(0.5, '#ddd');
+                        poleGrad.addColorStop(1, '#333');
+                        ctx.fillStyle = poleGrad;
+                        ctx.shadowBlur = 4; ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowOffsetY = 2;
                         ctx.beginPath();
-                        ctx.moveTo(flagX, flagY + 35);
-                        ctx.lineTo(flagX, flagY - 2);
-                        ctx.stroke();
-                        // Flag image (diagonal)
-                        ctx.translate(flagX + 2, flagY);
-                        ctx.rotate(-0.2);
+                        if (ctx.roundRect) ctx.roundRect(-2, -22, 4, 57, 2);
+                        else ctx.fillRect(-2, -22, 4, 57);
+                        ctx.fill();
+
+                        // Finial (golden globe)
+                        ctx.shadowBlur = 0;
+                        var fGrad = ctx.createRadialGradient(-1, -24, 0, 0, -23, 4);
+                        fGrad.addColorStop(0, '#fff');
+                        fGrad.addColorStop(0.3, '#ffd700');
+                        fGrad.addColorStop(1, '#b8860b');
+                        ctx.fillStyle = fGrad;
+                        ctx.beginPath(); ctx.arc(0, -23, 4, 0, Math.PI * 2); ctx.fill();
+
+                        // Flag image (hangs left)
                         if (flagImg.complete && flagImg.naturalWidth > 0) {
-                            ctx.drawImage(flagImg, 0, -20, 56, 40);
+                            ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowOffsetY = 4;
+                            ctx.drawImage(flagImg, -56, -20, 56, 40);
+                            ctx.shadowBlur = 0;
+                            ctx.strokeStyle = 'rgba(0,0,0,0.5)'; // soft black
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(-56, -20, 56, 40);
                         }
                         ctx.restore();
                     }
-
+                    // Roblox Flag with pole (Right side)
+                    if (_robloxAvatars[pick.userName] && _flagImages['roblox_' + pick.userName]) {
+                        ctx.save();
+                        var rFlagImg = _flagImages['roblox_' + pick.userName];
+                        var rcx = pick.x - 10 - oAvSize / 2;
+                        var rFlagX = rcx + oAvSize / 2 + 4;
+                        var rFlagY = oAvY - oAvSize / 2 - 20;
+                        ctx.translate(rFlagX, rFlagY);
+                        ctx.rotate(-0.15);
+                        var poleGrad = ctx.createLinearGradient(-3, 0, 3, 0);
+                        poleGrad.addColorStop(0, '#555'); poleGrad.addColorStop(0.5, '#ddd'); poleGrad.addColorStop(1, '#333');
+                        ctx.fillStyle = poleGrad;
+                        ctx.shadowBlur = 4; ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowOffsetY = 2;
+                        ctx.beginPath();
+                        if (ctx.roundRect) ctx.roundRect(-2, -22, 4, 57, 2);
+                        else ctx.fillRect(-2, -22, 4, 57);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        var fGrad = ctx.createRadialGradient(-1, -24, 0, 0, -23, 4);
+                        fGrad.addColorStop(0, '#fff'); fGrad.addColorStop(0.3, '#ffd700'); fGrad.addColorStop(1, '#b8860b');
+                        ctx.fillStyle = fGrad;
+                        ctx.beginPath(); ctx.arc(0, -23, 4, 0, Math.PI * 2); ctx.fill();
+                        if (rFlagImg.complete && rFlagImg.naturalWidth > 0) {
+                            ctx.shadowBlur = 6; ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowOffsetY = 4;
+                            ctx.fillStyle = '#e8e8e8';
+                            ctx.fillRect(0, -20, 56, 40);
+                            ctx.drawImage(rFlagImg, 0, -20, 56, 40);
+                            ctx.shadowBlur = 0;
+                            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(0, -20, 56, 40);
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                            ctx.fillRect(32, -20, 24, 24);
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(39, -13, 10, 10);
+                            ctx.fillStyle = '#000';
+                            ctx.fillRect(42, -10, 4, 4);
+                        }
+                        ctx.restore();
+                    }
                     drawPlayerCooldowns(ctx, pick.x - 10 - oAvSize / 2, oAvY, pick.userName);
-
                     ctx.restore();
                 }
             }
 
-            // picaretas extras (skill dupla + clones)
+            // ── Extra Picks (Clones / Double Skill) ──────────────────────────────────
             for (var ei = 0; ei < extraPicks.length; ei++) {
                 var ep = extraPicks[ei];
                 ctx.save();
@@ -5870,67 +6161,67 @@
                 ctx.rotate(ep.ang);
 
                 if (ep.cloneOwner) {
-                    // Clone: use owner's pickaxe and color glow
-                    var cFadeThreshold = Math.floor(cloneCooldown * 0.15); // fade last 15%
-                    var cloneAlpha = ep.cloneTimer < cFadeThreshold ? (ep.cloneTimer / cFadeThreshold) : 1; // fade out last 15%
-                    ctx.globalAlpha = cloneAlpha;
-                    if (SHADOW_ENABLED) {
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = ep.cloneColor || '#44ddff';
-                    }
-                    var cImg = (ep.clonePickaxe || currentPickaxe).imgObj;
-                    if (cImg && cImg.complete && cImg.naturalWidth > 0) {
-                        ctx.drawImage(cImg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                    var cFadeT = Math.floor(cloneCooldown * 0.15);
+                    var cAlpha = ep.cloneTimer < cFadeT ? (ep.cloneTimer / cFadeT) : 1;
+                    ctx.globalAlpha = cAlpha;
+                    if (SHADOW_ENABLED) { ctx.shadowBlur = 10; ctx.shadowColor = ep.cloneColor || '#44ddff'; }
+                    var cPik = ep.clonePickaxe || currentPickaxe;
+                    var cPikImg = cPik.imgObj;
+                    var cPikScale = cPik.scale || 1.0;
+                    if (cPikImg && cPikImg.complete && cPikImg.naturalWidth > 0) {
+                        ctx.drawImage(cPikImg, -PICK_HALF * cPikScale, -PICK_HALF * cPikScale, PICK_HALF * 2 * cPikScale, PICK_HALF * 2 * cPikScale);
                     } else {
                         ctx.fillStyle = ep.cloneColor || '#44ddff';
-                        ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                        ctx.fillRect(-PICK_HALF * cPikScale, -PICK_HALF * cPikScale, PICK_HALF * 2 * cPikScale, PICK_HALF * 2 * cPikScale);
                     }
                     ctx.restore();
-                    // Draw clone avatar and name (same size as original picks)
-                    var cloneAvSize = 42;
-                    var cloneAvY = ep.y - PICK_HALF - (30);
+
+                    // Clone ID and Avatar
+                    var cAvS = Math.floor(TILE * 0.6);
+                    var cAvY = ep.y - PICK_HALF - Math.floor(TILE * 0.45);
+                    var cFS = Math.floor(TILE * 0.32);
+                    
                     if (ep.cloneAvatar && avatarCache[ep.cloneAvatar]) {
-                        var avImg = avatarCache[ep.cloneAvatar];
-                        if (avImg.complete && avImg.naturalWidth > 0) {
+                        var cavI = avatarCache[ep.cloneAvatar];
+                        if (cavI.complete && cavI.naturalWidth > 0) {
                             ctx.save();
-                            ctx.globalAlpha = cloneAlpha * 0.85;
-                            ctx.beginPath(); ctx.arc(ep.x - 10 - cloneAvSize / 2, cloneAvY, cloneAvSize / 2, 0, Math.PI * 2); ctx.clip();
-                            try { ctx.drawImage(avImg, ep.x - 10 - cloneAvSize, cloneAvY - cloneAvSize / 2, cloneAvSize, cloneAvSize); } catch(e) {}
+                            ctx.globalAlpha = cAlpha * 0.85;
+                            ctx.beginPath(); ctx.arc(ep.x - 10 - cAvS / 2, cAvY, cAvS / 2, 0, Math.PI * 2); ctx.clip();
+                            try { ctx.drawImage(cavI, ep.x - 10 - cAvS, cAvY - cAvS / 2, cAvS, cAvS); } catch (e) { }
                             ctx.restore();
                             ctx.save();
-                            ctx.globalAlpha = cloneAlpha * 0.85;
-                            ctx.strokeStyle = ep.cloneColor || '#44ddff'; ctx.lineWidth = 2;
-                            ctx.beginPath(); ctx.arc(ep.x - 10 - cloneAvSize / 2, cloneAvY, cloneAvSize / 2, 0, Math.PI * 2); ctx.stroke();
+                            ctx.globalAlpha = cAlpha * 0.85;
+                            ctx.strokeStyle = ep.cloneColor || '#44ddff'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.03));
+                            ctx.beginPath(); ctx.arc(ep.x - 10 - cAvS / 2, cAvY, cAvS / 2, 0, Math.PI * 2); ctx.stroke();
                             ctx.restore();
                         }
                     }
                     ctx.save();
-                    ctx.globalAlpha = cloneAlpha * 0.85;
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                    ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
-                    ctx.strokeText(ep.cloneOwner || '', ep.x + 10, cloneAvY);
+                    ctx.globalAlpha = cAlpha * 0.85;
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold ' + cFS + 'px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.04)); ctx.lineJoin = 'round';
+                    ctx.strokeText(ep.cloneOwner || '', ep.x + 10, cAvY);
                     if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
-                    ctx.fillText(ep.cloneOwner || '', ep.x + 10, cloneAvY);
+                    ctx.fillText(ep.cloneOwner || '', ep.x + 10, cAvY);
                     ctx.restore();
                 } else {
-                    // Original doublePick extra
                     if (SHADOW_ENABLED) {
-                        var pulse = doublePickTimer > 0 ? (Math.sin(doublePickTimer * 0.15) * 0.5 + 0.5) : 1;
-                        ctx.shadowBlur = 8 + pulse * 6;
+                        var pT = doublePickTimer > 0 ? (Math.sin(doublePickTimer * 0.15) * 0.5 + 0.5) : 1;
+                        ctx.shadowBlur = 8 + pT * 6;
                         ctx.shadowColor = '#44ddff';
                     }
-                    var epimg = currentPickaxe.imgObj;
-                    if (epimg && epimg.complete && epimg.naturalWidth > 0) {
-                        ctx.drawImage(epimg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                    var epI = currentPickaxe.imgObj;
+                    var epS = currentPickaxe.scale || 1.0;
+                    if (epI && epI.complete && epI.naturalWidth > 0) {
+                        ctx.drawImage(epI, -PICK_HALF * epS, -PICK_HALF * epS, PICK_HALF * 2 * epS, PICK_HALF * 2 * epS);
                     } else {
-                        ctx.fillStyle = '#44ddff';
-                        ctx.fillRect(-PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                        ctx.fillStyle = '#44ddff'; ctx.fillRect(-PICK_HALF * epS, -PICK_HALF * epS, PICK_HALF * 2 * epS, PICK_HALF * 2 * epS);
                     }
                     ctx.restore();
                 }
             }
 
-            // picaretas de outros usuários (permanentes com avatar)
+            // ── Other Players (userPicks) ─────────────────────────────────────────────
             for (var ui = 0; ui < userPicks.length; ui++) {
                 var up = userPicks[ui];
                 drawTormentaAura(tormentaPick === up ? up : null);
@@ -5938,71 +6229,75 @@
                 ctx.save();
                 ctx.translate(up.x, up.y);
                 ctx.rotate(up.ang);
-                var _upBigS = (up.bigTimer > 0) ? BIG_SCALE : 1;
-                if (_upBigS > 1) ctx.scale(_upBigS, _upBigS);
+                var upBig = (up.bigTimer > 0) ? BIG_SCALE : 1;
+                if (upBig > 1) ctx.scale(upBig, upBig);
                 if (SHADOW_ENABLED) { ctx.shadowBlur = 12; ctx.shadowColor = up.color || '#00ff88'; }
-                var uImg = (up.pickaxe || currentPickaxe).imgObj;
-                if (uImg && uImg.complete && uImg.naturalWidth > 0) {
-                    ctx.drawImage(uImg, -PICK_HALF, -PICK_HALF, PICK_HALF * 2, PICK_HALF * 2);
+                var upPik = up.pickaxe || currentPickaxe;
+                var upI = upPik.imgObj;
+                var upS = upPik.scale || 1.0;
+                if (upI && upI.complete && upI.naturalWidth > 0) {
+                    ctx.drawImage(upI, -PICK_HALF * upS, -PICK_HALF * upS, PICK_HALF * 2 * upS, PICK_HALF * 2 * upS);
                 }
                 ctx.restore();
 
-                // nome e avatar
+                // Name and Avatar above
                 ctx.save();
-                // Auto-reload avatar from persistentScores if missing from cache
                 if (up.userAvatarUrl && !avatarCache[up.userAvatarUrl]) {
                     loadAvatar(up.userAvatarUrl);
                 } else if (!up.userAvatarUrl && persistentScores[up.userName] && persistentScores[up.userName].avatar) {
                     up.userAvatarUrl = persistentScores[up.userName].avatar;
                     loadAvatar(up.userAvatarUrl);
                 }
-                var avImg = (up.userAvatarUrl && avatarCache[up.userAvatarUrl]) || null;
-                var avSize = 42;
-                var avY = up.y - PICK_HALF - (30);
-                if (avImg && avImg.complete && avImg.naturalWidth > 0) {
+                var uAS = Math.floor(TILE * 0.6);
+                var uAY = up.y - PICK_HALF - Math.floor(TILE * 0.45);
+                var uAI = (up.userAvatarUrl && avatarCache[up.userAvatarUrl]) || null;
+                if (uAI && uAI.complete && uAI.naturalWidth > 0) {
                     ctx.save();
-                    ctx.beginPath(); ctx.arc(up.x - 10 - avSize / 2, avY, avSize / 2, 0, Math.PI * 2); ctx.clip();
-                    try { ctx.drawImage(avImg, up.x - 10 - avSize, avY - avSize / 2, avSize, avSize); } catch(e) {}
+                    ctx.beginPath(); ctx.arc(up.x - 10 - uAS / 2, uAY, uAS / 2, 0, Math.PI * 2); ctx.clip();
+                    try { ctx.drawImage(uAI, up.x - 10 - uAS, uAY - uAS / 2, uAS, uAS); } catch (e) { }
                     ctx.restore();
-                    ctx.strokeStyle = up.color || '#fff'; ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.arc(up.x - 10 - avSize / 2, avY, avSize / 2, 0, Math.PI * 2); ctx.stroke();
+                    ctx.strokeStyle = up.color || '#fff'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.03));
+                    ctx.beginPath(); ctx.arc(up.x - 10 - uAS / 2, uAY, uAS / 2, 0, Math.PI * 2); ctx.stroke();
                 } else {
-                    // Fallback: colored circle with initials
-                    ctx.save();
-                    ctx.fillStyle = up.color || '#00ff88';
-                    ctx.beginPath(); ctx.arc(up.x - 10 - avSize / 2, avY, avSize / 2, 0, Math.PI * 2); ctx.fill();
-                    ctx.fillStyle = '#000'; ctx.font = 'bold ' + Math.floor(avSize * 0.4) + 'px Arial';
+                    ctx.save(); ctx.fillStyle = up.color || '#00ff88';
+                    ctx.beginPath(); ctx.arc(up.x - 10 - uAS / 2, uAY, uAS / 2, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#000'; ctx.font = 'bold ' + Math.floor(uAS * 0.4) + 'px Arial';
                     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    ctx.fillText((up.userName || '?').replace('@','').charAt(0).toUpperCase(), up.x - 10 - avSize / 2, avY);
+                    ctx.fillText((up.userName || '?').replace('@', '').charAt(0).toUpperCase(), up.x - 10 - uAS / 2, uAY);
                     ctx.restore();
                 }
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
-                ctx.strokeText(up.userName, up.x + 10, avY);
+                var uFS = Math.floor(TILE * 0.32);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold ' + uFS + 'px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.04)); ctx.lineJoin = 'round';
+                ctx.strokeText(up.userName, up.x + 10, uAY);
                 if (SHADOW_ENABLED) { ctx.shadowBlur = 8; ctx.shadowColor = '#000'; }
-                ctx.fillText(up.userName, up.x + 10, avY);
-                // Flag with pole
+                ctx.fillText(up.userName, up.x + 10, uAY);
+
+                if (_robloxAvatars[up.userName]) {
+                    ctx.save();
+                    var urbN = _robloxAvatars[up.userName].robloxName;
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold ' + Math.floor(uFS * 0.9) + 'px Arial';
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(2, Math.floor(TILE * 0.04)); ctx.lineJoin = 'round';
+                    ctx.save(); ctx.translate(up.x + 21, uAY + 26); ctx.rotate(0.2);
+                    ctx.fillStyle = '#fff'; ctx.fillRect(-9, -9, 18, 18);
+                    ctx.fillStyle = '#000'; ctx.fillRect(-3, -3, 6, 6);
+                    ctx.restore();
+                    ctx.strokeText(urbN, up.x + 36, uAY + 26);
+                    ctx.fillText(urbN, up.x + 36, uAY + 26);
+                    ctx.restore();
+                }
                 if (_playerFlags[up.userName]) {
                     ctx.save();
-                    var flagCode = _playerFlags[up.userName];
-                    var flagImg = getFlagImage(flagCode);
-                    var flagX = up.x - 10 - avSize / 2 - 8;
-                    var flagY = avY - avSize / 2 - 24;
-                    ctx.strokeStyle = '#888';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(flagX, flagY + 35);
-                    ctx.lineTo(flagX, flagY - 2);
-                    ctx.stroke();
-                    ctx.translate(flagX + 2, flagY);
-                    ctx.rotate(-0.2);
-                    if (flagImg.complete && flagImg.naturalWidth > 0) {
-                        ctx.drawImage(flagImg, 0, -20, 56, 40);
-                    }
+                    var ufI = getFlagImage(_playerFlags[up.userName]);
+                    var ufX = up.x - 10 - uAS / 2;
+                    ctx.translate(ufX - uAS / 2 - 4, uAY - uAS / 2 - 20);
+                    ctx.rotate(0.15);
+                    ctx.fillStyle = '#666'; ctx.fillRect(-2, -22, 4, 57);
+                    if (ufI.complete && ufI.naturalWidth > 0) ctx.drawImage(ufI, -56, -20, 56, 40);
                     ctx.restore();
                 }
 
-                drawPlayerCooldowns(ctx, up.x - 10 - avSize / 2, avY, up.userName);
+                drawPlayerCooldowns(ctx, up.x - 10 - uAS / 2, uAY, up.userName);
 
                 ctx.restore();
             }
@@ -6101,7 +6396,7 @@
             // updateFanBanners(); // disabled temporarily
             updateFX();
             updateWeatherParticles();
-            try { draw(); } catch(e) { console.warn('draw error:', e.message); }
+            try { draw(); } catch (e) { console.warn('draw error:', e.message); }
             requestAnimationFrame(loop);
         }
 
@@ -6151,21 +6446,21 @@
         var spiderWebs = [];
 
         var SPIDER_ANIMS = {
-            idle:   { folder: 'Idle_Nervous', count: 24, speed: 0.12 },
-            walk:   { folder: 'Walk',         count: 16, speed: 0.15 },
-            run:    { folder: 'Run',          count: 16, speed: 0.22 },
-            attack: { folder: 'Attack_01',    count: 20, speed: 0.18 },
-            hurt:   { folder: 'Hit',          count: 16, speed: 0.15 },
-            dead:   { folder: 'Die_01',       count: 24, speed: 0.12 },
-            jump:   { folder: 'Jump_Simple',  count: 24, speed: 0.15 }
+            idle: { folder: 'Idle_Nervous', count: 24, speed: 0.12 },
+            walk: { folder: 'Walk', count: 16, speed: 0.15 },
+            run: { folder: 'Run', count: 16, speed: 0.22 },
+            attack: { folder: 'Attack_01', count: 20, speed: 0.18 },
+            hurt: { folder: 'Hit', count: 16, speed: 0.15 },
+            dead: { folder: 'Die_01', count: 24, speed: 0.12 },
+            jump: { folder: 'Jump_Simple', count: 24, speed: 0.15 }
         };
 
         // Baby spiders use 256x144, mothers use 384x216
         var spiderSprites = { baby: {}, mother: {} };
-        (function() {
-            ['baby', 'mother'].forEach(function(size) {
+        (function () {
+            ['baby', 'mother'].forEach(function (size) {
                 var res = size === 'baby' ? 'Frames_256x144' : 'Frames_384x216';
-                Object.keys(SPIDER_ANIMS).forEach(function(anim) {
+                Object.keys(SPIDER_ANIMS).forEach(function (anim) {
                     var a = SPIDER_ANIMS[anim];
                     spiderSprites[size][anim] = [];
                     for (var i = 1; i <= a.count; i++) {
@@ -6315,7 +6610,7 @@
         }
 
         function checkPickSpiderCollisions() {
-            var PICK_R = 28;
+            var PICK_R = TILE * 0.4;
             var allPicks = [pick].concat(userPicks, extraPicks);
             for (var pi = 0; pi < allPicks.length; pi++) {
                 var p = allPicks[pi];
@@ -6630,24 +6925,24 @@
                     b.x += b.vx * 0.9;
                     // Block collision while hurt (skip if being sucked by black hole)
                     if (!b._bhCaptured) {
-                    var hHalf = BUBBLE_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
-                    var hCol = Math.floor(b.x / TILE), hRow = Math.floor(b.y / TILE);
-                    for (var hr = hRow - 1; hr <= hRow + 1; hr++) {
-                        for (var hc = hCol - 1; hc <= hCol + 1; hc++) {
-                            var hCell = getCell(hr, hc);
-                            if (!hCell || hCell.t === E) continue;
-                            var htl = hc * TILE, htr = (hc + 1) * TILE, htt = hr * TILE, htb = (hr + 1) * TILE;
-                            var hcx = Math.max(htl, Math.min(b.x, htr));
-                            var hcy = Math.max(htt, Math.min(b.y, htb));
-                            var hdx = b.x - hcx, hdy = b.y - hcy;
-                            var hd = Math.sqrt(hdx * hdx + hdy * hdy);
-                            if (hd < hHalf) {
-                                if (hd > 0) { b.x += (hdx / hd) * (hHalf - hd); b.y += (hdy / hd) * (hHalf - hd); }
-                                else { b.y -= hHalf; }
-                                b.vx *= -0.3; b.vy *= -0.3;
+                        var hHalf = BUBBLE_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                        var hCol = Math.floor(b.x / TILE), hRow = Math.floor(b.y / TILE);
+                        for (var hr = hRow - 1; hr <= hRow + 1; hr++) {
+                            for (var hc = hCol - 1; hc <= hCol + 1; hc++) {
+                                var hCell = getCell(hr, hc);
+                                if (!hCell || hCell.t === E) continue;
+                                var htl = hc * TILE, htr = (hc + 1) * TILE, htt = hr * TILE, htb = (hr + 1) * TILE;
+                                var hcx = Math.max(htl, Math.min(b.x, htr));
+                                var hcy = Math.max(htt, Math.min(b.y, htb));
+                                var hdx = b.x - hcx, hdy = b.y - hcy;
+                                var hd = Math.sqrt(hdx * hdx + hdy * hdy);
+                                if (hd < hHalf) {
+                                    if (hd > 0) { b.x += (hdx / hd) * (hHalf - hd); b.y += (hdy / hd) * (hHalf - hd); }
+                                    else { b.y -= hHalf; }
+                                    b.vx *= -0.3; b.vy *= -0.3;
+                                }
                             }
                         }
-                    }
                     } // end bhCaptured check
                     if (b.hurtTimer <= 0) {
                         b.state = 'fly'; b.anim = 0;
@@ -6734,54 +7029,54 @@
 
                 // ── Block collision: push out of solid tiles (skip if black hole captured) ──
                 if (!b._bhCaptured) {
-                var bHalf = BUBBLE_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
-                var bCol = Math.floor(b.x / TILE), bRow = Math.floor(b.y / TILE);
-                // Check a small grid around the bat
-                for (var cr = bRow - 1; cr <= bRow + 1; cr++) {
-                    for (var cc = bCol - 1; cc <= bCol + 1; cc++) {
-                        var cell = getCell(cr, cc);
-                        if (!cell || cell.t === E) continue;
-                        // Tile AABB
-                        var tl = cc * TILE, tr = (cc + 1) * TILE, tt = cr * TILE, tb = (cr + 1) * TILE;
-                        // Overlap check (circle vs AABB)
-                        var closestX = Math.max(tl, Math.min(b.x, tr));
-                        var closestY = Math.max(tt, Math.min(b.y, tb));
-                        var ddx = b.x - closestX, ddy = b.y - closestY;
-                        var dd = Math.sqrt(ddx * ddx + ddy * ddy);
-                        if (dd < bHalf) {
-                            // Push out
-                            if (dd > 0) {
-                                var pen = bHalf - dd;
-                                b.x += (ddx / dd) * pen;
-                                b.y += (ddy / dd) * pen;
-                            } else {
-                                b.y -= bHalf;
-                            }
-                            // Bounce velocity away from block
-                            if (ddx !== 0 || ddy !== 0) {
-                                var nd = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-                                b.vx = Math.abs(b.vx) * (ddx / nd) * 0.5;
-                                b.vy = Math.abs(b.vy) * (ddy / nd) * 0.5;
+                    var bHalf = BUBBLE_SIZE * 0.35 * (b.isQueen ? QUEEN_SCALE : (b.isMother ? MOTHER_SCALE : 1));
+                    var bCol = Math.floor(b.x / TILE), bRow = Math.floor(b.y / TILE);
+                    // Check a small grid around the bat
+                    for (var cr = bRow - 1; cr <= bRow + 1; cr++) {
+                        for (var cc = bCol - 1; cc <= bCol + 1; cc++) {
+                            var cell = getCell(cr, cc);
+                            if (!cell || cell.t === E) continue;
+                            // Tile AABB
+                            var tl = cc * TILE, tr = (cc + 1) * TILE, tt = cr * TILE, tb = (cr + 1) * TILE;
+                            // Overlap check (circle vs AABB)
+                            var closestX = Math.max(tl, Math.min(b.x, tr));
+                            var closestY = Math.max(tt, Math.min(b.y, tb));
+                            var ddx = b.x - closestX, ddy = b.y - closestY;
+                            var dd = Math.sqrt(ddx * ddx + ddy * ddy);
+                            if (dd < bHalf) {
+                                // Push out
+                                if (dd > 0) {
+                                    var pen = bHalf - dd;
+                                    b.x += (ddx / dd) * pen;
+                                    b.y += (ddy / dd) * pen;
+                                } else {
+                                    b.y -= bHalf;
+                                }
+                                // Bounce velocity away from block
+                                if (ddx !== 0 || ddy !== 0) {
+                                    var nd = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+                                    b.vx = Math.abs(b.vx) * (ddx / nd) * 0.5;
+                                    b.vy = Math.abs(b.vy) * (ddy / nd) * 0.5;
+                                }
                             }
                         }
                     }
-                }
                 } // end bhCaptured block collision check
 
                 // Clamp to bounds (skip if captured by black hole)
                 if (!b._bhCaptured) {
-                if (b.x < b.boundsMinX) { b.x = b.boundsMinX; b.vx = Math.abs(b.vx); }
-                if (b.x > b.boundsMaxX) { b.x = b.boundsMaxX; b.vx = -Math.abs(b.vx); }
-                if (b.y < b.boundsMinY) { b.y = b.boundsMinY; b.vy = Math.abs(b.vy); }
-                if (b.y > b.boundsMaxY) { b.y = b.boundsMaxY; b.vy = -Math.abs(b.vy); }
-                // Hard barrier: prevent passing through bedrock floor
-                if (b.isQueen && b.zone !== undefined) {
-                    var _bfRow = megaClearedZones[b.zone + '_zbFloorRow'];
-                    if (_bfRow !== undefined) {
-                        var _bfY = _bfRow * TILE - BUBBLE_SIZE * 0.5;
-                        if (b.y > _bfY) { b.y = _bfY; b.vy = -Math.abs(b.vy) * 0.5; }
+                    if (b.x < b.boundsMinX) { b.x = b.boundsMinX; b.vx = Math.abs(b.vx); }
+                    if (b.x > b.boundsMaxX) { b.x = b.boundsMaxX; b.vx = -Math.abs(b.vx); }
+                    if (b.y < b.boundsMinY) { b.y = b.boundsMinY; b.vy = Math.abs(b.vy); }
+                    if (b.y > b.boundsMaxY) { b.y = b.boundsMaxY; b.vy = -Math.abs(b.vy); }
+                    // Hard barrier: prevent passing through bedrock floor
+                    if (b.isQueen && b.zone !== undefined) {
+                        var _bfRow = megaClearedZones[b.zone + '_zbFloorRow'];
+                        if (_bfRow !== undefined) {
+                            var _bfY = _bfRow * TILE - BUBBLE_SIZE * 0.5;
+                            if (b.y > _bfY) { b.y = _bfY; b.vy = -Math.abs(b.vy) * 0.5; }
+                        }
                     }
-                }
                 }
 
                 // Direction based on velocity
@@ -6826,7 +7121,7 @@
         }
 
         function checkPickBubbleCollisions() {
-            var PICK_R = 28;
+            var PICK_R = TILE * 0.4;
             var allPicks = [pick].concat(userPicks, extraPicks);
             for (var pi = 0; pi < allPicks.length; pi++) {
                 var p = allPicks[pi];
@@ -7223,7 +7518,7 @@
                                     cell.hp -= (z.bossTier.fireDamage || 2);
                                     if (cell.hp <= 0) {
                                         if (cell.t === BONUS_BOX) {
-                                            var _fireOwnerPick = z.userName ? (pick && pick.userName === z.userName ? pick : userPicks.find(function(u) { return u.userName === z.userName; })) : pick;
+                                            var _fireOwnerPick = z.userName ? (pick && pick.userName === z.userName ? pick : userPicks.find(function (u) { return u.userName === z.userName; })) : pick;
                                             spawnBonusBalls(fc * TILE + TILE / 2, fr * TILE + TILE / 2, _fireOwnerPick || pick);
                                         }
                                         cell.t = E; cell.hp = 0; cell.cr = 0;
@@ -7318,7 +7613,7 @@
         }
 
         function checkPickSlimeCollisions() {
-            var PICK_R = 28;
+            var PICK_R = TILE * 0.4;
             var allPicks = [pick].concat(userPicks, extraPicks);
             for (var pi = 0; pi < allPicks.length; pi++) {
                 var p = allPicks[pi];
@@ -8744,10 +9039,10 @@
             if (!('wakeLock' in navigator)) return;
             try {
                 _wakeLock = await navigator.wakeLock.request('screen');
-                _wakeLock.addEventListener('release', function() { _wakeLock = null; });
-            } catch (e) {}
+                _wakeLock.addEventListener('release', function () { _wakeLock = null; });
+            } catch (e) { }
         }
-        document.addEventListener('visibilitychange', function() {
+        document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible' && !_wakeLock) requestWakeLock();
         });
 
@@ -8761,7 +9056,7 @@
         function goFullscreen() {
             var el = document.documentElement;
             var rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-            if (rfs) rfs.call(el).catch(function() {});
+            if (rfs) rfs.call(el).catch(function () { });
             ensureAudio();
         }
 
@@ -8774,7 +9069,7 @@
             // Ctrl+Shift+R: full reset (clear all saved data, then hard reload)
             if (e.ctrlKey && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
                 var keys = Object.keys(localStorage);
-                keys.forEach(function(k) { if (k.startsWith('pd_')) localStorage.removeItem(k); });
+                keys.forEach(function (k) { if (k.startsWith('pd_')) localStorage.removeItem(k); });
                 // Let the browser do the hard reload naturally
                 return;
             }
@@ -8821,7 +9116,7 @@
         });
 
         // Chroma key toggle — separate listener on document to work even with input focus
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
             var k = e.key || '';
             var kc = e.keyCode || e.which || 0;
@@ -8953,7 +9248,7 @@
             try {
                 var savedStatsKeys = JSON.parse(localStorage.getItem('pd_stats_keys') || '[]');
                 if (savedStatsKeys.length > 0) document.getElementById('statsKeyInput').value = savedStatsKeys.join(', ');
-            } catch(e) {}
+            } catch (e) { }
         }
 
         function hideApiSetup() {
@@ -9042,7 +9337,7 @@
         var _fanSyncTimer = 0;
 
         // Load fans from server on start
-        fetch('/fans').then(function(r) { return r.json(); }).then(function(data) {
+        fetch('/fans').then(function (r) { return r.json(); }).then(function (data) {
             _fanActivity = data || {};
             // Enrich with avatars from persistentScores cache
             var keys = Object.keys(_fanActivity);
@@ -9072,7 +9367,7 @@
                 }
             }
             console.log('[fans] Loaded ' + Object.keys(_fanActivity).length + ' fans, enriched with local cache');
-        }).catch(function(e) { console.warn('[fans] Failed to load:', e); });
+        }).catch(function (e) { console.warn('[fans] Failed to load:', e); });
 
         // Sync fans to server every 2 minutes
         function syncFansToServer() {
@@ -9081,7 +9376,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(_fanActivity)
-            }).catch(function() {});
+            }).catch(function () { });
         }
         setInterval(syncFansToServer, 120000);
         var _fanBannerIndex = 0;
@@ -9112,9 +9407,9 @@
 
         function getTopFans(n) {
             if (!_fanActivity) return [];
-            return Object.keys(_fanActivity).map(function(name) {
+            return Object.keys(_fanActivity).map(function (name) {
                 return { name: name, score: getFanScore(_fanActivity[name]), data: _fanActivity[name] };
-            }).sort(function(a, b) { return b.score - a.score; }).slice(0, n || 10);
+            }).sort(function (a, b) { return b.score - a.score; }).slice(0, n || 10);
         }
 
         function showFanBanner(fan, rank) {
@@ -9142,7 +9437,7 @@
             var proxyAv = avatarUrl ? '/avatar-proxy?url=' + encodeURIComponent(avatarUrl) : '';
             var avHtml = proxyAv
                 ? '<img src="' + proxyAv + '" style="width:72px;height:72px;border-radius:50%;border:3px solid #ffaa00;object-fit:cover;flex-shrink:0;box-shadow:0 0 12px rgba(255,170,0,0.5);" onerror="this.style.display=\'none\'">'
-                : '<div style="width:72px;height:72px;border-radius:50%;background:#ffaa00;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:28px;flex-shrink:0;">' + (fan.name || '?').replace('@','').charAt(0).toUpperCase() + '</div>';
+                : '<div style="width:72px;height:72px;border-radius:50%;background:#ffaa00;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:28px;flex-shrink:0;">' + (fan.name || '?').replace('@', '').charAt(0).toUpperCase() + '</div>';
             var badges = '';
             if (fan.data.superchats > 0) badges += '<span style="font-size:20px;">💰</span>';
             if (fan.data.members > 0) badges += '<span style="font-size:20px;">⭐</span>';
@@ -9154,15 +9449,16 @@
             card.innerHTML =
                 avHtml +
                 '<div style="display:flex;flex-direction:column;gap:4px;">' +
-                    '<div style="font-size:16px;color:#ffaa00;font-weight:bold;letter-spacing:0.5px;">' + medal + ' Top Fan</div>' +
-                    '<div style="font-size:22px;font-weight:bold;color:#fff;">' + flagHtml + name + ' ' + badges + '</div>' +
-                    '<div style="font-size:14px;color:#aaa;">Score: <span style="color:#ffdd44;font-weight:bold;">' + fan.score + '</span> pts</div>' +
+                '<div style="font-size:16px;color:#ffaa00;font-weight:bold;letter-spacing:0.5px;">' + medal + ' Top Fan</div>' +
+                '<div style="font-size:22px;font-weight:bold;color:#fff;">' + flagHtml + name + ' ' + badges + '</div>' +
+                '<div style="font-size:14px;color:#aaa;">Score: <span style="color:#ffdd44;font-weight:bold;">' + fan.score + '</span> pts</div>' +
                 '</div>';
 
             var overlay = document.getElementById('announceOverlay');
             overlay.appendChild(card);
             _fanBannerActive = card;
-
+            
+            // Auto close after 4 seconds
             setTimeout(function() {
                 if (card.parentNode) {
                     card.classList.add('fade-out');
@@ -9170,7 +9466,39 @@
                 }
                 _fanBannerActive = null;
             }, 4000);
+
+            setTimeout(function () {
+                if (card.parentNode) {
+                    card.classList.add('fade-out');
+                    setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 400);
+                }
+                _fanBannerActive = null;
+            }, 4000);
         }
+
+        window.changeRoblox3DDance = function (btn, animType) {
+            var model = document.getElementById('dancingModel');
+            var cardboard = document.querySelector('.cardboard-avatar');
+            
+            if (model) {
+                model.classList.remove('dance-3d-bounce', 'dance-3d-swing');
+                model.autoRotate = false;
+                if (animType === 'Dance') {
+                    model.autoRotate = true;
+                } else if (animType === 'Jump') {
+                    model.classList.add('dance-3d-bounce');
+                } else if (animType === 'Wave') {
+                    model.classList.add('dance-3d-swing');
+                }
+            } else if (cardboard) {
+                cardboard.classList.remove('Dance', 'Jump', 'Wave');
+                void cardboard.offsetWidth; // trigger reflow
+                cardboard.classList.add(animType);
+            }
+            
+            document.querySelectorAll('.dance-btn').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+        };
 
         function updateFanBanners() {
             if (!_aiEnabled) return; // only show when AI is active
@@ -9187,7 +9515,63 @@
             _fanBannerIndex++;
         }
 
-        function updateTopFansUI() {} // kept for compatibility
+        function updateTopFansUI() { } // kept for compatibility
+
+        function showUserAvatarCard(userName, avatarUrl) {
+            var existing = document.querySelector('.avatar-card');
+            if (existing) existing.remove();
+
+            var card = document.createElement('div');
+            card.className = 'avatar-card';
+            
+            var robloxId = (typeof _robloxUserIds !== 'undefined') ? _robloxUserIds[userName] : null;
+            if (!robloxId && persistentScores[userName]) robloxId = persistentScores[userName].robloxId;
+            
+            if (!robloxId) {
+                console.log("[3D Flow] Usuário sem Roblox, ignorando dança.");
+                return;
+            }
+
+            // Simplificado: Sempre Cardboard (2.5D) sem moldura
+            var modelHtml = `<div class="cardboard-container" style="background:transparent; border:none; box-shadow:none;">
+                <img src="/roblox-full-body?userId=${robloxId}" 
+                     class="cardboard-avatar" 
+                     id="dancingModel"
+                     alt="Avatar Roblox"
+                     onerror="this.src='https://tr.rbxcdn.com/30day-avatar-headshot-png/150/150/AvatarHeadshot/Png/true'">
+            </div>`;
+
+            card.innerHTML = modelHtml;
+            var overlay = document.getElementById('announceOverlay');
+            overlay.appendChild(card);
+
+            // Iniciar dança automática aleatória
+            setTimeout(function() {
+                var anims = ['Dance', 'Jump', 'Wave'];
+                var randomAnim = anims[Math.floor(Math.random() * anims.length)];
+                var model = card.querySelector('.cardboard-avatar');
+                if (model) model.classList.add(randomAnim);
+                console.log(`[3D Flow] Dança automática: ${randomAnim}`);
+            }, 100);
+
+            // Auto-remover após 4 segundos
+            setTimeout(function () {
+                if (card.parentNode) {
+                    card.classList.add('fade-out');
+                    setTimeout(function () { if (card.parentNode) card.parentNode.removeChild(card); }, 500);
+                }
+            }, 4000);
+        }
+        
+        var _aiEnabled = false;
+        function toggleAI() {
+            _aiEnabled = !_aiEnabled;
+            var btn = document.getElementById('aiToggle');
+            if (btn) {
+                btn.style.color = _aiEnabled ? '#00ff88' : '#888';
+                btn.style.borderColor = _aiEnabled ? '#00ff88' : '#444';
+            }
+        }
 
         function processWsChat(data) {
             var cUser = (data.userName || '').replace(/^@@+/, '@');
@@ -9229,7 +9613,23 @@
             // Detect country flag from message
             detectFlag(cUser, cText);
 
-            var existingPick = userPicks.find(function(up) { return up.userName === cUser; });
+            // Detect show profile command: "!dance", "!show", "!avatar", "!perfil"
+            var showMatch = cText.match(/^!(dance|show|avatar|perfil|profile)/i);
+            if (showMatch) {
+                if (_robloxUserIds[cUser] || (persistentScores[cUser] && persistentScores[cUser].robloxId)) {
+                    showUserAvatarCard(cUser, cAvatarUrl);
+                } else {
+                    spawnText(canvas.width / 2, camY + canvas.height / 2, '⚠️ ' + cUser + ': Use !roblox user [nick]!', '#ff4444');
+                }
+            }
+
+            // Detect roblox command: "!roblox NomeDoUsuario" ou "!roblox user NomeDoUsuario"
+            var robloxMatch = cText.match(/^!(roblox|rbx)\s+(?:user\s+)?(\S+)/i);
+            if (robloxMatch) {
+                fetchRobloxAvatar(cUser, robloxMatch[2]);
+            }
+
+            var existingPick = userPicks.find(function (up) { return up.userName === cUser; });
             if (existingPick && cAvatarUrl && !existingPick.userAvatarUrl) {
                 existingPick.userAvatarUrl = cAvatarUrl;
             }
@@ -9237,7 +9637,7 @@
             // Ignore bots — never spawn them as players
             var isBot = /botrix|nightbot|streamelements|streamlabs|moobot/i.test(cUser);
 
-            if (!isBot && !isOwner && persistentScores[cUser] && !userPicks.some(function(up) { return up.userName === cUser; })) {
+            if (!isBot && !isOwner && persistentScores[cUser] && !userPicks.some(function (up) { return up.userName === cUser; })) {
                 spawnUserPickaxe(cUser, cAvatarUrl);
             }
 
@@ -9246,32 +9646,46 @@
                 spawnUserPickaxe(cUser, cAvatarUrl);
             }
 
-            var userPick = isOwner ? pick : userPicks.find(function(up) { return up.userName === cUser; });
+            var userPick = isOwner ? pick : userPicks.find(function (up) { return up.userName === cUser; });
             var tx = userPick ? userPick.x : undefined;
             var ty = userPick ? userPick.y : undefined;
 
             // ── Parse up to 4 chained commands from a single message ──
             var cmdPatterns = [
-                { re: /\bmega\b|\bpower\s*tnt\b|\bpowertnt\b/gi, fn: function() { activateMegaTNT(tx, ty, cUser, cAvatarUrl); }, id: 'mega' },
-                { re: /\btnt\b/gi, fn: function() { activateTNT(tx, ty, cUser, cAvatarUrl); }, id: 'tnt' },
-                { re: /\bthor\b/gi, fn: function() { activateThor(tx, ty, cUser); }, id: 'thor' },
-                { re: /\bnuke\b/gi, fn: function() { activateNuke(tx, ty, cUser); }, id: 'nuke' },
-                { re: /\bclone\b/gi, fn: function() { spawnClone(cUser, cAvatarUrl); }, id: 'clone' },
-                { re: /\bblackhole\b|\bblack\s*hole\b|\bbh\b/gi, fn: function() { activateBlackHole(tx, ty, cUser); }, id: 'bh' },
-                { re: /\bping\s*pong\b|\bpingpong\b|\bpp\b/gi, fn: function() {
-                    if (!isBot && !isOwner && !userPick) {
-                        spawnUserPickaxe(cUser, cAvatarUrl);
-                        userPick = userPicks.find(function(up) { return up.userName === cUser; });
-                    }
-                    if (userPick) activateStorm(userPick);
-                }, id: 'pp' },
-                { re: /\b(sr|sl|sd|su)\b|\bspin\s+(right|left|down|up)\b/gi, fn: function() {
-                    // Handled separately below for chained spins with delay
-                }, id: 'spin', skipLoop: true },
-                { re: /\bbig\b/gi, fn: function() { activateBig(cUser); }, id: 'big' },
-                { re: /\bgravity\b|\bgrav\b/gi, fn: function() { activateGravity(cUser); }, id: 'gravity' },
-                { re: /\bme\b|\bbeijinho\b|\bkiss\b/gi, fn: function() { activateKiss(cUser, cAvatarUrl); }, id: 'kiss' },
-                { re: /\bmg\b|\bgun\b|\bmetralhadora\b/gi, fn: function() { activateMG(cUser); }, id: 'mg' }
+                { re: /\bmega\b|\bpower\s*tnt\b|\bpowertnt\b/gi, fn: function () { activateMegaTNT(tx, ty, cUser, cAvatarUrl); }, id: 'mega' },
+                { re: /\btnt\b/gi, fn: function () { activateTNT(tx, ty, cUser, cAvatarUrl); }, id: 'tnt' },
+                { re: /\bthor\b/gi, fn: function () { activateThor(tx, ty, cUser); }, id: 'thor' },
+                { re: /\bnuke\b/gi, fn: function () { activateNuke(tx, ty, cUser); }, id: 'nuke' },
+                { re: /\bclone\b/gi, fn: function () { spawnClone(cUser, cAvatarUrl); }, id: 'clone' },
+                { re: /\bblackhole\b|\bblack\s*hole\b|\bbh\b/gi, fn: function () { activateBlackHole(tx, ty, cUser); }, id: 'bh' },
+                {
+                    re: /\bping\s*pong\b|\bpingpong\b|\bpp\b/gi, fn: function () {
+                        if (!isBot && !isOwner && !userPick) {
+                            spawnUserPickaxe(cUser, cAvatarUrl);
+                            userPick = userPicks.find(function (up) { return up.userName === cUser; });
+                        }
+                        if (userPick) activateStorm(userPick);
+                    }, id: 'pp'
+                },
+                {
+                    re: /\b(sr|sl|sd|su)\b|\bspin\s+(right|left|down|up)\b/gi, fn: function () {
+                        // Handled separately below for chained spins with delay
+                    }, id: 'spin', skipLoop: true
+                },
+                { re: /\bbig\b/gi, fn: function () { activateBig(cUser); }, id: 'big' },
+                { re: /\bgravity\b|\bgrav\b/gi, fn: function () { activateGravity(cUser); }, id: 'gravity' },
+                { re: /\bme\b|\bbeijinho\b|\bkiss\b/gi, fn: function () { activateKiss(cUser, cAvatarUrl); }, id: 'kiss' },
+                { re: /\bmg\b|\bgun\b|\bmetralhadora\b/gi, fn: function () { activateMG(cUser); }, id: 'mg' },
+                {
+                    re: /\b(robloxpick|rp)\b/gi, fn: function () {
+                        if (!isBot && !isOwner && !userPick) {
+                            spawnUserPickaxe(cUser, cAvatarUrl);
+                            userPick = userPicks.find(function (up) { return up.userName === cUser; });
+                        }
+                        if (userPick) userPick.pickaxe = customRobloxPickaxe;
+                        else if (isOwner) pick.pickaxe = customRobloxPickaxe;
+                    }, id: 'robloxpick'
+                }
             ];
 
             var cmdCount = 0;
@@ -9310,8 +9724,8 @@
             }
             if (spinDirs.length > 0) {
                 for (var sd = 0; sd < spinDirs.length; sd++) {
-                    (function(dir, delay) {
-                        setTimeout(function() { activateSpin(cUser, dir); }, delay);
+                    (function (dir, delay) {
+                        setTimeout(function () { activateSpin(cUser, dir); }, delay);
                     })(spinDirs[sd], sd * 300);
                 }
             }
@@ -9334,28 +9748,28 @@
             var followMatch = rawMsg.match(/thank you for the follow @?(\S+)/i);
             if (followMatch) {
                 botrixName = followMatch[1];
-                var fp = userPicks.find(function(u) { return u.userName === botrixName; });
+                var fp = userPicks.find(function (u) { return u.userName === botrixName; });
                 botrixAvatar = fp ? fp.userAvatarUrl : null;
                 triggerBotrixEvent('follow', botrixName, botrixAvatar);
             }
             var scMatch = rawMsg.match(/thanks @?(\S+) for the superchat/i);
             if (scMatch) {
                 botrixName = scMatch[1];
-                var sp2 = userPicks.find(function(u) { return u.userName === botrixName; });
+                var sp2 = userPicks.find(function (u) { return u.userName === botrixName; });
                 botrixAvatar = sp2 ? sp2.userAvatarUrl : null;
                 triggerBotrixEvent('superchat', botrixName, botrixAvatar);
             }
             var memberMatch = rawMsg.match(/thank you for the member @?(\S+)/i);
             if (memberMatch) {
                 botrixName = memberMatch[1];
-                var mp = userPicks.find(function(u) { return u.userName === botrixName; });
+                var mp = userPicks.find(function (u) { return u.userName === botrixName; });
                 botrixAvatar = mp ? mp.userAvatarUrl : null;
                 triggerBotrixEvent('member', botrixName, botrixAvatar);
             }
             var giftMatch = rawMsg.match(/thank you for gifting a member @?(\S+)/i);
             if (giftMatch) {
                 botrixName = giftMatch[1];
-                var gp = userPicks.find(function(u) { return u.userName === botrixName; });
+                var gp = userPicks.find(function (u) { return u.userName === botrixName; });
                 botrixAvatar = gp ? gp.userAvatarUrl : null;
                 triggerBotrixEvent('gift', botrixName, botrixAvatar);
             }
@@ -9365,13 +9779,13 @@
             if (_ws && (_ws.readyState === 0 || _ws.readyState === 1)) return;
             try {
                 _ws = new WebSocket(getWsUrl());
-            } catch(e) {
+            } catch (e) {
                 console.error('[ws] Failed to create WebSocket:', e);
                 updateStatusUI(false);
                 return;
             }
 
-            _ws.onopen = function() {
+            _ws.onopen = function () {
                 console.log('[ws] Connected to server');
                 dismissApiBanner();
                 // Send connect command with saved channel/live info
@@ -9382,7 +9796,7 @@
                 }
             };
 
-            _ws.onmessage = function(event) {
+            _ws.onmessage = function (event) {
                 try {
                     var data = JSON.parse(event.data);
                     if (data.type === 'status') {
@@ -9407,23 +9821,23 @@
                             errEl.textContent = data.message;
                         }
                     }
-                } catch(e) {
+                } catch (e) {
                     console.error('[ws] Parse error:', e);
                 }
             };
 
-            _ws.onclose = function() {
+            _ws.onclose = function () {
                 console.log('[ws] Disconnected');
                 _apiConnected = false;
                 updateStatusUI(false);
                 // Auto-reconnect after 5s
                 if (_wsReconnectTimer) clearTimeout(_wsReconnectTimer);
-                _wsReconnectTimer = setTimeout(function() {
+                _wsReconnectTimer = setTimeout(function () {
                     if (!_apiConnected) connectWebSocket();
                 }, 5000);
             };
 
-            _ws.onerror = function(err) {
+            _ws.onerror = function (err) {
                 console.error('[ws] Error:', err);
             };
         }
@@ -9436,7 +9850,7 @@
                 if (!vid) return;
                 _ws.send(JSON.stringify({ type: 'start_stats', videoId: vid, apiKeys: keys, interval: 2000 }));
                 console.log('[stats] Sent start_stats with ' + keys.length + ' key(s) for video ' + vid);
-            } catch(e) {}
+            } catch (e) { }
         }
 
         function onNewLikes(count) {
@@ -9444,8 +9858,8 @@
             var oy = pick ? pick.y : camY + canvas.height / 2;
             var who = pick ? pick.userName : ownerName || '@Player';
             for (var i = 0; i < Math.min(count * 10, 50); i++) {
-                setTimeout(function() {
-                    activateTNT(ox + (Math.random()-0.5)*200, oy + (Math.random()-0.5)*200, who);
+                setTimeout(function () {
+                    activateTNT(ox + (Math.random() - 0.5) * 200, oy + (Math.random() - 0.5) * 200, who);
                 }, i * 80);
             }
             _showBigPopup('👍', '#4488ff', count > 1 ? count + ' LIKES!' : 'NEW LIKE!');
@@ -9457,7 +9871,7 @@
             var raw = document.getElementById('statsKeyInput').value.trim();
             if (!raw) { result.textContent = 'Enter at least one API key.'; result.style.color = '#ff8888'; return; }
 
-            var keys = raw.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k.length > 10; });
+            var keys = raw.split(',').map(function (k) { return k.trim(); }).filter(function (k) { return k.length > 10; });
             if (keys.length === 0) { result.textContent = 'No valid keys found.'; result.style.color = '#ff8888'; return; }
 
             btn.textContent = 'Testing ' + keys.length + '...';
@@ -9469,11 +9883,11 @@
             var okCount = 0;
             var failedKeys = [];
 
-            keys.forEach(function(apiKey) {
+            keys.forEach(function (apiKey) {
                 var testUrl = 'https://www.googleapis.com/youtube/v3/videos?part=statistics&id=dQw4w9WgXcQ&key=' + encodeURIComponent(apiKey);
                 fetch(testUrl)
-                    .then(function(r) { return r.json().catch(function() { return { error: { message: 'parse error' } }; }); })
-                    .then(function(data) {
+                    .then(function (r) { return r.json().catch(function () { return { error: { message: 'parse error' } }; }); })
+                    .then(function (data) {
                         tested++;
                         if (data.error) {
                             failedKeys.push(apiKey.substring(0, 8) + '...: ' + (data.error.message || 'error').substring(0, 40));
@@ -9482,7 +9896,7 @@
                         }
                         if (tested >= keys.length) finishTest();
                     })
-                    .catch(function(e) {
+                    .catch(function (e) {
                         tested++;
                         failedKeys.push(apiKey.substring(0, 8) + '...: ' + e.message);
                         if (tested >= keys.length) finishTest();
@@ -9548,7 +9962,7 @@
             localStorage.setItem('pd_channel_id', channelId);
             if (liveId) localStorage.setItem('pd_live_id', liveId);
             // Save stats API keys
-            var statsKeys = statsKeysRaw ? statsKeysRaw.split(',').map(function(k) { return k.trim(); }).filter(function(k) { return k.length > 10; }) : [];
+            var statsKeys = statsKeysRaw ? statsKeysRaw.split(',').map(function (k) { return k.trim(); }).filter(function (k) { return k.length > 10; }) : [];
             if (statsKeys.length > 0) localStorage.setItem('pd_stats_keys', JSON.stringify(statsKeys));
 
             btn.textContent = 'Connecting...';
@@ -9561,17 +9975,17 @@
             } else {
                 connectWebSocket();
                 // Wait for WS to open, then send
-                var waitInterval = setInterval(function() {
+                var waitInterval = setInterval(function () {
                     if (_ws && _ws.readyState === 1) {
                         clearInterval(waitInterval);
                         _ws.send(JSON.stringify({ type: 'connect', channelId: channelId, liveId: liveId }));
                     }
                 }, 200);
-                setTimeout(function() { clearInterval(waitInterval); }, 10000);
+                setTimeout(function () { clearInterval(waitInterval); }, 10000);
             }
 
             // Timeout for UI feedback
-            setTimeout(function() {
+            setTimeout(function () {
                 btn.textContent = '▶ Connect';
                 btn.disabled = false;
                 if (!_apiConnected) {
@@ -9673,17 +10087,17 @@
         var _avatarDataCache = {};
         try {
             _avatarDataCache = JSON.parse(localStorage.getItem('pd_avatar_data') || '{}');
-        } catch(e) { _avatarDataCache = {}; }
+        } catch (e) { _avatarDataCache = {}; }
 
         function _saveAvatarDataCache() {
             try {
                 // Keep max 200 entries to avoid localStorage bloat
                 var keys = Object.keys(_avatarDataCache);
                 if (keys.length > 200) {
-                    keys.slice(0, keys.length - 200).forEach(function(k) { delete _avatarDataCache[k]; });
+                    keys.slice(0, keys.length - 200).forEach(function (k) { delete _avatarDataCache[k]; });
                 }
                 localStorage.setItem('pd_avatar_data', JSON.stringify(_avatarDataCache));
-            } catch(e) {}
+            } catch (e) { }
         }
 
         function loadAvatar(url) {
@@ -9692,7 +10106,7 @@
             // Try cached data URL first (instant, no network)
             if (_avatarDataCache[url]) {
                 var cached = new Image();
-                cached.onload = function() { avatarCache[url] = cached; };
+                cached.onload = function () { avatarCache[url] = cached; };
                 cached.src = _avatarDataCache[url];
                 _avatarLoading[url] = true;
                 return;
@@ -9702,25 +10116,25 @@
 
             // Use server proxy to bypass CORS
             var proxyUrl = '/avatar-proxy?url=' + encodeURIComponent(url);
-            fetch(proxyUrl).then(function(r) {
+            fetch(proxyUrl).then(function (r) {
                 if (!r.ok) throw new Error(r.status);
                 return r.blob();
-            }).then(function(blob) {
+            }).then(function (blob) {
                 var reader = new FileReader();
-                reader.onloadend = function() {
+                reader.onloadend = function () {
                     var dataUrl = reader.result;
                     _avatarDataCache[url] = dataUrl;
                     _saveAvatarDataCache();
                     var img = new Image();
-                    img.onload = function() { avatarCache[url] = img; };
+                    img.onload = function () { avatarCache[url] = img; };
                     img.src = dataUrl;
                 };
                 reader.readAsDataURL(blob);
-            }).catch(function() {
+            }).catch(function () {
                 // Fallback: try direct load (works for same-origin or permissive CORS)
                 var img = new Image();
                 img.crossOrigin = 'anonymous';
-                img.onload = function() {
+                img.onload = function () {
                     if (img.naturalWidth > 0) {
                         avatarCache[url] = img;
                         // Try to persist via canvas
@@ -9730,7 +10144,7 @@
                             c.getContext('2d').drawImage(img, 0, 0);
                             _avatarDataCache[url] = c.toDataURL('image/png');
                             _saveAvatarDataCache();
-                        } catch(e) {}
+                        } catch (e) { }
                     }
                 };
                 img.src = url;
@@ -9859,7 +10273,7 @@
             var cdKey = userName + '_blackhole';
             if (skillCooldowns[cdKey] && skillCooldowns[cdKey] > 0) return;
 
-            var sourcePlayer = (ownerName && userName === ownerName) ? pick : userPicks.find(function(up) { return up.userName === userName; });
+            var sourcePlayer = (ownerName && userName === ownerName) ? pick : userPicks.find(function (up) { return up.userName === userName; });
             if (!sourcePlayer) sourcePlayer = pick;
 
             var bx = tx !== undefined ? tx : sourcePlayer.x;
@@ -10074,7 +10488,7 @@
                                         }
                                         // Bonus box check before destroying
                                         if (cell.t === BONUS_BOX) {
-                                            var _bhOwnerPick = bh.userName ? (pick && pick.userName === bh.userName ? pick : userPicks.find(function(u) { return u.userName === bh.userName; })) : pick;
+                                            var _bhOwnerPick = bh.userName ? (pick && pick.userName === bh.userName ? pick : userPicks.find(function (u) { return u.userName === bh.userName; })) : pick;
                                             spawnBonusBalls(dbx, dby, _bhOwnerPick || pick);
                                         }
                                         cell.t = E; cell.hp = 0; cell.cr = 0;
@@ -10569,7 +10983,7 @@
             if (!list) return;
 
             // Use cycle scores (reset every 400m round)
-            var players = Object.keys(_cycleScores).map(function(name) {
+            var players = Object.keys(_cycleScores).map(function (name) {
                 var cs = _cycleScores[name];
                 var pTier = currentPickaxe;
                 if (ownerName && name === ownerName) {
@@ -10581,7 +10995,7 @@
                 }
                 var av = cs.avatar || (persistentScores[name] ? persistentScores[name].avatar : '');
                 return { userName: name, score: cs.score || 0, kills: cs.kills || 0, items: cs.items || 0, balls: cs.balls || 0, userAvatarUrl: av, pickaxe: pTier };
-            }).filter(function(p) { return p.score > 0; });
+            }).filter(function (p) { return p.score > 0; });
 
             var sorted = players.sort((a, b) => b.score - a.score).slice(0, 10);
 
@@ -10602,9 +11016,9 @@
                 var rClass = rankClass[i] || '';
                 var rankLabel = i < 3 ? rankEmoji[i] : '#' + (i + 1);
                 var stats = '';
-                if (u.kills > 0) stats += '💥' + u.kills;
-                if (u.balls > 0) stats += '🔮' + u.balls;
-                var statsBadge = stats ? '<span style="color:#aaa;font-size:10px;margin-left:2px;">' + stats + '</span>' : '';
+                if (u.kills > 0) stats += '<span style="font-size:14px;vertical-align:middle;margin-right:1px;">💥</span>' + u.kills;
+                if (u.balls > 0) stats += '<span style="font-size:14px;vertical-align:middle;margin-left:4px;margin-right:1px;">🔮</span>' + u.balls;
+                var statsBadge = stats ? '<span style="color:#fff;text-shadow:1px 1px 1px #000;font-size:11px;font-weight:800;margin-left:4px;display:inline-flex;align-items:center;">' + stats + '</span>' : '';
                 html += `<div class="lb-item"><span class="lb-rank ${rClass}">${rankLabel}</span><img class="lb-avatar" src="${avSrc}" onerror="this.onerror=null;this.style.display='none'"><span class="lb-name">${u.userName}</span>${statsBadge}<span class="lb-score" style="color:${pickColor}">${Math.floor(u.score)}</span></div>`;
             });
             list.innerHTML = html;

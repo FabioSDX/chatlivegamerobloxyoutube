@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head><title>Enrich Fans</title></head>
+<body>
+<h2>Enriching fans.json with local avatar cache...</h2>
+<pre id="log"></pre>
+<script>
+function log(msg) {
+    document.getElementById('log').textContent += msg + '\n';
+}
+
+// Load persistentScores from localStorage
+var ps = {};
+try {
+    ps = JSON.parse(localStorage.getItem('pd_persistent_scores') || '{}');
+    log('Found ' + Object.keys(ps).length + ' players in local cache');
+} catch(e) {
+    log('Error reading localStorage: ' + e);
+}
+
+// Load fans from server
+fetch('/fans').then(function(r) { return r.json(); }).then(function(fans) {
+    log('Loaded ' + Object.keys(fans).length + ' fans from server');
+    var updated = 0;
+
+    var fanKeys = Object.keys(fans);
+    for (var i = 0; i < fanKeys.length; i++) {
+        var name = fanKeys[i];
+        if (fans[name].avatar && fans[name].avatar !== '') continue; // already has avatar
+
+        // Try exact match
+        if (ps[name] && ps[name].avatar) {
+            fans[name].avatar = ps[name].avatar;
+            log('✓ ' + name + ' → avatar found (exact)');
+            updated++;
+            continue;
+        }
+
+        // Try case-insensitive match without @
+        var nameClean = name.replace('@', '').toLowerCase();
+        var psKeys = Object.keys(ps);
+        for (var j = 0; j < psKeys.length; j++) {
+            if (psKeys[j].replace('@', '').toLowerCase() === nameClean) {
+                if (ps[psKeys[j]].avatar) {
+                    fans[name].avatar = ps[psKeys[j]].avatar;
+                    log('✓ ' + name + ' → avatar found (fuzzy: ' + psKeys[j] + ')');
+                    updated++;
+                    break;
+                }
+            }
+        }
+
+        if (!fans[name].avatar || fans[name].avatar === '') {
+            log('✗ ' + name + ' → no avatar found');
+        }
+    }
+
+    log('\nUpdated ' + updated + ' fans. Saving...');
+
+    // Save back to server
+    return fetch('/fans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fans)
+    });
+}).then(function(r) { return r.json(); }).then(function(result) {
+    log('Saved! Total fans: ' + result.total);
+    log('\nDone! You can close this page.');
+}).catch(function(e) {
+    log('Error: ' + e);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+4726:            checkPickSlimeCollisions();
+4728:            checkPickSpiderCollisions();
+4865:            checkPickBubbleCollisions();
+6612:        function checkPickSpiderCollisions() {
+7123:        function checkPickBubbleCollisions() {
+7615:        function checkPickSlimeCollisions() {

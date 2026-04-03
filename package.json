@@ -4,7 +4,9 @@
   "description": "Pickaxe Drop — YouTube Live Chat Game",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "lint": "npx eslint .",
+    "audit": "npm audit"
   },
   "dependencies": {
     "youtube-chat": "^2.2.0",

@@ -1,0 +1,19 @@
+2562:        function drawCycleOverlay() {
+3130:        function drawMGs() {
+3835:        function drawTormentaAura(p) {
+4064:        function drawFallingBlocks() {
+4263:        function drawBonusBalls() {
+5028:        function drawCrystalShape(cx, x, sy, w, h, flip) {
+5123:        function drawWeatherOverlay() {
+5148:        function drawBackground() {
+5341:        function drawWaterTable() {
+5426:        function drawPlayerCooldowns(context, px, py, userName) {
+5490:        function draw() {
+6673:        function drawSpiders() {
+7198:        function drawBubbles() {
+8213:        function drawSlime3D(cx, cy, size, color, hp, maxHp, wobble) {
+8359:        function drawTestSlimes() {
+8366:        function drawBossEffects() {
+8433:        function drawSlimes() {
+10583:        function drawBlackHoles() {
+10903:        function drawSpinAura(p) {

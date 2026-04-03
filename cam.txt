@@ -1,0 +1,55 @@
+2263:        var camY = 0;
+2293:            pick.y = camY + TILE * 2;
+2461:                        spawnText(canvas.width / 2, camY + canvas.height / 2, '🎮 ' + userName + ' → Roblox: ' + data.username, '#00aaff');
+2477:                    spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + code, '#ffffff');
+2492:                        spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[i].toUpperCase(), '#ffffff');
+2504:                        spawnText(canvas.width / 2, camY + canvas.height / 2, '🏳️ ' + userName + ' → ' + keys[j].toUpperCase(), '#ffffff');
+2826:            camTarget = null; camLeaderTimer = 0; camY = 0;
+3084:                if (b.life <= 0 || b.x < 0 || b.x > COLS * TILE || b.y < camY - 200) {
+3184:            var py = p ? p.y : camY + canvas.height / 2;
+3279:            var ceiling = camY;
+3285:            var floor = camY + canvas.height + 600; // max fall distance below camera
+3294:                p.y = camY + canvas.height * 0.3;
+3302:                p.y = camY + canvas.height * 0.3;
+3335:            var fallLimit = camY + canvas.height + 800;
+3341:                    up.y = camY + canvas.height * 0.3;
+3372:            var fallLimitEx = camY + canvas.height + 800;
+3380:                        ep.y = camY + canvas.height * 0.3;
+4058:                if (fb.y > camY + canvas.height + 400) {
+4067:                if (fb.y < camY - TILE * 2 || fb.y > camY + canvas.height + TILE * 2) continue;
+4257:                if (bonusBalls[i] && (ball.y > camY + canvas.height + 800 || ball.x < -200 || ball.x > COLS * TILE + 200)) {
+4269:                if (by < camY - TILE * 3 || by > camY + canvas.height + TILE * 3) continue;
+4292:                if (ball.y < camY - 30 || ball.y > camY + canvas.height + 30) continue;
+4439:            var viewTop = camY - TILE * 2;
+4440:            var viewBot = camY + canvas.height + TILE * 2;
+4581:            if (targetCamY > camY) { camY += (targetCamY - camY) * 0.08; }
+4588:            var fallLimit = camY + canvas.height + 800;
+4591:                pick.y = camY + canvas.height * 0.3;
+4632:                    var gp = pick || { x: canvas.width / 2, y: camY + canvas.height / 2 };
+4650:                        if (b.state === 'dead' || b.y < camY - 200 || b.y > camY + canvas.height + 200) continue;
+4656:                        if (z.state === 'dead' || z.y < camY - 200 || z.y > camY + canvas.height + 200) continue;
+4662:                        if (sp.state === 'dead' || sp.y < camY - 200 || sp.y > camY + canvas.height + 200) continue;
+5517:            ctx.translate(sx, sy - camY); // aplica câmera + tremor
+5676:            var viewTop = camY - TILE * 2;
+5677:            var viewBot = camY + canvas.height + TILE * 2;
+6360:                ctx.arc(ring.x, ring.y - camY, ring.radius, 0, Math.PI * 2);
+6367:                ctx.arc(ring.x, ring.y - camY, ring.radius * 0.8, 0, Math.PI * 2);
+6504:                if (s.y < camY - 400) { spiders.splice(i, 1); continue; }
+6674:            var viewTop = camY - TILE * 2;
+6675:            var viewBot = camY + canvas.height + TILE * 2;
+6892:                if (b.y < camY - 500) {
+7199:            var viewTop = camY - TILE * 2;
+7200:            var viewBot = camY + canvas.height + TILE * 2;
+7720:                if (z.y < camY - 400) {
+7727:                        if (z.isSlimeBoss) console.log('[boss] Boss REMOVED (above camera) zone=' + z.zone + ' y=' + Math.floor(z.y) + ' camY=' + Math.floor(camY));
+8434:            var viewTop = camY - TILE * 2;
+8435:            var viewBot = camY + canvas.height + TILE * 2;
+8926:            var viewTop = camY - TILE * 2;
+8927:            var viewBot = camY + canvas.height + TILE * 2;
+9104:                spawnText(canvas.width / 2, camY + 100, '20 BOTS ADDED!', '#ffff00');
+9619:                    spawnText(canvas.width / 2, camY + canvas.height / 2, '⚠️ ' + cUser + ': Use !roblox user [nick]!', '#ff4444');
+9738:                spawnText(canvas.width / 2, camY + 100, '20 BOTS ADDED!', '#ffff00');
+9855:            var oy = pick ? pick.y : camY + canvas.height / 2;
+10664:                    if (!e || e.state === 'dead' || e.y < camY - 100 || e.y > camY + canvas.height + 100) continue;
+10673:                if (c.state === 'dead' || c.y < camY - 200 || c.y > camY + canvas.height + 200) continue;
+11041:            var cy = pick ? pick.y : camY + canvas.height * 0.5;

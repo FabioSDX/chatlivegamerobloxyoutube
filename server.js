@@ -23,7 +23,7 @@ function loadFans() {
 }
 
 function saveFans() {
-  try { fs.writeFileSync(FANS_FILE, JSON.stringify(fansData, null, 2), 'utf8'); } catch (e) {}
+  try { fs.writeFileSync(FANS_FILE, JSON.stringify(fansData, null, 2), 'utf8'); } catch (e) { }
 }
 
 loadFans();
@@ -65,7 +65,7 @@ const AVATAR_CACHE_TTL = 3600000;
 
 app.get('/avatar-proxy', async (req, res) => {
   const url = req.query.url;
-  if (!url || (!url.includes('ggpht.com') && !url.includes('googleusercontent.com'))) {
+  if (!url || (!url.includes('ggpht.com') && !url.includes('googleusercontent.com') && !url.includes('rbxcdn.com'))) {
     return res.status(400).send('Invalid avatar URL');
   }
   const cached = avatarMemCache.get(url);
@@ -92,6 +92,59 @@ app.get('/avatar-proxy', async (req, res) => {
     res.status(502).send('Failed to fetch avatar');
   }
 });
+
+// ── Roblox Avatar Lookup ─────────────────────────────────────────────────
+const robloxCache = new Map(); // username -> { avatarUrl, userId, timestamp }
+
+app.get('/roblox-avatar', async (req, res) => {
+  const username = (req.query.username || '').trim();
+  if (!username) return res.status(400).json({ error: 'username required' });
+
+  // Check cache
+  const cached = robloxCache.get(username.toLowerCase());
+  if (cached && (Date.now() - cached.timestamp < 3600000)) {
+    return res.json({ avatarUrl: cached.avatarUrl, userId: cached.userId, username });
+  }
+
+  try {
+    // Search user by name using roproxy to bypass blocks and use limit=10 (valid enum)
+    const searchRes = await fetch(`https://users.roproxy.com/v1/users/search?keyword=${encodeURIComponent(username)}&limit=10`);
+    const searchData = await searchRes.json();
+    if (!searchData.data || searchData.data.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    // Find exact match (case-insensitive)
+    const user = searchData.data.find(u => u.name.toLowerCase() === username.toLowerCase()) || searchData.data[0];
+    const userId = user.id;
+
+    // Get avatar headshot
+    const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=false`);
+    const thumbData = await thumbRes.json();
+    const avatarUrl = thumbData.data && thumbData.data[0] ? thumbData.data[0].imageUrl : '';
+
+    robloxCache.set(username.toLowerCase(), { avatarUrl, userId, timestamp: Date.now() });
+    res.json({ avatarUrl, userId, username: user.name });
+  } catch (e) {
+    console.error('[roblox] Error:', e.message);
+    res.status(502).json({ error: 'Failed to fetch Roblox data' });
+  }
+});
+
+// Endpoint para fornecer a miniatura de corpo inteiro do avatar do Roblox
+app.get('/roblox-full-body', async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) return res.status(400).send('userId required');
+  try {
+    const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar?userIds=${userId}&size=420x420&format=Png&isCircular=false`);
+    const thumbData = await thumbRes.json();
+    const imageUrl = thumbData.data && thumbData.data[0] ? thumbData.data[0].imageUrl : '';
+    if (!imageUrl) return res.status(404).send('Image not found');
+    res.redirect(imageUrl);
+  } catch (e) {
+    res.status(502).send('Failed to fetch full-body thumbnail');
+  }
+});
+
 
 // ── Multi-Room Chat System ───────────────────────────────────────────────
 // Each room = one youtube-chat instance for a channel/live
@@ -122,7 +175,7 @@ function destroyRoom(key) {
   const room = rooms.get(key);
   if (!room) return;
   if (room.liveChat) {
-    try { room.liveChat.stop(); } catch (e) {}
+    try { room.liveChat.stop(); } catch (e) { }
   }
   if (room.statsInterval) clearInterval(room.statsInterval);
   rooms.delete(key);
